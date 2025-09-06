@@ -79,7 +79,7 @@ class MedicalInfoCard extends StatelessWidget {
           
           const SizedBox(height: 16),
           
-          // Información del registro
+          // Información del historial
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -99,7 +99,7 @@ class MedicalInfoCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Información del Registro',
+                      'Información del Historial',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,

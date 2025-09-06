@@ -4,7 +4,7 @@ import '../../../../utils/app_theme.dart';
 class TreatmentAlertCard extends StatelessWidget {
   const TreatmentAlertCard({super.key});
 
-  // Datos ficticios de alertas
+  // Datos ficticios de Urgencias
   final List<TreatmentAlert> _alerts = const [
     TreatmentAlert(patient: "Juan Pérez", message: "Revisión post-cirugía pendiente", daysOverdue: 2),
     TreatmentAlert(patient: "Elena Torres", message: "Ajuste de ortodoncia vencido", daysOverdue: 5),

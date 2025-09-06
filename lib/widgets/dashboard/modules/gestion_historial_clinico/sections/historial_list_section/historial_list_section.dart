@@ -33,7 +33,7 @@ class HistorialListSection extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${historiales.length} registro${historiales.length != 1 ? 's' : ''} clínico${historiales.length != 1 ? 's' : ''} encontrado${historiales.length != 1 ? 's' : ''}',
+              '${historiales.length} historial${historiales.length != 1 ? 's' : ''} clínico${historiales.length != 1 ? 's' : ''} encontrado${historiales.length != 1 ? 's' : ''}',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,

@@ -104,7 +104,7 @@ class HistorialClinicoController extends GetxController {
   // ========== ACCIONES CRUD ==========
 
   void addNewHistorial() {
-    Get.snackbar('Nuevo Registro', 'Función para agregar nuevo historial clínico');
+    Get.snackbar('Nuevo Historial', 'Función para agregar nuevo historial clínico');
   }
 
   void editHistorial() {

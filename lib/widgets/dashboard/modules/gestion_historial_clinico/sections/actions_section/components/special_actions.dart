@@ -34,7 +34,7 @@ class SpecialActions extends StatelessWidget {
         ActionButton(
           icon: Icons.history,
           title: 'Historial Completo',
-          subtitle: 'Ver todos los registros del paciente',
+          subtitle: 'Ver todos los historiales del paciente',
           color: const Color(0xFF10B981),
           onPressed: controller.viewPatientHistory,
         ),
