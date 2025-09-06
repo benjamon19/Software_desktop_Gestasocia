@@ -79,7 +79,7 @@ class HistorialClinicoMainView extends StatelessWidget {
 
   String _getSubtitle(HistorialClinicoController controller) {
     if (controller.isDetailView) {
-      return 'Información completa del registro clínico odontológico';
+      return 'Información completa del historial clínico odontológico';
     } else {
       return 'Gestiona el historial clínico odontológico de todos los pacientes';
     }
@@ -122,11 +122,11 @@ class HistorialClinicoMainView extends StatelessWidget {
             ),
           ),
         
-        // Botón nuevo registro (siempre visible)
+        // Botón nuevo historial (siempre visible)
         ElevatedButton.icon(
           onPressed: controller.addNewHistorial,
           icon: const Icon(Icons.medical_information, size: 20),
-          label: const Text('Nuevo Registro'),
+          label: const Text('Nuevo Historial'),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,

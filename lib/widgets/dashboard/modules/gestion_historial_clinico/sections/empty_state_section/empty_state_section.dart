@@ -35,7 +35,7 @@ class EmptyStateSection extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            hasSearchQuery ? 'No se encontraron registros' : 'No hay historial clínico',
+            hasSearchQuery ? 'No se encontraron historiales' : 'No hay historial clínico',
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -45,8 +45,8 @@ class EmptyStateSection extends StatelessWidget {
           const SizedBox(height: 12),
           Text(
             hasSearchQuery 
-                ? 'No se encontraron registros para "$searchQuery"\nIntenta con un término diferente'
-                : 'Aún no hay registros clínicos en el sistema\nComienza agregando el primer historial',
+                ? 'No se encontraron historiales para "$searchQuery"\nIntenta con un término diferente'
+                : 'Aún no hay historiales clínicos en el sistema\nComienza agregando el primer historial',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -58,7 +58,7 @@ class EmptyStateSection extends StatelessWidget {
           ElevatedButton.icon(
             onPressed: onNewHistorial,
             icon: const Icon(Icons.medical_information, size: 20),
-            label: Text(hasSearchQuery ? 'Agregar Nuevo Registro' : 'Crear Primer Registro'),
+            label: Text(hasSearchQuery ? 'Agregar Nuevo Historial' : 'Crear Primer Historial'),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppTheme.primaryColor,
               foregroundColor: Colors.white,
@@ -82,7 +82,7 @@ class EmptyStateSection extends StatelessWidget {
         _buildFeatureItem(
           context,
           icon: Icons.medical_information_outlined,
-          title: 'Registros Clínicos',
+          title: 'Historiales Clínicos',
           description: 'Historial completo de consultas',
         ),
         const SizedBox(width: 40),
