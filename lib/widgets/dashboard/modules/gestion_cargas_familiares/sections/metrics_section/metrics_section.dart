@@ -41,7 +41,7 @@ class MetricsSection extends StatelessWidget {
         const SizedBox(width: 20),
         Expanded(
           child: MetricCard(
-            title: 'Alertas',
+            title: 'Urgencias',
             value: '2',
             icon: Icons.warning_amber_outlined,
             iconColor: const Color(0xFFF56565),

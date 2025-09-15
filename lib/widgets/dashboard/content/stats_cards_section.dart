@@ -51,7 +51,7 @@ class StatsCardsSection extends StatelessWidget {
         SizedBox(width: isSmallScreen ? 8 : 12),
         Expanded(
           child: StatCard(
-            title: 'Alertas',
+            title: 'Urgencias',
             value: '3',
             icon: Icons.warning_amber_outlined,
             iconColor: const Color(0xFFF56565),

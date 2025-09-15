@@ -39,7 +39,7 @@ class MedicalInfoCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.warning_amber, color: Color(0xFFEF4444), size: 20),
                       const SizedBox(width: 8),
-                      Text('Alertas (${carga['alertas'].length})', 
+                      Text('Urgencias (${carga['alertas'].length})', 
                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
                     ],
                   ),

@@ -155,7 +155,7 @@ class _SidebarMenuState extends State<SidebarMenu>
     // Dimensiones adaptativas
     double logoHeight = isVeryShortScreen ? 60 : (isSmallScreen ? 68 : 76);
     double logoPadding = isVerySmallScreen ? 10 : (isSmallScreen ? 12 : 15);
-    double logoSize = isVerySmallScreen ? 28 : (isSmallScreen ? 32 : 36);
+    double logoSize = isVerySmallScreen ? 26 : (isSmallScreen ? 30 : 34);
     double fontSize = isVerySmallScreen ? 16 : (isSmallScreen ? 18 : 20);
     double logoMargin = isVerySmallScreen ? 8 : 10;
 
@@ -164,7 +164,7 @@ class _SidebarMenuState extends State<SidebarMenu>
       padding: EdgeInsets.all(logoPadding),
       child: Row(
         children: [
-          // Logo siempre visible
+          // Logo
           Image.asset(
             'assets/images/gestasocia_icon.png',
             width: logoSize,
@@ -210,7 +210,7 @@ class _SidebarMenuState extends State<SidebarMenu>
     double horizontalMargin = isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 10);
     double verticalMargin = isVeryShortScreen ? 2 : 3;
     double horizontalPadding = isVerySmallScreen ? 10 : (isSmallScreen ? 12 : 14);
-    double iconSize = isVerySmallScreen ? 18 : 20;
+    double iconSize = isVerySmallScreen ? 15 : 17;
     double fontSize = isVerySmallScreen ? 12 : (isSmallScreen ? 13 : 14);
     double textMargin = isVerySmallScreen ? 8 : (isSmallScreen ? 10 : 12);
 
@@ -232,7 +232,7 @@ class _SidebarMenuState extends State<SidebarMenu>
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 2),
             child: Row(
               children: [
-                // Icono siempre visible
+                // Icono
                 Icon(
                   item['icon'],
                   color: isSelected

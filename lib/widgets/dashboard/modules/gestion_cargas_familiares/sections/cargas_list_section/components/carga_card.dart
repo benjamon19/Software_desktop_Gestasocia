@@ -99,7 +99,7 @@ class CargaCard extends StatelessWidget {
             style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _getEstadoColor()),
           ),
         ),
-        if (carga['alertas'].isNotEmpty) ...[
+        if (carga['Urgencias'].isNotEmpty) ...[
           const SizedBox(height: 4),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -108,7 +108,7 @@ class CargaCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
-              '${carga['alertas'].length}',
+              '${carga['Urgencias'].length}',
               style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
             ),
           ),

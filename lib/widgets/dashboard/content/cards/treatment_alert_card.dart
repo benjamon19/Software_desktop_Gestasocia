@@ -4,7 +4,7 @@ import '../../../../utils/app_theme.dart';
 class TreatmentAlertCard extends StatelessWidget {
   const TreatmentAlertCard({super.key});
 
-  // Datos ficticios de alertas
+  // Datos ficticios de urgencias
   final List<TreatmentAlert> _alerts = const [
     TreatmentAlert(patient: "Juan Pérez", message: "Revisión post-cirugía pendiente", daysOverdue: 2),
     TreatmentAlert(patient: "Elena Torres", message: "Ajuste de ortodoncia vencido", daysOverdue: 5),
@@ -86,7 +86,7 @@ class TreatmentAlertCard extends StatelessWidget {
       return Row(
         children: [
           Text(
-            'Alertas',
+            'Urgencias',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -117,7 +117,7 @@ class TreatmentAlertCard extends StatelessWidget {
     return Row(
       children: [
         Text(
-          isSmallScreen ? 'Alertas Pendientes' : 'Alertas Pendientes',
+          isSmallScreen ? 'Urgencias Pendientes' : 'Urgencias Pendientes',
           style: TextStyle(
             fontSize: isSmallScreen ? 14 : (isMediumScreen ? 15 : 16),
             fontWeight: FontWeight.w600,
