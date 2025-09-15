@@ -128,7 +128,7 @@ class _SearchSectionState extends State<SearchSection> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Busca por nombre del paciente, RUT o utiliza los filtros para encontrar registros específicos',
+            'Busca por nombre del paciente, RUT o utiliza los filtros para encontrar historiales específicos',
             style: TextStyle(
               fontSize: 14,
               color: AppTheme.getTextSecondary(context),
