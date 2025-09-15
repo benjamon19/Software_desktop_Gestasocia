@@ -99,3 +99,4 @@ ios/Flutter/ephemeral/flutter_lldbinit
 ios/Flutter/ephemeral/flutter_lldb_helper.py
 android/local.properties
 android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+.vscode/settings.json
