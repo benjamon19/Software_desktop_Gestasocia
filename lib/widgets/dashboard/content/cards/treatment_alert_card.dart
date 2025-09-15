@@ -192,7 +192,7 @@ class TreatmentAlertCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Días vencidos con color de urgencia
-          Container(
+          SizedBox(
             width: daysColumnWidth,
             child: Text(
               '${alert.daysOverdue}d',

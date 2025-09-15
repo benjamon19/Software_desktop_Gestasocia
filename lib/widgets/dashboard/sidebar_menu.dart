@@ -34,18 +34,10 @@ class _SidebarMenuState extends State<SidebarMenu>
       vsync: this,
     );
 
-    // Obtener dimensiones responsive para el ancho
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bool isSmallScreen = screenWidth < 600;
-    final bool isVerySmallScreen = screenWidth < 480;
-
-    // Anchos adaptativos más compactos
-    double expandedWidth = isVerySmallScreen ? 180 : (isSmallScreen ? 200 : 210);
-    double collapsedWidth = isVerySmallScreen ? 55 : (isSmallScreen ? 60 : 65);
-
+    // Inicializar con valores por defecto - se actualizarán en didChangeDependencies
     _widthAnimation = Tween<double>(
-      begin: expandedWidth,
-      end: collapsedWidth,
+      begin: 210.0,
+      end: 65.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOutCubic,
@@ -62,6 +54,29 @@ class _SidebarMenuState extends State<SidebarMenu>
     if (widget.isCollapsed) {
       _animationController.value = 1.0;
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Aquí sí podemos acceder a MediaQuery de forma segura
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isVerySmallScreen = screenWidth < 480;
+
+    // Anchos adaptativos más compactos
+    double expandedWidth = isVerySmallScreen ? 180 : (isSmallScreen ? 200 : 210);
+    double collapsedWidth = isVerySmallScreen ? 55 : (isSmallScreen ? 60 : 65);
+
+    // Actualizar la animación con los nuevos valores
+    _widthAnimation = Tween<double>(
+      begin: expandedWidth,
+      end: collapsedWidth,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOutCubic,
+    ));
   }
 
   @override

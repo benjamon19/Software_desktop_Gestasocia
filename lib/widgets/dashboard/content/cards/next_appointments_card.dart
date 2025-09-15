@@ -175,7 +175,7 @@ class NextAppointmentsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hora compacta con ancho adaptativo
-          Container(
+          SizedBox(
             width: timeColumnWidth,
             child: Text(
               appointment.time,
