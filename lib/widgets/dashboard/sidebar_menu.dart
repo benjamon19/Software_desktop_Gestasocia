@@ -34,9 +34,18 @@ class _SidebarMenuState extends State<SidebarMenu>
       vsync: this,
     );
 
+    // Obtener dimensiones responsive para el ancho
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isVerySmallScreen = screenWidth < 480;
+
+    // Anchos adaptativos más compactos
+    double expandedWidth = isVerySmallScreen ? 180 : (isSmallScreen ? 200 : 210);
+    double collapsedWidth = isVerySmallScreen ? 55 : (isSmallScreen ? 60 : 65);
+
     _widthAnimation = Tween<double>(
-      begin: 230.0,
-      end: 70.0,
+      begin: expandedWidth,
+      end: collapsedWidth,
     ).animate(CurvedAnimation(
       parent: _animationController,
       curve: Curves.easeInOutCubic,
@@ -101,7 +110,7 @@ class _SidebarMenuState extends State<SidebarMenu>
               // Menu Items
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: _getAdaptivePadding(context),
                   itemCount: DashboardData.menuItems.length,
                   itemBuilder: (context, index) {
                     return _buildMenuItem(context, index);
@@ -115,17 +124,36 @@ class _SidebarMenuState extends State<SidebarMenu>
     );
   }
 
+  EdgeInsets _getAdaptivePadding(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bool isVeryShortScreen = screenHeight < 600;
+    return EdgeInsets.symmetric(vertical: isVeryShortScreen ? 6 : 8);
+  }
+
   Widget _buildLogoSection(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isVerySmallScreen = screenWidth < 480;
+    final bool isVeryShortScreen = screenHeight < 600;
+
+    // Dimensiones adaptativas
+    double logoHeight = isVeryShortScreen ? 60 : (isSmallScreen ? 68 : 76);
+    double logoPadding = isVerySmallScreen ? 10 : (isSmallScreen ? 12 : 15);
+    double logoSize = isVerySmallScreen ? 28 : (isSmallScreen ? 32 : 36);
+    double fontSize = isVerySmallScreen ? 16 : (isSmallScreen ? 18 : 20);
+    double logoMargin = isVerySmallScreen ? 8 : 10;
+
     return Container(
-      height: 76, // Altura fija para mantener consistencia
-      padding: const EdgeInsets.all(15),
+      height: logoHeight,
+      padding: EdgeInsets.all(logoPadding),
       child: Row(
         children: [
           // Logo siempre visible
           Image.asset(
             'assets/images/gestasocia_icon.png',
-            width: 36,
-            height: 36,
+            width: logoSize,
+            height: logoSize,
           ),
           // Texto con fade animation
           if (!widget.isCollapsed)
@@ -133,15 +161,16 @@ class _SidebarMenuState extends State<SidebarMenu>
               child: FadeTransition(
                 opacity: _fadeAnimation,
                 child: Container(
-                  margin: const EdgeInsets.only(left: 10),
+                  margin: EdgeInsets.only(left: logoMargin),
                   child: Text(
                     'GestAsocia',
                     style: TextStyle(
                       color: AppTheme.getTextPrimary(context),
-                      fontSize: 20,
+                      fontSize: fontSize,
                       fontWeight: FontWeight.bold,
                     ),
                     overflow: TextOverflow.clip,
+                    maxLines: 1,
                   ),
                 ),
               ),
@@ -154,9 +183,24 @@ class _SidebarMenuState extends State<SidebarMenu>
   Widget _buildMenuItem(BuildContext context, int index) {
     final item = DashboardData.menuItems[index];
     final isSelected = widget.selectedIndex == index;
+    
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isVerySmallScreen = screenWidth < 480;
+    final bool isVeryShortScreen = screenHeight < 600;
+
+    // Dimensiones adaptativas
+    double menuItemHeight = isVeryShortScreen ? 40 : (isSmallScreen ? 44 : 48);
+    double horizontalMargin = isVerySmallScreen ? 6 : (isSmallScreen ? 8 : 10);
+    double verticalMargin = isVeryShortScreen ? 2 : 3;
+    double horizontalPadding = isVerySmallScreen ? 10 : (isSmallScreen ? 12 : 14);
+    double iconSize = isVerySmallScreen ? 18 : 20;
+    double fontSize = isVerySmallScreen ? 12 : (isSmallScreen ? 13 : 14);
+    double textMargin = isVerySmallScreen ? 8 : (isSmallScreen ? 10 : 12);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      margin: EdgeInsets.symmetric(horizontal: horizontalMargin, vertical: verticalMargin),
       decoration: BoxDecoration(
         color: isSelected
             ? AppTheme.primaryColor.withValues(alpha: 0.1)
@@ -169,8 +213,8 @@ class _SidebarMenuState extends State<SidebarMenu>
           borderRadius: BorderRadius.circular(8),
           onTap: () => widget.onItemSelected(index),
           child: Container(
-            height: 48, // Altura fija para consistencia
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            height: menuItemHeight,
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 2),
             child: Row(
               children: [
                 // Icono siempre visible
@@ -179,7 +223,7 @@ class _SidebarMenuState extends State<SidebarMenu>
                   color: isSelected
                       ? AppTheme.primaryColor
                       : AppTheme.getTextSecondary(context),
-                  size: 20,
+                  size: iconSize,
                 ),
                 // Texto con animación
                 if (!widget.isCollapsed)
@@ -187,7 +231,7 @@ class _SidebarMenuState extends State<SidebarMenu>
                     child: FadeTransition(
                       opacity: _fadeAnimation,
                       child: Container(
-                        margin: const EdgeInsets.only(left: 12),
+                        margin: EdgeInsets.only(left: textMargin),
                         child: Text(
                           item['title'],
                           style: TextStyle(
@@ -197,9 +241,10 @@ class _SidebarMenuState extends State<SidebarMenu>
                             fontWeight: isSelected
                                 ? FontWeight.w600
                                 : FontWeight.normal,
-                            fontSize: 14,
+                            fontSize: fontSize,
                           ),
-                          overflow: TextOverflow.clip,
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ),
                     ),

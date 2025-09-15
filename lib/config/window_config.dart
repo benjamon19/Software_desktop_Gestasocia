@@ -3,10 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
 
 class WindowConfig {
-  // Configuración de tamaños
-  static const double minWidth = 1500.0;   
-  static const double minHeight = 1000.0;   
-
+  // Configuración de tamaños más compactos
+  static const double minWidth = 1024.0;     // Reducido de 1500 a 1024
+  static const double minHeight = 600.0;     // Reducido de 1000 a 600
+  
+  // Tamaño inicial recomendado (más cómodo que el mínimo)
+  static const double defaultWidth = 1200.0;
+  static const double defaultHeight = 700.0;
+  
   // Inicializar ventana
   static Future<void> initialize() async {
     // Solo ejecutar en desktop, NO en web
@@ -39,10 +43,10 @@ class WindowConfig {
       // Asegurar que window manager esté inicializado
       await windowManager.ensureInitialized();
 
-      // Configurar opciones de ventana
+      // Configurar opciones de ventana con tamaños más razonables
       const WindowOptions windowOptions = WindowOptions(
-        size: Size(minWidth, minHeight),
-        minimumSize: Size(minWidth, minHeight),
+        size: Size(defaultWidth, defaultHeight),         // Tamaño inicial cómodo
+        minimumSize: Size(minWidth, minHeight),          // Tamaño mínimo reducido
         center: true,
         backgroundColor: Colors.transparent,
         skipTaskbar: false,
@@ -60,6 +64,8 @@ class WindowConfig {
 
       if (kDebugMode) {
         print('Window manager configurado correctamente');
+        print('Tamaño inicial: ${defaultWidth}x$defaultHeight');
+        print('Tamaño mínimo: ${minWidth}x$minHeight');
       }
       
     } catch (e) {

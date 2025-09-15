@@ -6,32 +6,32 @@ class TreatmentAlertCard extends StatelessWidget {
 
   // Datos ficticios de alertas
   final List<TreatmentAlert> _alerts = const [
-    TreatmentAlert(
-      patient: "Juan Pérez",
-      message: "Revisión post-cirugía pendiente",
-      daysOverdue: 2,
-    ),
-    TreatmentAlert(
-      patient: "Elena Torres",
-      message: "Ajuste de ortodoncia vencido",
-      daysOverdue: 5,
-    ),
-    TreatmentAlert(
-      patient: "Miguel Santos",
-      message: "Limpieza semestral programada",
-      daysOverdue: 1,
-    ),
-    TreatmentAlert(
-      patient: "Laura Martín",
-      message: "Control de implante",
-      daysOverdue: 3,
-    ),
+    TreatmentAlert(patient: "Juan Pérez", message: "Revisión post-cirugía pendiente", daysOverdue: 2),
+    TreatmentAlert(patient: "Elena Torres", message: "Ajuste de ortodoncia vencido", daysOverdue: 5),
+    TreatmentAlert(patient: "Miguel Santos", message: "Limpieza semestral programada", daysOverdue: 1),
+    TreatmentAlert(patient: "Laura Martín", message: "Control de implante", daysOverdue: 3),
+    TreatmentAlert(patient: "Ana Ruiz", message: "Seguimiento endodoncia", daysOverdue: 4),
+    TreatmentAlert(patient: "Carlos Vega", message: "Retirar puntos de sutura", daysOverdue: 1),
+    TreatmentAlert(patient: "Sofia López", message: "Revisión de prótesis", daysOverdue: 6),
+    TreatmentAlert(patient: "Diego Mora", message: "Control de brackets", daysOverdue: 2),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isMediumScreen = screenWidth >= 600 && screenWidth < 1000;
+    final bool isShortScreen = screenHeight < 700;
+    final bool isVeryShortScreen = screenHeight < 600;
+    
+    // Padding adaptativo según espacio disponible
+    double cardPadding = isVeryShortScreen ? 8 : (isShortScreen ? 10 : (isSmallScreen ? 12 : 16));
+    double headerSpacing = isVeryShortScreen ? 4 : (isShortScreen ? 6 : (isSmallScreen ? 8 : 12));
+    double footerSpacing = isVeryShortScreen ? 3 : (isShortScreen ? 4 : (isSmallScreen ? 6 : 8));
+    
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(cardPadding),
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(12),
@@ -48,52 +48,172 @@ class TreatmentAlertCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Text(
-            'Alertas Pendientes',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.getTextPrimary(context),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${_alerts.length} notificaciones activas',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.getTextSecondary(context),
-            ),
-          ),
+          // Header que se adapta al espacio
+          _buildAdaptiveHeader(context, isSmallScreen, isMediumScreen, isVeryShortScreen),
           
-          const SizedBox(height: 16),
+          SizedBox(height: headerSpacing),
           
-          // Lista con scroll
+          // Lista que se expande según el espacio disponible
           Expanded(
-            child: ListView.separated(
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
               itemCount: _alerts.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                return _buildAlertItem(context, _alerts[index]);
+                return _buildAdaptiveAlertItem(
+                  context, 
+                  _alerts[index],
+                  isSmallScreen,
+                  isMediumScreen,
+                  isVeryShortScreen,
+                );
               },
             ),
           ),
           
-          const SizedBox(height: 16),
+          SizedBox(height: footerSpacing),
           
-          // Link
-          Align(
-            alignment: Alignment.centerRight,
-            child: GestureDetector(
-              onTap: () {},
-              child: Text(
-                'Ver todas las alertas →',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: const Color(0xFF3B82F6),
-                  fontWeight: FontWeight.w500,
-                ),
+          // Footer adaptativo - se oculta en pantallas muy pequeñas
+          if (!isVeryShortScreen)
+            _buildAdaptiveFooter(context, isSmallScreen),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdaptiveHeader(BuildContext context, bool isSmallScreen, bool isMediumScreen, bool isVeryShortScreen) {
+    if (isVeryShortScreen) {
+      // Header ultra compacto para pantallas muy pequeñas
+      return Row(
+        children: [
+          Text(
+            'Alertas',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.getTextPrimary(context),
+            ),
+          ),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              '${_alerts.length}',
+              style: const TextStyle(
+                fontSize: 9,
+                color: Color(0xFFEF4444),
+                fontWeight: FontWeight.w600,
               ),
+            ),
+          ),
+        ],
+      );
+    }
+    
+    // Header normal para pantallas con más espacio
+    return Row(
+      children: [
+        Text(
+          isSmallScreen ? 'Alertas Pendientes' : 'Alertas Pendientes',
+          style: TextStyle(
+            fontSize: isSmallScreen ? 14 : (isMediumScreen ? 15 : 16),
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextPrimary(context),
+          ),
+        ),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '${_alerts.length}',
+            style: TextStyle(
+              fontSize: isSmallScreen ? 10 : 11,
+              color: const Color(0xFFEF4444),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdaptiveFooter(BuildContext context, bool isSmallScreen) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: GestureDetector(
+        onTap: () {},
+        child: Text(
+          isSmallScreen ? 'Ver más →' : 'Ver todas →',
+          style: TextStyle(
+            fontSize: isSmallScreen ? 10 : 11,
+            color: const Color(0xFF3B82F6),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdaptiveAlertItem(
+    BuildContext context, 
+    TreatmentAlert alert,
+    bool isSmallScreen,
+    bool isMediumScreen,
+    bool isVeryShortScreen,
+  ) {
+    // Color según urgencia
+    Color urgencyColor = alert.daysOverdue > 3 
+        ? const Color(0xFFEF4444)  // Rojo para más de 3 días
+        : const Color(0xFFF59E0B); // Amarillo para menos días
+    
+    // Espaciado vertical adaptativo
+    double verticalPadding = isVeryShortScreen ? 2 : (isSmallScreen ? 3 : 4);
+    
+    // Ancho de la columna de días según espacio disponible
+    double daysColumnWidth = isVeryShortScreen ? 30 : (isSmallScreen ? 35 : 40);
+    
+    // Tamaño de texto adaptativo
+    double daysSize = isVeryShortScreen ? 9 : (isSmallScreen ? 10 : 11);
+    double contentSize = isVeryShortScreen ? 10 : (isSmallScreen ? 11 : 12);
+    
+    // Espaciado horizontal adaptativo
+    double horizontalSpacing = isVeryShortScreen ? 6 : (isSmallScreen ? 8 : 12);
+    
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: verticalPadding),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Días vencidos con color de urgencia
+          Container(
+            width: daysColumnWidth,
+            child: Text(
+              '${alert.daysOverdue}d',
+              style: TextStyle(
+                fontSize: daysSize,
+                fontWeight: FontWeight.w700,
+                color: urgencyColor,
+              ),
+            ),
+          ),
+          
+          SizedBox(width: horizontalSpacing),
+          
+          // Contenido adaptativo según espacio
+          Expanded(
+            child: _buildAdaptiveAlertContent(
+              context,
+              alert,
+              contentSize,
+              isMediumScreen,
+              isVeryShortScreen,
             ),
           ),
         ],
@@ -101,70 +221,78 @@ class TreatmentAlertCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAlertItem(BuildContext context, TreatmentAlert alert) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.grey.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.1)
-              : Colors.grey.withValues(alpha: 0.2),
-          width: 1,
+  Widget _buildAdaptiveAlertContent(
+    BuildContext context,
+    TreatmentAlert alert,
+    double fontSize,
+    bool isMediumScreen,
+    bool isVeryShortScreen,
+  ) {
+    if (isVeryShortScreen) {
+      // Ultra compacto: solo nombre del paciente
+      return Text(
+        alert.patient,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w500,
+          color: AppTheme.getTextPrimary(context),
         ),
-      ),
-      child: Row(
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    } else if (isMediumScreen) {
+      // Pantalla mediana: dos líneas separadas
+      return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Días
-          SizedBox(
-            width: 25,
-            child: Text(
-              '${alert.daysOverdue}d',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.getTextSecondary(context),
-              ),
+          Text(
+            alert.patient,
+            style: TextStyle(
+              fontSize: fontSize,
+              fontWeight: FontWeight.w500,
+              color: AppTheme.getTextPrimary(context),
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          
-          const SizedBox(width: 12),
-          
-          // Información
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  alert.patient,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.getTextPrimary(context),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  alert.message,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppTheme.getTextSecondary(context),
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          const SizedBox(height: 2),
+          Text(
+            alert.message,
+            style: TextStyle(
+              fontSize: fontSize - 1,
+              color: AppTheme.getTextSecondary(context),
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
-      ),
-    );
+      );
+    } else {
+      // Pantalla normal: una línea con separador
+      return RichText(
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        text: TextSpan(
+          style: TextStyle(
+            fontSize: fontSize,
+            color: AppTheme.getTextPrimary(context),
+          ),
+          children: [
+            TextSpan(
+              text: alert.patient,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            TextSpan(
+              text: ' • ${alert.message}',
+              style: TextStyle(
+                color: AppTheme.getTextSecondary(context),
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 }
 

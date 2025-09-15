@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/new_carga_familiar_dialog.dart';
 
 class CargasFamiliaresController extends GetxController {
   // Estados de vista
@@ -20,7 +19,7 @@ class CargasFamiliaresController extends GetxController {
   RxList<Map<String, dynamic>> filteredCargas = <Map<String, dynamic>>[].obs;
 
   // Control de diálogo
-  bool _isDialogOpen = false;
+  final _isDialogOpen = true;
 
   @override
   void onInit() {
@@ -89,6 +88,26 @@ class CargasFamiliaresController extends GetxController {
   }
 
   // ========== CRUD ==========
+  Future<void> refreshCargas() async {
+    isLoading.value = true;
+    
+    // Simular carga de datos
+    await Future.delayed(const Duration(milliseconds: 800));
+    
+    // Recargar datos (en caso real sería desde API/BD)
+    _loadSampleData();
+    
+    isLoading.value = false;
+    
+    Get.snackbar(
+      'Actualizado',
+      'Lista de cargas familiares actualizada',
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
   Future<void> addNewCarga() async {
     if (_isDialogOpen) return;
 
@@ -103,9 +122,6 @@ class CargasFamiliaresController extends GetxController {
       return;
     }
 
-    _isDialogOpen = true;
-    await NewCargaFamiliarDialog.show(context);
-    _isDialogOpen = false;
   }
 
   void editCarga() {
@@ -307,13 +323,6 @@ class CargasFamiliaresController extends GetxController {
   bool get isListView => currentView.value == listaView;
   bool get isDetailView => currentView.value == detalleView;
   bool get hasSearchQuery => searchQuery.value.isNotEmpty;
-
-  String get currentTitle {
-    if (isDetailView && hasSelectedCarga) {
-      return 'Detalle de ${selectedCarga.value!['nombre']}';
-    }
-    return 'Gestión de Cargas Familiares';
-  }
 
   int get totalCargas => cargasList.length;
   int get cargasActivas => cargasList.where((c) => c['estado'] == 'Activa').length;

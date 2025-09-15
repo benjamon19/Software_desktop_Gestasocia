@@ -29,14 +29,9 @@ class SearchSection extends StatelessWidget {
   Widget _buildSectionHeader(BuildContext context) {
     return Row(
       children: [
-        Icon(
-          Icons.search,
-          color: AppTheme.primaryColor,
-          size: 18,
-        ),
         const SizedBox(width: 8),
         Text(
-          'Buscar Asociado',
+          'Buscador',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,

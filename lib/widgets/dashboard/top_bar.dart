@@ -6,10 +6,10 @@ import '../../utils/app_theme.dart';
 
 class TopBar extends StatelessWidget {
   final bool isDrawerOpen;
-  final bool isSidebarCollapsed; // Nuevo parámetro
+  final bool isSidebarCollapsed;
   final String currentPageTitle;
   final VoidCallback onMenuToggle;
-  final VoidCallback onSidebarToggle; // Nuevo callback
+  final VoidCallback onSidebarToggle;
   final AuthController authController;
   final Function(int)? onNavigateToSection;
 
@@ -26,9 +26,19 @@ class TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isMediumScreen = screenWidth >= 600 && screenWidth < 1000;
+    final bool isVeryShortScreen = screenHeight < 600;
+    
+    // Adaptamos la altura según el tamaño de pantalla
+    double topBarHeight = isVeryShortScreen ? 60 : (isSmallScreen ? 65 : 70);
+    double horizontalPadding = isSmallScreen ? 16 : 25;
+    
     return Container(
-      height: 70,
-      padding: const EdgeInsets.symmetric(horizontal: 25),
+      height: topBarHeight,
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
         boxShadow: [
@@ -48,112 +58,135 @@ class TopBar extends StatelessWidget {
             icon: Icon(
               isSidebarCollapsed ? Icons.menu : Icons.menu_open,
               color: AppTheme.getTextPrimary(context),
+              size: isSmallScreen ? 20 : 24,
             ),
             onPressed: onSidebarToggle,
             tooltip: isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú',
           ),
-          const SizedBox(width: 20),
+          SizedBox(width: isSmallScreen ? 12 : 20),
           
-          // Page Title
-          Text(
-            currentPageTitle,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.getTextPrimary(context),
+          // Page Title - Adaptativo
+          Expanded(
+            child: Text(
+              currentPageTitle,
+              style: TextStyle(
+                fontSize: isVeryShortScreen ? 16 : (isSmallScreen ? 18 : 20),
+                fontWeight: FontWeight.w600,
+                color: AppTheme.getTextPrimary(context),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          const Spacer(),
           
-          // Date Display
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark 
-                  ? AppTheme.darkSurfaceColor.withValues(alpha: 0.8)
-                  : AppTheme.backgroundColor,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.calendar_today_outlined, 
-                  size: 16, 
-                  color: AppTheme.getTextSecondary(context),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  DashboardData.getFormattedDate(),
-                  style: TextStyle(
+          // Date Display - Solo mostrar en pantallas no muy pequeñas
+          if (!isSmallScreen) ...[
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isMediumScreen ? 12 : 16, 
+                vertical: isVeryShortScreen ? 6 : 8,
+              ),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? AppTheme.darkSurfaceColor.withValues(alpha: 0.8)
+                    : AppTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_today_outlined, 
+                    size: isVeryShortScreen ? 14 : 16, 
                     color: AppTheme.getTextSecondary(context),
-                    fontSize: 14,
                   ),
-                ),
-              ],
+                  SizedBox(width: isVeryShortScreen ? 6 : 8),
+                  Text(
+                    DashboardData.getFormattedDate(),
+                    style: TextStyle(
+                      color: AppTheme.getTextSecondary(context),
+                      fontSize: isVeryShortScreen ? 12 : 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 20),
+            SizedBox(width: isMediumScreen ? 12 : 20),
+          ] else ...[
+            // Para pantallas pequeñas, solo un pequeño espacio
+            const SizedBox(width: 8),
+          ],
           
-          // User Menu
-          _buildUserMenu(context),
+          // User Menu - Adaptativo
+          _buildUserMenu(context, isSmallScreen, isVeryShortScreen),
         ],
       ),
     );
   }
 
-  Widget _buildUserMenu(BuildContext context) {
+  Widget _buildUserMenu(BuildContext context, bool isSmallScreen, bool isVeryShortScreen) {
     return PopupMenuButton<String>(
-      offset: const Offset(0, 45),
+      offset: Offset(0, isVeryShortScreen ? 40 : 45),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(
+          horizontal: isSmallScreen ? 8 : 12, 
+          vertical: isVeryShortScreen ? 4 : 6,
+        ),
         decoration: BoxDecoration(
           border: Border.all(color: AppTheme.getBorderLight(context)),
           borderRadius: BorderRadius.circular(25),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             CircleAvatar(
               backgroundColor: AppTheme.primaryColor,
-              radius: 18,
+              radius: isVeryShortScreen ? 15 : (isSmallScreen ? 16 : 18),
               child: Text(
                 authController.userDisplayName.isNotEmpty 
                     ? authController.userDisplayName[0].toUpperCase() 
                     : 'U',
-                style: const TextStyle(
+                style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
+                  fontSize: isVeryShortScreen ? 12 : (isSmallScreen ? 13 : 14),
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            Obx(() => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  authController.userDisplayName,
-                  style: TextStyle(
-                    color: AppTheme.getTextPrimary(context),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+            
+            // En pantallas pequeñas, ocultar el texto del usuario
+            if (!isSmallScreen) ...[
+              SizedBox(width: isVeryShortScreen ? 8 : 10),
+              Obx(() => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    authController.userDisplayName,
+                    style: TextStyle(
+                      color: AppTheme.getTextPrimary(context),
+                      fontWeight: FontWeight.w600,
+                      fontSize: isVeryShortScreen ? 12 : 14,
+                    ),
                   ),
-                ),
-                Text(
-                  authController.userEmail,
-                  style: TextStyle(
-                    color: AppTheme.getTextSecondary(context),
-                    fontSize: 12,
+                  Text(
+                    authController.userEmail,
+                    style: TextStyle(
+                      color: AppTheme.getTextSecondary(context),
+                      fontSize: isVeryShortScreen ? 10 : 12,
+                    ),
                   ),
-                ),
-              ],
-            )),
-            const SizedBox(width: 8),
+                ],
+              )),
+              SizedBox(width: isVeryShortScreen ? 6 : 8),
+            ],
+            
             Icon(
               Icons.arrow_drop_down, 
               color: AppTheme.getTextSecondary(context),
+              size: isSmallScreen ? 18 : 20,
             ),
           ],
         ),

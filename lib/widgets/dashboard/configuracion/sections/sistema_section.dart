@@ -9,12 +9,53 @@ class SistemaSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ConfiguracionController controller = Get.find<ConfiguracionController>();
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isMediumScreen = screenWidth >= 600 && screenWidth < 1000;
+    // Removida variable isShortScreen no utilizada
+    final bool isVeryShortScreen = screenHeight < 600;
     
+    return SingleChildScrollView(
+      child: _buildAdaptiveContainer(
+        context,
+        isSmallScreen: isSmallScreen,
+        isVeryShortScreen: isVeryShortScreen,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildAdaptiveSectionHeader(context, isSmallScreen, isMediumScreen, isVeryShortScreen),
+            SizedBox(height: isVeryShortScreen ? 16 : 24),
+            _buildAdaptiveSystemInfo(context, controller, isSmallScreen, isVeryShortScreen),
+            SizedBox(height: isVeryShortScreen ? 16 : 24),
+            _buildAdaptiveSystemActions(context, controller, isSmallScreen, isVeryShortScreen),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAdaptiveContainer(BuildContext context, {required Widget child, required bool isSmallScreen, required bool isVeryShortScreen}) {
+    double padding = isVeryShortScreen ? 16 : (isSmallScreen ? 20 : 24);
+    double borderRadius = isSmallScreen ? 12 : 16;
+
+    if (isVeryShortScreen) {
+      return Container(
+        padding: EdgeInsets.all(padding),
+        decoration: BoxDecoration(
+          color: AppTheme.getSurfaceColor(context),
+          borderRadius: BorderRadius.circular(borderRadius),
+          border: Border.all(color: AppTheme.getBorderLight(context)),
+        ),
+        child: child,
+      );
+    }
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark 
@@ -25,24 +66,53 @@ class SistemaSection extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader(context),
-          const SizedBox(height: 24),
-          _buildSystemInfo(context, controller),
-          const SizedBox(height: 24),
-          _buildSystemActions(context, controller),
-        ],
-      ),
+      child: child,
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context) {
+  Widget _buildAdaptiveSectionHeader(BuildContext context, bool isSmallScreen, bool isMediumScreen, bool isVeryShortScreen) {
+    double iconSize = isVeryShortScreen ? 20 : (isSmallScreen ? 22 : 24);
+    double iconPadding = isVeryShortScreen ? 8 : (isSmallScreen ? 10 : 12);
+    double iconSpacing = isVeryShortScreen ? 10 : (isSmallScreen ? 12 : 16);
+    double titleSize = isVeryShortScreen ? 16 : (isSmallScreen ? 18 : 20);
+    double subtitleSize = isVeryShortScreen ? 12 : (isSmallScreen ? 13 : 14);
+
+    if (isVeryShortScreen) {
+      return Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(iconPadding),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.info_outline,
+              color: AppTheme.primaryColor,
+              size: iconSize,
+            ),
+          ),
+          SizedBox(width: iconSpacing),
+          Expanded(
+            child: Text(
+              'Información del Sistema',
+              style: TextStyle(
+                fontSize: titleSize,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.getTextPrimary(context),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(iconPadding),
           decoration: BoxDecoration(
             color: AppTheme.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
@@ -50,113 +120,133 @@ class SistemaSection extends StatelessWidget {
           child: Icon(
             Icons.info_outline,
             color: AppTheme.primaryColor,
-            size: 24,
+            size: iconSize,
           ),
         ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Información del Sistema',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.getTextPrimary(context),
+        SizedBox(width: iconSpacing),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Información del Sistema',
+                style: TextStyle(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.getTextPrimary(context),
+                ),
               ),
-            ),
-            Text(
-              'Detalles de la aplicación y sistema',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.getTextSecondary(context),
+              const SizedBox(height: 4),
+              Text(
+                isSmallScreen 
+                    ? 'Detalles de la aplicación'
+                    : 'Detalles de la aplicación y sistema',
+                style: TextStyle(
+                  fontSize: subtitleSize,
+                  color: AppTheme.getTextSecondary(context),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildSystemInfo(BuildContext context, ConfiguracionController controller) {
+  Widget _buildAdaptiveSystemInfo(BuildContext context, ConfiguracionController controller, bool isSmallScreen, bool isVeryShortScreen) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Información de la aplicación
-        Obx(() => _buildInfoCard(
+        Obx(() => _buildAdaptiveInfoCard(
           context,
-          'Información de la Aplicación',
+          isSmallScreen ? 'Información de App' : 'Información de la Aplicación',
           [
-            _buildInfoRow('Versión', controller.appVersion.value),
-            _buildInfoRow('Build', controller.buildNumber.value),
-            _buildInfoRow('Flutter', controller.flutterVersion.value),
-            _buildInfoRow('Fecha de Build', controller.buildDate.value),
+            _buildAdaptiveInfoRow('Versión', controller.appVersion.value, isVeryShortScreen),
+            _buildAdaptiveInfoRow('Build', controller.buildNumber.value, isVeryShortScreen),
+            _buildAdaptiveInfoRow('Flutter', controller.flutterVersion.value, isVeryShortScreen),
+            _buildAdaptiveInfoRow('Fecha de Build', controller.buildDate.value, isVeryShortScreen),
           ],
           Icons.apps_outlined,
+          isSmallScreen,
+          isVeryShortScreen,
         )),
       ],
     );
   }
 
-  Widget _buildSystemActions(BuildContext context, ConfiguracionController controller) {
+  Widget _buildAdaptiveSystemActions(BuildContext context, ConfiguracionController controller, bool isSmallScreen, bool isVeryShortScreen) {
+    double titleSize = isVeryShortScreen ? 14 : 16;
+    double actionSpacing = isVeryShortScreen ? 8 : 12;
+    double rowSpacing = isVeryShortScreen ? 8 : 12;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Acciones del Sistema',
+          isVeryShortScreen ? 'Acciones' : 'Acciones del Sistema',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: titleSize,
             fontWeight: FontWeight.w600,
             color: AppTheme.getTextPrimary(context),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: isVeryShortScreen ? 12 : 16),
         
+        // Siempre usar layout de filas (como en la imagen), nunca grid
         Row(
           children: [
             Expanded(
-              child: _buildActionButton(
+              child: _buildAdaptiveActionButton(
                 context,
-                'Buscar Actualizaciones',
+                isSmallScreen || isVeryShortScreen ? 'Actualizaciones' : 'Buscar Actualizaciones',
                 Icons.system_update_outlined,
                 const Color(0xFF10B981),
                 () => controller.checkForUpdates(),
+                isSmallScreen,
+                isVeryShortScreen,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: actionSpacing),
             Expanded(
-              child: _buildActionButton(
+              child: _buildAdaptiveActionButton(
                 context,
-                'Ver Licencias',
+                isSmallScreen || isVeryShortScreen ? 'Licencias' : 'Ver Licencias',
                 Icons.description_outlined,
                 const Color(0xFF6B7280),
                 () => controller.viewLicenses(),
+                isSmallScreen,
+                isVeryShortScreen,
               ),
             ),
           ],
         ),
         
-        const SizedBox(height: 12),
+        SizedBox(height: rowSpacing),
         
         Row(
           children: [
             Expanded(
-              child: _buildActionButton(
+              child: _buildAdaptiveActionButton(
                 context,
-                'Política de Privacidad',
+                isSmallScreen || isVeryShortScreen ? 'Privacidad' : 'Política de Privacidad',
                 Icons.privacy_tip_outlined,
                 const Color(0xFF8B5CF6),
                 () => controller.viewPrivacyPolicy(),
+                isSmallScreen,
+                isVeryShortScreen,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: actionSpacing),
             Expanded(
-              child: _buildActionButton(
+              child: _buildAdaptiveActionButton(
                 context,
-                'Soporte Técnico',
+                isSmallScreen || isVeryShortScreen ? 'Soporte' : 'Soporte Técnico',
                 Icons.support_agent_outlined,
                 const Color(0xFF3B82F6),
                 () => controller.contactSupport(),
+                isSmallScreen,
+                isVeryShortScreen,
               ),
             ),
           ],
@@ -165,21 +255,28 @@ class SistemaSection extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(
+  Widget _buildAdaptiveInfoCard(
     BuildContext context,
     String title,
     List<Widget> children,
     IconData icon,
+    bool isSmallScreen,
+    bool isVeryShortScreen,
   ) {
+    double padding = isVeryShortScreen ? 12 : (isSmallScreen ? 16 : 20);
+    double titleSize = isVeryShortScreen ? 14 : 16;
+    double iconSize = isVeryShortScreen ? 16 : 20;
+    double iconPadding = isVeryShortScreen ? 6 : 8;
+    double iconSpacing = isVeryShortScreen ? 8 : 12;
+    double contentSpacing = isVeryShortScreen ? 12 : 16;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(padding),
       decoration: BoxDecoration(
         color: AppTheme.getInputBackground(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.getBorderLight(context),
-        ),
+        border: Border.all(color: AppTheme.getBorderLight(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,54 +284,70 @@ class SistemaSection extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(iconPadding),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(
                   icon,
                   color: AppTheme.primaryColor,
-                  size: 20,
+                  size: iconSize,
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.getTextPrimary(context),
+              SizedBox(width: iconSpacing),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: titleSize,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.getTextPrimary(context),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: contentSpacing),
           ...children,
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildAdaptiveInfoRow(String label, String value, bool isVeryShortScreen) {
+    double fontSize = isVeryShortScreen ? 12 : 14;
+    double bottomPadding = isVeryShortScreen ? 6 : 8;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.getTextSecondary(Get.context!),
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: fontSize,
+                color: AppTheme.getTextSecondary(Get.context!),
+              ),
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.getTextPrimary(Get.context!),
+          Expanded(
+            flex: 3,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.getTextPrimary(Get.context!),
+              ),
+              textAlign: TextAlign.end,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -242,13 +355,20 @@ class SistemaSection extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(
+  Widget _buildAdaptiveActionButton(
     BuildContext context,
     String title,
     IconData icon,
     Color color,
     VoidCallback onPressed,
+    bool isSmallScreen,
+    bool isVeryShortScreen,
   ) {
+    double padding = isVeryShortScreen ? 12 : (isSmallScreen ? 14 : 16);
+    double iconSize = isVeryShortScreen ? 20 : (isSmallScreen ? 22 : 24);
+    double titleSize = isVeryShortScreen ? 12 : (isSmallScreen ? 13 : 14);
+    double iconSpacing = isVeryShortScreen ? 6 : 8;
+
     return Obx(() {
       final ConfiguracionController controller = Get.find<ConfiguracionController>();
       final isLoading = controller.isLoading.value;
@@ -259,20 +379,22 @@ class SistemaSection extends StatelessWidget {
           onTap: isLoading ? null : onPressed,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            width: double.infinity, // Ancho completo
+            padding: EdgeInsets.symmetric(
+              vertical: padding,
+              horizontal: padding,
+            ),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: color.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: color.withValues(alpha: 0.3)),
             ),
-            child: Column(
+            child: Row(
               children: [
                 if (isLoading && title.contains('Actualizaciones'))
                   SizedBox(
-                    width: 24,
-                    height: 24,
+                    width: iconSize,
+                    height: iconSize,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       valueColor: AlwaysStoppedAnimation<Color>(color),
@@ -282,16 +404,19 @@ class SistemaSection extends StatelessWidget {
                   Icon(
                     icon,
                     color: color,
-                    size: 24,
+                    size: iconSize,
                   ),
-                const SizedBox(height: 8),
-                Text(
-                  title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: color,
+                SizedBox(width: iconSpacing),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: titleSize,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
