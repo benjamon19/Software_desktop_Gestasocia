@@ -86,7 +86,7 @@ class TreatmentAlertCard extends StatelessWidget {
       return Row(
         children: [
           Text(
-            'Alertas',
+            'Urgencias',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -117,7 +117,7 @@ class TreatmentAlertCard extends StatelessWidget {
     return Row(
       children: [
         Text(
-          isSmallScreen ? 'Alertas Pendientes' : 'Alertas Pendientes',
+          isSmallScreen ? 'Urgencias Pendientes' : 'Urgencias Pendientes',
           style: TextStyle(
             fontSize: isSmallScreen ? 14 : (isMediumScreen ? 15 : 16),
             fontWeight: FontWeight.w600,

@@ -9,6 +9,9 @@ class MedicalInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Manejo seguro de alertas
+    final alertas = carga['alertas'] as List<dynamic>? ?? [];
+    
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
       child: Column(
@@ -18,12 +21,26 @@ class MedicalInfoCard extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _buildInfoItem(context, 'Última Visita', carga['ultimaVisita'], Icons.medical_services_outlined)),
+              Expanded(
+                child: _buildInfoItem(
+                  context, 
+                  'Última Visita', 
+                  carga['ultimaVisita']?.toString() ?? 'No registrada', 
+                  Icons.medical_services_outlined
+                )
+              ),
               const SizedBox(width: 16),
-              Expanded(child: _buildInfoItem(context, 'Próxima Cita', carga['proximaCita'] ?? 'No agendada', Icons.event_outlined)),
+              Expanded(
+                child: _buildInfoItem(
+                  context, 
+                  'Próxima Cita', 
+                  carga['proximaCita']?.toString() ?? 'No agendada', 
+                  Icons.event_outlined
+                )
+              ),
             ],
           ),
-          if (carga['alertas'].isNotEmpty) ...[
+          if (alertas.isNotEmpty) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
@@ -39,13 +56,26 @@ class MedicalInfoCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.warning_amber, color: Color(0xFFEF4444), size: 20),
                       const SizedBox(width: 8),
-                      Text('Alertas (${carga['alertas'].length})', 
-                           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
+                      Text(
+                        'Urgencias (${alertas.length})', 
+                        style: const TextStyle(
+                          fontSize: 14, 
+                          fontWeight: FontWeight.w600, 
+                          color: Color(0xFFEF4444)
+                        )
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...carga['alertas'].map<Widget>((alerta) => 
-                    Text('• $alerta', style: const TextStyle(fontSize: 12, color: Color(0xFFEF4444)))).toList(),
+                  ...alertas.map<Widget>((alerta) => 
+                    Text(
+                      '• ${alerta?.toString() ?? 'Alerta sin descripción'}', 
+                      style: const TextStyle(
+                        fontSize: 12, 
+                        color: Color(0xFFEF4444)
+                      )
+                    )
+                  )
                 ],
               ),
             ),
@@ -70,11 +100,25 @@ class MedicalInfoCard extends StatelessWidget {
             children: [
               Icon(icon, size: 16, color: AppTheme.getTextSecondary(context)),
               const SizedBox(width: 8),
-              Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppTheme.getTextSecondary(context))),
+              Text(
+                label, 
+                style: TextStyle(
+                  fontSize: 12, 
+                  fontWeight: FontWeight.w500, 
+                  color: AppTheme.getTextSecondary(context)
+                )
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.getTextPrimary(context))),
+          Text(
+            value, 
+            style: TextStyle(
+              fontSize: 14, 
+              fontWeight: FontWeight.w600, 
+              color: AppTheme.getTextPrimary(context)
+            )
+          ),
         ],
       ),
     );

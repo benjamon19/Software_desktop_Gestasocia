@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../../utils/app_theme.dart';
+import '../../../../../../models/carga_familiar.dart';
 import 'components/carga_header.dart';
 import 'components/personal_info_card.dart';
 import 'components/medical_info_card.dart';
@@ -13,6 +14,9 @@ class CargaDetailSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Convertir el Map a CargaFamiliar
+    final cargaFamiliar = CargaFamiliar.fromMap(carga, carga['id'] ?? '');
+    
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
@@ -34,7 +38,7 @@ class CargaDetailSection extends StatelessWidget {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  PersonalInfoCard(carga: carga),
+                  PersonalInfoCard(carga: cargaFamiliar),
                   const SizedBox(height: 20),
                   MedicalInfoCard(carga: carga),
                   const SizedBox(height: 20),
