@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../../../../utils/app_theme.dart';
 import '../../../../../../../controllers/asociados_controller.dart';
+import '../../../../../../../utils/app_theme.dart';
 
 class ProfileHeader extends StatelessWidget {
   final Map<String, dynamic> asociado;
@@ -20,8 +20,13 @@ class ProfileHeader extends StatelessWidget {
     // Obtener el controller para reaccionar a cambios
     final AsociadosController controller = Get.find<AsociadosController>();
     
+    // Detectar tamaño de pantalla
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isVerySmall = screenWidth < 400;
+    
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(isVerySmall ? 16 : (isSmallScreen ? 20 : 24)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -30,6 +35,7 @@ class ProfileHeader extends StatelessWidget {
             AppTheme.primaryColor,
             AppTheme.primaryColor.withValues(alpha: 0.8),
           ],
+          stops: const [0.0, 1.0],
         ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(16),
@@ -45,14 +51,19 @@ class ProfileHeader extends StatelessWidget {
               if (onBack != null)
                 IconButton(
                   onPressed: onBack,
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(
+                    Icons.arrow_back, 
+                    color: Colors.white,
+                    size: isVerySmall ? 20 : 24,
+                  ),
                   tooltip: 'Volver a la lista',
+                  padding: EdgeInsets.all(isVerySmall ? 8 : 12),
                 ),
-              if (onBack == null) const SizedBox(width: 48),
+              if (onBack == null) SizedBox(width: isVerySmall ? 32 : 48),
             ],
           ),
           
-          const SizedBox(height: 8),
+          SizedBox(height: isVerySmall ? 4 : 8),
           
           // Información principal del asociado - AHORA REACTIVA
           Obx(() {
@@ -61,113 +72,145 @@ class ProfileHeader extends StatelessWidget {
               return const SizedBox(); // Si no hay asociado, no mostrar nada
             }
             
-            return Row(
-              children: [
-                // Avatar simple: solo icono de persona
-                _buildAvatar(),
-                
-                const SizedBox(width: 20),
-                
-                // Información básica
-                Expanded(
-                  child: _buildBasicInfo(currentAsociado),
-                ),
-              ],
-            );
+            return isVerySmall 
+              ? _buildCompactLayout(currentAsociado, isVerySmall)
+              : _buildNormalLayout(currentAsociado, isSmallScreen);
           }),
         ],
       ),
     );
   }
 
-  Widget _buildAvatar() {
+  Widget _buildNormalLayout(dynamic currentAsociado, bool isSmallScreen) {
+    return Row(
+      children: [
+        // Avatar más pequeño
+        _buildAvatar(isSmallScreen, false),
+        
+        SizedBox(width: isSmallScreen ? 12 : 16),
+        
+        // Información básica más compacta
+        Expanded(
+          child: _buildBasicInfo(currentAsociado, isSmallScreen, false),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactLayout(dynamic currentAsociado, bool isVerySmall) {
+    return Row(
+      children: [
+        // Avatar pequeño a la izquierda en vez de centrado
+        _buildAvatar(false, isVerySmall),
+        
+        const SizedBox(width: 12),
+        
+        // Información compacta
+        Expanded(
+          child: _buildBasicInfo(currentAsociado, false, isVerySmall),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvatar(bool isSmallScreen, bool isVerySmall) {
+    final avatarSize = isVerySmall ? 45.0 : (isSmallScreen ? 55.0 : 65.0);
+    final iconSize = isVerySmall ? 22.0 : (isSmallScreen ? 28.0 : 35.0);
+    final borderWidth = isVerySmall ? 2.0 : 2.5;
+    
     return Container(
-      width: 90,
-      height: 90,
+      width: avatarSize,
+      height: avatarSize,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
         shape: BoxShape.circle,
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.3),
-          width: 3,
+          width: borderWidth,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            blurRadius: isVerySmall ? 3 : 6,
+            offset: Offset(0, isVerySmall ? 1 : 3),
           ),
         ],
       ),
       child: Icon(
         Icons.person,
-        size: 50,
+        size: iconSize,
         color: Colors.white.withValues(alpha: 0.9),
       ),
     );
   }
 
-  Widget _buildBasicInfo(dynamic currentAsociado) {
+  Widget _buildBasicInfo(dynamic currentAsociado, bool isSmallScreen, bool isVerySmall) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nombre completo
+        // Nombre completo más pequeño
         Text(
           currentAsociado.nombreCompleto,
-          style: const TextStyle(
-            fontSize: 26,
+          style: TextStyle(
+            fontSize: isVerySmall ? 16 : (isSmallScreen ? 18 : 20),
             fontWeight: FontWeight.bold,
             color: Colors.white,
-            letterSpacing: -0.5,
+            letterSpacing: -0.3,
           ),
-          maxLines: 2,
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         
-        const SizedBox(height: 6),
+        SizedBox(height: isVerySmall ? 3 : 4),
         
-        // RUT
+        // RUT más pequeño
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          padding: EdgeInsets.symmetric(
+            horizontal: isVerySmall ? 6 : 8,
+            vertical: isVerySmall ? 2 : 3,
+          ),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
             'RUT: ${currentAsociado.rut}',
             style: TextStyle(
-              fontSize: 14,
+              fontSize: isVerySmall ? 10 : 11,
               fontWeight: FontWeight.w500,
               color: Colors.white.withValues(alpha: 0.95),
             ),
           ),
         ),
         
-        const SizedBox(height: 12),
+        SizedBox(height: isVerySmall ? 6 : 8),
         
-        // Fila con estado y plan
+        // Badges más pequeños en una sola fila
         Row(
           children: [
-            _buildStatusBadge(currentAsociado.estado),
-            const SizedBox(width: 12),
-            _buildPlanBadge(currentAsociado.plan),
+            _buildStatusBadge(currentAsociado.estado, isVerySmall),
+            const SizedBox(width: 6),
+            _buildPlanBadge(currentAsociado.plan, isVerySmall),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildStatusBadge(String status) {
+  Widget _buildStatusBadge(String status, bool isVerySmall) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isVerySmall ? 6 : 8,
+        vertical: isVerySmall ? 3 : 4,
+      ),
       decoration: BoxDecoration(
         color: _getStatusColor(status),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
           ),
         ],
       ),
@@ -175,18 +218,18 @@ class ProfileHeader extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 6,
-            height: 6,
+            width: isVerySmall ? 4 : 5,
+            height: isVerySmall ? 4 : 5,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.9),
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: isVerySmall ? 3 : 4),
           Text(
             status,
-            style: const TextStyle(
-              fontSize: 12,
+            style: TextStyle(
+              fontSize: isVerySmall ? 9 : 10,
               fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
@@ -196,12 +239,15 @@ class ProfileHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildPlanBadge(String plan) {
+  Widget _buildPlanBadge(String plan, bool isVerySmall) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(
+        horizontal: isVerySmall ? 6 : 8,
+        vertical: isVerySmall ? 3 : 4,
+      ),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Colors.white.withValues(alpha: 0.3),
           width: 1,
@@ -210,7 +256,7 @@ class ProfileHeader extends StatelessWidget {
       child: Text(
         plan,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: isVerySmall ? 9 : 10,
           fontWeight: FontWeight.w600,
           color: Colors.white.withValues(alpha: 0.95),
         ),

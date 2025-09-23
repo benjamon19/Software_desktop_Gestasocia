@@ -59,7 +59,7 @@ class _SidebarMenuState extends State<SidebarMenu>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     // Aquí sí podemos acceder a MediaQuery de forma segura
     final screenWidth = MediaQuery.of(context).size.width;
     final bool isSmallScreen = screenWidth < 600;
@@ -198,7 +198,7 @@ class _SidebarMenuState extends State<SidebarMenu>
   Widget _buildMenuItem(BuildContext context, int index) {
     final item = DashboardData.menuItems[index];
     final isSelected = widget.selectedIndex == index;
-    
+
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final bool isSmallScreen = screenWidth < 600;

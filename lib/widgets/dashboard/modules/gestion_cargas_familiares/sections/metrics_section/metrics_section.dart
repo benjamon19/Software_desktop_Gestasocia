@@ -1,4 +1,3 @@
-// lib/widgets/dashboard/modules/gestion_cargas_familiares/sections/metrics_section/metrics_section.dart
 import 'package:flutter/material.dart';
 import 'components/metric_card.dart';
 
@@ -7,6 +6,11 @@ class MetricsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool hasVerticalSpace = screenHeight > 600; // Detecta si hay espacio vertical
+    
     return Row(
       children: [
         Expanded(
@@ -16,9 +20,11 @@ class MetricsSection extends StatelessWidget {
             icon: Icons.group_outlined,
             iconColor: const Color(0xFF4299E1),
             backgroundColor: const Color(0xFFEBF8FF),
+            isSmallScreen: isSmallScreen,
+            hasVerticalSpace: hasVerticalSpace,
           ),
         ),
-        const SizedBox(width: 20),
+        SizedBox(width: isSmallScreen ? 8 : 12),
         Expanded(
           child: MetricCard(
             title: 'Pendientes',
@@ -26,9 +32,11 @@ class MetricsSection extends StatelessWidget {
             icon: Icons.pending_actions_outlined,
             iconColor: const Color(0xFF48BB78),
             backgroundColor: const Color(0xFFF0FDF4),
+            isSmallScreen: isSmallScreen,
+            hasVerticalSpace: hasVerticalSpace,
           ),
         ),
-        const SizedBox(width: 20),
+        SizedBox(width: isSmallScreen ? 8 : 12),
         Expanded(
           child: MetricCard(
             title: 'Vencimientos',
@@ -36,9 +44,11 @@ class MetricsSection extends StatelessWidget {
             icon: Icons.schedule_outlined,
             iconColor: const Color(0xFF9F7AEA),
             backgroundColor: const Color(0xFFF9F5FF),
+            isSmallScreen: isSmallScreen,
+            hasVerticalSpace: hasVerticalSpace,
           ),
         ),
-        const SizedBox(width: 20),
+        SizedBox(width: isSmallScreen ? 8 : 12),
         Expanded(
           child: MetricCard(
             title: 'Urgencias',
@@ -46,6 +56,8 @@ class MetricsSection extends StatelessWidget {
             icon: Icons.warning_amber_outlined,
             iconColor: const Color(0xFFF56565),
             backgroundColor: const Color(0xFFFFF5F5),
+            isSmallScreen: isSmallScreen,
+            hasVerticalSpace: hasVerticalSpace,
           ),
         ),
       ],

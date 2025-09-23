@@ -1,22 +1,25 @@
-// lib/widgets/dashboard/modules/gestion_cargas_familiares/sections/pending_actions_section/pending_actions_section.dart
 import 'package:flutter/material.dart';
-import '../../../../../../utils/app_theme.dart';
-import 'components/pending_action_item.dart';
+import 'package:get/get.dart';
+import '../../../../../../../utils/app_theme.dart';
 
 class PendingActionsSection extends StatelessWidget {
   const PendingActionsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isVerySmall = screenWidth < 400;
+    
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark 
                 ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
+                : Colors.grey.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -24,84 +27,103 @@ class PendingActionsSection extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16), 
-                topRight: Radius.circular(16)
-              ),
-            ),
+          // Header compacto
+          Padding(
+            padding: EdgeInsets.all(isVerySmall ? 12 : (isSmallScreen ? 14 : 16)),
             child: Row(
               children: [
-                Icon(Icons.pending_actions, color: AppTheme.primaryColor, size: 24),
-                const SizedBox(width: 12),
-                Text(
-                  'Acciones Pendientes',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
+                Icon(
+                  Icons.pending_actions_outlined, 
+                  color: AppTheme.primaryColor, 
+                  size: isVerySmall ? 16 : (isSmallScreen ? 18 : 20)
+                ),
+                SizedBox(width: isVerySmall ? 8 : 12),
+                Expanded(
+                  child: Text(
+                    isVerySmall ? 'Pendientes' : 'Acciones Pendientes',
+                    style: TextStyle(
+                      fontSize: isVerySmall ? 14 : (isSmallScreen ? 15 : 16),
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
                   ),
                 ),
-                const Spacer(),
                 Text(
-                  '8 pendientes',
+                  isVerySmall ? '8' : '8 pendientes',
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: isVerySmall ? 11 : (isSmallScreen ? 12 : 13),
                     color: AppTheme.getTextSecondary(context),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
+          
+          // Línea divisoria sutil
+          Container(
+            height: 1,
+            margin: EdgeInsets.symmetric(horizontal: isVerySmall ? 12 : 16),
+            color: AppTheme.getTextSecondary(context).withValues(alpha: 0.1),
+          ),
+          
+          // Lista de acciones compacta
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isVerySmall ? 12 : (isSmallScreen ? 14 : 16)),
               children: [
-                PendingActionItem(
+                _buildActionItem(
+                  context: context,
                   title: 'Validar Documentos',
-                  subtitle: '5 cargas requieren validación de documentos',
-                  icon: Icons.description,
-                  color: const Color(0xFF3B82F6),
+                  subtitle: isVerySmall ? '5 cargas' : '5 cargas requieren validación',
+                  icon: Icons.description_outlined,
                   count: 5,
+                  isSmallScreen: isSmallScreen,
+                  isVerySmall: isVerySmall,
                   onTap: () {},
                 ),
-                const SizedBox(height: 12),
-                PendingActionItem(
-                  title: 'Renovación de Carnets',
-                  subtitle: '3 carnets vencen en los próximos 15 días',
-                  icon: Icons.badge,
-                  color: const Color(0xFFF59E0B),
+                SizedBox(height: isVerySmall ? 8 : 10),
+                _buildActionItem(
+                  context: context,
+                  title: 'Renovación Carnets',
+                  subtitle: isVerySmall ? '3 carnets' : '3 carnets vencen pronto',
+                  icon: Icons.badge_outlined,
                   count: 3,
+                  isSmallScreen: isSmallScreen,
+                  isVerySmall: isVerySmall,
                   onTap: () {},
                 ),
-                const SizedBox(height: 12),
-                PendingActionItem(
-                  title: 'Actualizaciones Médicas',
-                  subtitle: '7 cargas sin información médica actualizada',
-                  icon: Icons.medical_services,
-                  color: const Color(0xFF10B981),
+                SizedBox(height: isVerySmall ? 8 : 10),
+                _buildActionItem(
+                  context: context,
+                  title: 'Info Médica',
+                  subtitle: isVerySmall ? '7 cargas' : '7 cargas sin actualizar',
+                  icon: Icons.medical_services_outlined,
                   count: 7,
+                  isSmallScreen: isSmallScreen,
+                  isVerySmall: isVerySmall,
                   onTap: () {},
                 ),
-                const SizedBox(height: 12),
-                PendingActionItem(
-                  title: 'Transferencias Pendientes',
-                  subtitle: '2 solicitudes de transferencia por aprobar',
-                  icon: Icons.swap_horiz,
-                  color: const Color(0xFF8B5CF6),
+                SizedBox(height: isVerySmall ? 8 : 10),
+                _buildActionItem(
+                  context: context,
+                  title: 'Transferencias',
+                  subtitle: isVerySmall ? '2 por aprobar' : '2 solicitudes por aprobar',
+                  icon: Icons.swap_horiz_outlined,
                   count: 2,
+                  isSmallScreen: isSmallScreen,
+                  isVerySmall: isVerySmall,
                   onTap: () {},
                 ),
-                const SizedBox(height: 12),
-                PendingActionItem(
-                  title: 'Contactos de Emergencia',
-                  subtitle: '4 cargas sin contacto de emergencia',
-                  icon: Icons.contact_emergency,
-                  color: const Color(0xFFEF4444),
+                SizedBox(height: isVerySmall ? 8 : 10),
+                _buildActionItem(
+                  context: context,
+                  title: 'Contactos',
+                  subtitle: isVerySmall ? '4 sin contacto' : '4 cargas sin contacto',
+                  icon: Icons.contact_emergency_outlined,
                   count: 4,
+                  isSmallScreen: isSmallScreen,
+                  isVerySmall: isVerySmall,
                   onTap: () {},
                 ),
               ],
@@ -109,6 +131,118 @@ class PendingActionsSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildActionItem({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required int count,
+    required bool isSmallScreen,
+    required bool isVerySmall,
+    required VoidCallback onTap,
+  }) {
+    final hovered = false.obs;
+
+    return ObxValue<RxBool>(
+      (hover) => InkWell(
+        onTap: onTap,
+        onHover: (value) => hover.value = value,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 10 : 12)),
+          decoration: BoxDecoration(
+            color: hover.value
+                ? AppTheme.primaryColor.withAlpha(10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              // Icono compacto
+              Container(
+                width: isVerySmall ? 28 : (isSmallScreen ? 32 : 36),
+                height: isVerySmall ? 28 : (isSmallScreen ? 32 : 36),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  icon,
+                  color: AppTheme.primaryColor,
+                  size: isVerySmall ? 14 : (isSmallScreen ? 16 : 18),
+                ),
+              ),
+              
+              SizedBox(width: isVerySmall ? 8 : (isSmallScreen ? 10 : 12)),
+              
+              // Contenido
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: isVerySmall ? 12 : (isSmallScreen ? 13 : 14),
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.getTextPrimary(context),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (!isVerySmall) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 10 : 11,
+                          color: AppTheme.getTextSecondary(context),
+                          height: 1.2,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              
+              SizedBox(width: isVerySmall ? 6 : 8),
+              
+              // Contador compacto
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isVerySmall ? 6 : 8, 
+                  vertical: isVerySmall ? 2 : 4
+                ),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                  borderRadius: BorderRadius.circular(isVerySmall ? 8 : 12),
+                ),
+                child: Text(
+                  count.toString(),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: isVerySmall ? 10 : (isSmallScreen ? 11 : 12),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              
+              SizedBox(width: isVerySmall ? 4 : 6),
+              
+              if (!isVerySmall)
+                Icon(
+                  Icons.chevron_right,
+                  size: isSmallScreen ? 14 : 16,
+                  color: AppTheme.getTextSecondary(context),
+                ),
+            ],
+          ),
+        ),
+      ),
+      hovered,
     );
   }
 }

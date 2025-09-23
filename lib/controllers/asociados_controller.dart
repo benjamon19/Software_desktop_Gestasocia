@@ -56,12 +56,8 @@ class AsociadosController extends GetxController {
 
   /// Filtra los asociados basado en el query de búsqueda
   void _filterAsociados(String query) {
-    final startTime = DateTime.now();
-    Get.log('FILTRANDO: "$query" con ${_allAsociados.length} asociados');
-    
     if (query.isEmpty) {
       asociados.value = List.from(_allAsociados);
-      Get.log('FILTRO VACÍO: Mostrando ${_allAsociados.length} asociados');
       return;
     }
 
@@ -84,14 +80,10 @@ class AsociadosController extends GetxController {
     }).toList();
 
     asociados.value = filteredList;
-    
-    final duration = DateTime.now().difference(startTime);
-    Get.log('FILTRADO COMPLETADO: "$query" -> ${filteredList.length}/${_allAsociados.length} resultados en ${duration.inMilliseconds}ms');
   }
 
   /// Maneja el cambio de query de búsqueda en tiempo real
   void onSearchQueryChanged(String query) {
-    Get.log('BÚSQUEDA INMEDIATA: "$query"');
     // Cancelar cualquier timer anterior
     _debounceTimer?.cancel();
     
@@ -101,12 +93,9 @@ class AsociadosController extends GetxController {
   
   /// Filtro inmediato sin debounce para búsqueda instantánea
   void _filterAsociadosImmediate(String query) {
-    Get.log('FILTRO INMEDIATO: "$query" con ${_allAsociados.length} asociados');
-    
     if (query.isEmpty) {
       asociados.value = List.from(_allAsociados);
       asociados.refresh(); // Forzar actualización
-      Get.log('LISTA COMPLETA: ${_allAsociados.length} asociados');
       return;
     }
 
@@ -126,8 +115,6 @@ class AsociadosController extends GetxController {
     // Actualizar la lista y forzar refresh
     asociados.value = filteredList;
     asociados.refresh();
-    
-    Get.log('FILTRADO INMEDIATO: "$query" -> ${filteredList.length}/${_allAsociados.length} resultados');
   }
 
   /// Resetea el filtro para mostrar todos los asociados
@@ -135,6 +122,7 @@ class AsociadosController extends GetxController {
     searchQuery.value = '';
     _filterAsociadosImmediate('');
   }
+  
   void clearSearchField() {
     try {
       final dynamic searchField = searchFieldKey.currentState;
@@ -154,32 +142,26 @@ class AsociadosController extends GetxController {
   Future<void> loadAsociados() async {
     try {
       isLoading.value = true;
-      Get.log('=== INICIANDO CARGA DE ASOCIADOS ===');
       
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('asociados')
           .get();
       
-      Get.log('=== DOCUMENTOS ENCONTRADOS: ${snapshot.docs.length} ===');
-      
       _allAsociados.clear();
       for (var doc in snapshot.docs) {
-        Get.log('=== PROCESANDO DOC: ${doc.id} ===');
         final asociado = Asociado.fromMap(
           doc.data() as Map<String, dynamic>, 
           doc.id
         );
         _allAsociados.add(asociado);
-        Get.log('=== AGREGADO: ${asociado.nombreCompleto} ===');
       }
       
       // Aplicar filtro actual después de cargar
       _filterAsociados(searchQuery.value);
       
-      Get.log('=== TOTAL ASOCIADOS EN LISTA COMPLETA: ${_allAsociados.length} ===');
-      Get.log('=== TOTAL ASOCIADOS FILTRADOS: ${asociados.length} ===');
+      Get.log('Asociados cargados: ${_allAsociados.length}');
     } catch (e) {
-      Get.log('=== ERROR CARGANDO ASOCIADOS: $e ===');
+      Get.log('Error cargando asociados: $e');
       _showErrorSnackbar("Error", "No se pudieron cargar los asociados: $e");
     } finally {
       isLoading.value = false;
@@ -252,7 +234,6 @@ class AsociadosController extends GetxController {
       searchQuery.value = '';
 
       _showSuccessSnackbar("Éxito!", "Asociado creado correctamente");
-      Get.log('Asociado creado: ${asociadoConId.nombreCompleto}');
       
       return true;
 
@@ -413,8 +394,6 @@ class AsociadosController extends GetxController {
 
   Future<void> loadAllCargasFamiliares() async {
     try {
-      Get.log('=== CARGANDO TODAS LAS CARGAS FAMILIARES ===');
-      
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('cargas_familiares')
           .get();
@@ -428,7 +407,7 @@ class AsociadosController extends GetxController {
         cargasFamiliares.add(carga);
       }
       
-      Get.log('=== TOTAL CARGAS CARGADAS: ${cargasFamiliares.length} ===');
+      Get.log('Cargas familiares cargadas: ${cargasFamiliares.length}');
     } catch (e) {
       Get.log('Error cargando todas las cargas familiares: $e');
     }
@@ -436,7 +415,6 @@ class AsociadosController extends GetxController {
 
   Future<void> loadCargasFamiliares() async {
     if (cargasFamiliares.isNotEmpty) {
-      Get.log('=== CARGAS YA CARGADAS: ${cargasFamiliares.length} ===');
       return;
     }
     
@@ -457,7 +435,6 @@ class AsociadosController extends GetxController {
 
     try {
       isLoading.value = true;
-      Get.log('=== CREANDO CARGA FAMILIAR ===');
 
       // Validaciones
       if (!CargaFamiliar.validarRUT(rut)) {
@@ -498,7 +475,6 @@ class AsociadosController extends GetxController {
       cargasFamiliares.add(cargaConId);
 
       _showSuccessSnackbar("Éxito!", "Carga familiar agregada correctamente");
-      Get.log('Carga familiar creada: ${cargaConId.nombreCompleto}');
       
       return true;
 
@@ -637,6 +613,10 @@ class AsociadosController extends GetxController {
       colorText: Get.theme.colorScheme.onPrimary,
       duration: const Duration(seconds: 3),
     );
+  }
+  
+  Asociado? getAsociadoById(String asociadoId) {
+    return _allAsociados.firstWhereOrNull((asociado) => asociado.id == asociadoId);
   }
 
   // ========== GETTERS ==========
