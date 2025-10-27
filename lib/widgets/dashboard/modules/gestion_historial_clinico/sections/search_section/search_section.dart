@@ -17,188 +17,270 @@ class _SearchSectionState extends State<SearchSection> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark 
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.medical_information_outlined,
-                color: AppTheme.primaryColor,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Buscar Historial Clínico',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.getTextPrimary(context),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    labelText: 'Buscar por nombre del paciente o RUT',
-                    hintText: 'María González, 12345678-9...',
-                    prefixIcon: Icon(Icons.search, color: AppTheme.getTextSecondary(context)),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              _searchController.clear();
-                              widget.controller.clearSearch();
-                              setState(() {});
-                            },
-                            icon: const Icon(Icons.clear),
-                          )
-                        : null,
-                    filled: true,
-                    fillColor: AppTheme.getInputBackground(context),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-                    ),
-                    labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
-                    hintStyle: TextStyle(
-                      color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7),
-                    ),
-                  ),
-                  style: TextStyle(color: AppTheme.getTextPrimary(context)),
-                  onChanged: (value) {
-                    setState(() {});
-                    widget.controller.searchHistorial(value);
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Dropdown de Tipo de Consulta con Obx
-              Obx(() => _buildFilterDropdown(
-                'Tipo', 
-                widget.controller.selectedFilter.value, 
-                ['todos', 'consulta', 'control', 'urgencia', 'tratamiento'], 
-                widget.controller.setFilter
-              )),
-              const SizedBox(width: 12),
-              // Dropdown de Estado con Obx
-              Obx(() => _buildFilterDropdown(
-                'Estado', 
-                widget.controller.selectedStatus.value,
-                ['todos', 'completado', 'pendiente'], 
-                widget.controller.setStatus
-              )),
-              const SizedBox(width: 12),
-              // Dropdown de Odontólogo con Obx
-              Obx(() => _buildFilterDropdown(
-                'Odontólogo', 
-                widget.controller.selectedOdontologo.value,
-                ['todos', 'dr.lopez', 'dr.martinez'], 
-                widget.controller.setOdontologo
-              )),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Busca por nombre del paciente, RUT o utiliza los filtros para encontrar historiales específicos',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.getTextSecondary(context),
-            ),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _buildSectionHeader(context),
+        const SizedBox(height: 12),
+        _buildSearchControls(context),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
-  Widget _buildFilterDropdown(String label, String value, List<String> options, Function(String) onChanged) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.getInputBackground(context),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppTheme.getBorderLight(context)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: value,
-          isDense: true,
-          icon: Icon(
-            Icons.keyboard_arrow_down,
-            size: 18,
-            color: AppTheme.getTextSecondary(context),
-          ),
+  Widget _buildSectionHeader(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          Icons.medical_information, // Ícono de historial clínico
+          color: AppTheme.primaryColor,
+          size: 20,
+        ),
+        const SizedBox(width: 8),
+        Text(
+          'Buscar Historial Clínico',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
             color: AppTheme.getTextPrimary(context),
           ),
-          dropdownColor: AppTheme.getSurfaceColor(context),
-          items: options.map((option) => DropdownMenuItem(
-            value: option,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$label: ${_getDisplayName(option)}',
-                  style: TextStyle(
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchControls(BuildContext context) {
+    return Column(
+      children: [
+        // Primera fila: Campo de búsqueda principal
+        Row(
+          children: [
+            // Campo de búsqueda
+            Expanded(
+              child: TextFormField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Buscar por nombre del paciente o RUT',
+                  prefixIcon: Icon(
+                    Icons.search, 
+                    color: AppTheme.getTextSecondary(context),
+                    size: 20,
+                  ),
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          onPressed: () {
+                            _searchController.clear();
+                            widget.controller.clearSearch();
+                            setState(() {});
+                          },
+                          icon: Icon(
+                            Icons.clear,
+                            color: AppTheme.getTextSecondary(context),
+                            size: 20,
+                          ),
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: AppTheme.getInputBackground(context),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(
+                      color: AppTheme.primaryColor,
+                      width: 2,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+                  ),
+                  hintStyle: TextStyle(
+                    color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7),
                     fontSize: 14,
-                    color: AppTheme.getTextPrimary(context),
                   ),
                 ),
-              ],
+                style: TextStyle(
+                  color: AppTheme.getTextPrimary(context),
+                  fontSize: 14,
+                ),
+                onChanged: (value) {
+                  setState(() {});
+                  widget.controller.searchHistorial(value);
+                },
+              ),
             ),
-          )).toList(),
-          onChanged: (newValue) {
-            if (newValue != null && newValue != value) {
-              onChanged(newValue);
-            }
-          },
+          ],
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Segunda fila: Filtros compactos
+        Row(
+          children: [
+            // Dropdown Tipo
+            Expanded(
+              child: Obx(() => _buildCompactDropdown(
+                'Tipo',
+                widget.controller.selectedFilter.value,
+                [
+                  {'value': 'todos', 'label': 'Todos', 'icon': Icons.all_inclusive},
+                  {'value': 'consulta', 'label': 'Consulta', 'icon': Icons.medical_information_outlined},
+                  {'value': 'control', 'label': 'Control', 'icon': Icons.check_circle_outline},
+                  {'value': 'urgencia', 'label': 'Urgencia', 'icon': Icons.emergency},
+                  {'value': 'tratamiento', 'label': 'Tratamiento', 'icon': Icons.healing},
+                ],
+                widget.controller.setFilter,
+              )),
+            ),
+            
+            const SizedBox(width: 8),
+            
+            // Dropdown Estado
+            Expanded(
+              child: Obx(() => _buildCompactDropdown(
+                'Estado',
+                widget.controller.selectedStatus.value,
+                [
+                  {'value': 'todos', 'label': 'Todos', 'icon': Icons.all_inclusive},
+                  {'value': 'completado', 'label': 'Completado', 'icon': Icons.check_circle},
+                  {'value': 'pendiente', 'label': 'Pendiente', 'icon': Icons.pending_actions},
+                ],
+                widget.controller.setStatus,
+              )),
+            ),
+            
+            const SizedBox(width: 8),
+            
+            // Dropdown Odontólogo
+            Expanded(
+              child: Obx(() => _buildCompactDropdown(
+                'Odontólogo',
+                widget.controller.selectedOdontologo.value,
+                [
+                  {'value': 'todos', 'label': 'Todos', 'icon': Icons.all_inclusive},
+                  {'value': 'dr.lopez', 'label': 'Dr. López', 'icon': Icons.person},
+                  {'value': 'dr.martinez', 'label': 'Dr. Martínez', 'icon': Icons.person},
+                ],
+                widget.controller.setOdontologo,
+              )),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCompactDropdown(
+    String label,
+    String value,
+    List<Map<String, dynamic>> options,
+    Function(String) onChanged,
+  ) {
+    final selectedOption = options.firstWhere(
+      (opt) => opt['value'] == value,
+      orElse: () => options.first,
+    );
+
+    return PopupMenuButton<String>(
+      onSelected: (String newValue) {
+        if (newValue != value) {
+          onChanged(newValue);
+        }
+      },
+      offset: const Offset(0, 40),
+      itemBuilder: (BuildContext context) => options.map((option) {
+        final isSelected = option['value'] == value;
+        return PopupMenuItem<String>(
+          value: option['value'],
+          child: Row(
+            children: [
+              Icon(
+                option['icon'] as IconData,
+                size: 18,
+                color: isSelected 
+                    ? AppTheme.primaryColor 
+                    : AppTheme.getTextSecondary(context),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                option['label'],
+                style: TextStyle(
+                  color: isSelected 
+                      ? AppTheme.primaryColor 
+                      : AppTheme.getTextPrimary(context),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+              ),
+              if (isSelected) ...[
+                const Spacer(),
+                Icon(
+                  Icons.check,
+                  size: 16,
+                  color: AppTheme.primaryColor,
+                ),
+              ],
+            ],
+          ),
+        );
+      }).toList(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: value == 'todos'
+              ? AppTheme.getInputBackground(context)
+              : AppTheme.primaryColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: value == 'todos'
+                ? AppTheme.getBorderLight(context)
+                : AppTheme.primaryColor.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              selectedOption['icon'] as IconData,
+              size: 16,
+              color: value == 'todos'
+                  ? AppTheme.getTextSecondary(context)
+                  : AppTheme.primaryColor,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                selectedOption['label'],
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: value == 'todos'
+                      ? AppTheme.getTextSecondary(context)
+                      : AppTheme.primaryColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down,
+              size: 16,
+              color: value == 'todos'
+                  ? AppTheme.getTextSecondary(context)
+                  : AppTheme.primaryColor,
+            ),
+          ],
         ),
       ),
     );
-  }
-
-  String _getDisplayName(String option) {
-    switch (option) {
-      case 'todos': return 'Todos';
-      case 'consulta': return 'Consulta';
-      case 'control': return 'Control';
-      case 'urgencia': return 'Urgencia';
-      case 'tratamiento': return 'Tratamiento';
-      case 'completado': return 'Completado';
-      case 'pendiente': return 'Pendiente';
-      case 'dr.lopez': return 'Dr. López';
-      case 'dr.martinez': return 'Dr. Martínez';
-      default: return option[0].toUpperCase() + option.substring(1);
-    }
   }
 
   @override
