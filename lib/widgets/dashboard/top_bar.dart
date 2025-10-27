@@ -141,21 +141,28 @@ class TopBar extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CircleAvatar(
-              backgroundColor: AppTheme.primaryColor,
-              radius: isVeryShortScreen ? 15 : (isSmallScreen ? 16 : 18),
-              child: Text(
-                authController.userDisplayName.isNotEmpty 
-                    ? authController.userDisplayName[0].toUpperCase() 
-                    : 'U',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: isVeryShortScreen ? 12 : (isSmallScreen ? 13 : 14),
-                ),
-              ),
-            ),
-            
+            Obx(() {
+              final photoUrl = authController.userPhotoUrl;
+              return CircleAvatar(
+                radius: isVeryShortScreen ? 15 : (isSmallScreen ? 16 : 18),
+                backgroundColor: AppTheme.primaryColor,
+                backgroundImage: photoUrl != null
+                    ? NetworkImage(photoUrl)
+                    : null,
+                child: photoUrl == null
+                    ? Text(
+                        authController.userDisplayName.isNotEmpty 
+                            ? authController.userDisplayName[0].toUpperCase() 
+                            : 'U',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: isVeryShortScreen ? 12 : (isSmallScreen ? 13 : 14),
+                        ),
+                      )
+                    : null,
+              );
+            }),
             // En pantallas pequeñas, ocultar el texto del usuario
             if (!isSmallScreen) ...[
               SizedBox(width: isVeryShortScreen ? 8 : 10),

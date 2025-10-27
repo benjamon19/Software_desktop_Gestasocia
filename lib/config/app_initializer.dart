@@ -45,13 +45,24 @@ class AppInitializer {
       }
     }
   }
-
+  
   /// Inicializar Firebase con manejo robusto de errores
   static Future<void> _initializeFirebase() async {
     try {
-      await Firebase.initializeApp(options: FirebaseConfig.webOptions);
+      // 🔹 App principal (Auth, Firestore, etc.)
+      await Firebase.initializeApp(
+        options: FirebaseConfig.webOptions,
+        name: '[DEFAULT]',
+      );
+
+      // 🔸 App secundaria (solo Storage)
+      await Firebase.initializeApp(
+        options: FirebaseConfig.storageOptions,
+        name: 'storageApp',
+      );
+
       if (kDebugMode) {
-        print('Firebase inicializado correctamente');
+        print('✅ Firebase y StorageApp inicializados correctamente');
       }
     } catch (e) {
       await _handleFirebaseInitializationError(e);

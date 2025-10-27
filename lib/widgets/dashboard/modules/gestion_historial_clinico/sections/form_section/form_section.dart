@@ -365,7 +365,7 @@ class _FormSectionState extends State<FormSection> {
         border: Border.all(color: AppTheme.getBorderLight(context)),
       ),
       child: DropdownButtonFormField<String>(
-        value: value,
+        initialValue: value,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, size: 20, color: AppTheme.getTextSecondary(context)),

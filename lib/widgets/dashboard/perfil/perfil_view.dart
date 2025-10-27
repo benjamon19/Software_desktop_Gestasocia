@@ -50,37 +50,45 @@ class _PerfilViewState extends State<PerfilView> {
 
   Widget _buildAdaptiveHeader(BuildContext context, bool isSmallScreen, bool isMediumScreen, bool isVeryShortScreen) {
     if (isVeryShortScreen) {
-      // Layout compacto para pantallas muy pequeñas
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              // Avatar más pequeño
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Obx(() => Center(
-                  child: Text(
-                    authController.userDisplayName.isNotEmpty
-                        ? authController.userDisplayName[0].toUpperCase()
-                        : 'A',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+              Obx(() {
+                final photoUrl = authController.userPhotoUrl;
+                final displayName = authController.userDisplayName;
+
+                return Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.primaryColor, // fallback de fondo
+                    image: photoUrl != null && photoUrl.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(photoUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                )),
-              ),
-              
+                  child: photoUrl == null || photoUrl.isEmpty
+                      ? Center(
+                          child: Text(
+                            displayName.isNotEmpty
+                                ? displayName[0].toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 32,
+                            ),
+                          ),
+                        )
+                      : null,
+                );
+              }),
               const SizedBox(width: 12),
-              
-              // Información básica compacta
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,37 +120,40 @@ class _PerfilViewState extends State<PerfilView> {
         ],
       );
     }
-    
+
     if (isSmallScreen) {
-      // Layout vertical para pantallas pequeñas
       return Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar
-          Container(
-            width: isMediumScreen ? 70 : 60,
-            height: isMediumScreen ? 70 : 60,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              shape: BoxShape.circle,
-            ),
-            child: Obx(() => Center(
-              child: Text(
-                authController.userDisplayName.isNotEmpty
-                    ? authController.userDisplayName[0].toUpperCase()
-                    : 'A',
-                style: TextStyle(
-                  fontSize: isMediumScreen ? 28 : 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+          Obx(() {
+            final photoUrl = authController.userPhotoUrl;
+            return Container(
+              width: isMediumScreen ? 70 : 60,
+              height: isMediumScreen ? 70 : 60,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                shape: BoxShape.circle,
+                image: photoUrl != null
+                    ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover)
+                    : null,
               ),
-            )),
-          ),
-          
+              child: photoUrl == null
+                  ? Center(
+                      child: Text(
+                        authController.userDisplayName.isNotEmpty
+                            ? authController.userDisplayName[0].toUpperCase()
+                            : 'A',
+                        style: TextStyle(
+                          fontSize: isMediumScreen ? 28 : 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : null,
+            );
+          }),
           const SizedBox(height: 16),
-          
-          // Información centrada
           Column(
             children: [
               Text(
@@ -180,35 +191,39 @@ class _PerfilViewState extends State<PerfilView> {
         ],
       );
     }
-    
-    // Layout horizontal para pantallas grandes (original)
+
+    // Layout grande
     return Row(
       children: [
-        // Avatar grande
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: AppTheme.primaryColor,
-            shape: BoxShape.circle,
-          ),
-          child: Obx(() => Center(
-            child: Text(
-              authController.userDisplayName.isNotEmpty
-                  ? authController.userDisplayName[0].toUpperCase()
-                  : 'A',
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+        Obx(() {
+          final photoUrl = authController.userPhotoUrl;
+          return Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor,
+              shape: BoxShape.circle,
+              image: photoUrl != null
+                  ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover)
+                  : null,
             ),
-          )),
-        ),
-        
+            child: photoUrl == null
+                ? Center(
+                    child: Text(
+                      authController.userDisplayName.isNotEmpty
+                          ? authController.userDisplayName[0].toUpperCase()
+                          : 'A',
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : null,
+          );
+        }),
         const SizedBox(width: 24),
-        
-        // Información básica
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

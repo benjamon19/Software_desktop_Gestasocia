@@ -14,6 +14,8 @@ class Asociado {
   DateTime fechaCreacion;
   DateTime fechaIngreso;
   bool isActive;
+  String? codigoBarras; // Código de barras único
+  String? sap; // Código SAP de 5 dígitos único
 
   Asociado({
     this.id,
@@ -29,6 +31,8 @@ class Asociado {
     required this.fechaCreacion,
     required this.fechaIngreso,
     this.isActive = true,
+    this.codigoBarras,
+    this.sap,
   });
 
   // Getters útiles
@@ -102,6 +106,11 @@ class Asociado {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
+  // Validar SAP (5 dígitos)
+  static bool validarSAP(String sap) {
+    return RegExp(r'^[0-9]{5}$').hasMatch(sap);
+  }
+
   // Convertir a Map para Firestore
   Map<String, dynamic> toMap() {
     return {
@@ -117,6 +126,8 @@ class Asociado {
       'fechaCreacion': fechaCreacion,
       'fechaIngreso': fechaIngreso,
       'isActive': isActive,
+      'codigoBarras': codigoBarras,
+      'sap': sap,
     };
   }
 
@@ -136,6 +147,8 @@ class Asociado {
       fechaCreacion: _parseDateTime(map['fechaCreacion']),
       fechaIngreso: _parseDateTime(map['fechaIngreso']),
       isActive: map['isActive'] ?? true,
+      codigoBarras: map['codigoBarras'],
+      sap: map['sap'],
     );
   }
 
@@ -174,6 +187,8 @@ class Asociado {
     DateTime? fechaCreacion,
     DateTime? fechaIngreso,
     bool? isActive,
+    String? codigoBarras,
+    String? sap,
   }) {
     return Asociado(
       id: id ?? this.id,
@@ -189,12 +204,14 @@ class Asociado {
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       fechaIngreso: fechaIngreso ?? this.fechaIngreso,
       isActive: isActive ?? this.isActive,
+      codigoBarras: codigoBarras ?? this.codigoBarras,
+      sap: sap ?? this.sap,
     );
   }
 
   @override
   String toString() {
-    return 'Asociado{id: $id, nombreCompleto: $nombreCompleto, email: $email, rut: $rutFormateado}';
+    return 'Asociado{id: $id, nombreCompleto: $nombreCompleto, email: $email, rut: $rutFormateado, sap: $sap}';
   }
 
   @override

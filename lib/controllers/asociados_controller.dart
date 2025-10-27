@@ -580,17 +580,60 @@ class AsociadosController extends GetxController {
       snackPosition: SnackPosition.BOTTOM,
     );
   }
-
-  void generateQR() {
+/// Actualizar código de barras del asociado
+Future<bool> updateAsociadoBarcode(String asociadoId, String codigoBarras) async {
+  try {
+    await FirebaseFirestore.instance
+        .collection('asociados')
+        .doc(asociadoId)
+        .update({
+      'codigoBarras': codigoBarras,
+    });
+    
+    // Actualizar el asociado seleccionado si es el mismo
+    if (selectedAsociado.value?.id == asociadoId) {
+      selectedAsociado.value = selectedAsociado.value?.copyWith(
+        codigoBarras: codigoBarras,
+      );
+      selectedAsociado.refresh();
+    }
+    
+    // Actualizar en la lista también
+    final index = asociados.indexWhere((a) => a.id == asociadoId);
+    if (index != -1) {
+      asociados[index] = asociados[index].copyWith(codigoBarras: codigoBarras);
+      asociados.refresh();
+    }
+    
     Get.snackbar(
-      'Generar QR', 
-      'Código QR generado exitosamente',
+      'Éxito',
+      'Código de barras generado correctamente',
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.8),
-      colorText: Get.theme.colorScheme.onPrimary,
+      backgroundColor: const Color(0xFF059669).withValues(alpha: 0.8),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
     );
+    
+    return true;
+  } catch (e) {
+    // Error al actualizar, no usar print en producción
+    debugPrint('Error al actualizar código de barras: $e');
+    
+    Get.snackbar(
+      'Error',
+      'No se pudo generar el código de barras',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
+      colorText: Get.theme.colorScheme.onError,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+    );
+    
+    return false;
   }
-
+}
   // ========== HELPERS ==========
 
   void _showErrorSnackbar(String title, String message) {

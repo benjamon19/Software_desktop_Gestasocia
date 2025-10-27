@@ -67,9 +67,8 @@ class _ActionsSectionState extends State<ActionsSection> {
                     
                     const SizedBox(height: 20),
                     
-                    // Herramientas
+                    // Herramientas - SIN onGenerateQR
                     ToolsActions(
-                      onGenerateQR: widget.controller.generateQR,
                       onViewHistory: widget.controller.viewHistory,
                     ),
                     

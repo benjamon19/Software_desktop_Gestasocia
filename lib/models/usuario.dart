@@ -7,6 +7,7 @@ class Usuario {
   String email;
   String telefono;
   String rut;
+  String? photoUrl; // NUEVO: URL de la foto de perfil
   DateTime fechaCreacion;
   bool isActive;
 
@@ -17,6 +18,7 @@ class Usuario {
     required this.email,
     required this.telefono,
     required this.rut,
+    this.photoUrl, // NUEVO
     required this.fechaCreacion,
     this.isActive = true,
   });
@@ -81,6 +83,7 @@ class Usuario {
       'email': email,
       'telefono': telefono,
       'rut': rut,
+      'photoUrl': photoUrl, // NUEVO
       'fechaCreacion': fechaCreacion,
       'isActive': isActive,
     };
@@ -95,6 +98,7 @@ class Usuario {
       email: map['email'] ?? '',
       telefono: map['telefono'] ?? '',
       rut: map['rut'] ?? '',
+      photoUrl: map['photoUrl'], // NUEVO
       fechaCreacion: _parseDateTime(map['fechaCreacion']),
       isActive: map['isActive'] ?? true,
     );
@@ -128,6 +132,7 @@ class Usuario {
     String? email,
     String? telefono,
     String? rut,
+    String? photoUrl, // NUEVO
     DateTime? fechaCreacion,
     bool? isActive,
   }) {
@@ -138,6 +143,7 @@ class Usuario {
       email: email ?? this.email,
       telefono: telefono ?? this.telefono,
       rut: rut ?? this.rut,
+      photoUrl: photoUrl ?? this.photoUrl, // NUEVO
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       isActive: isActive ?? this.isActive,
     );

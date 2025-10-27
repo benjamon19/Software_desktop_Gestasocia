@@ -1,15 +1,47 @@
-// lib/widgets/dashboard/perfil/sections/perfil_edit_section.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../controllers/auth_controller.dart';
 import '../../../../utils/app_theme.dart';
 
-class PerfilEditSection extends StatelessWidget {
+class PerfilEditSection extends StatefulWidget {
   const PerfilEditSection({super.key});
 
   @override
+  State<PerfilEditSection> createState() => _PerfilEditSectionState();
+}
+
+class _PerfilEditSectionState extends State<PerfilEditSection> {
+  final AuthController authController = Get.find<AuthController>();
+  
+  // Controladores para los campos editables
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _currentPasswordController = TextEditingController();
+  final TextEditingController _newPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+  
+  // Visibilidad de contraseñas
+  bool _showCurrentPassword = false;
+  bool _showNewPassword = false;
+  bool _showConfirmPassword = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicializar teléfono actual
+    _phoneController.text = authController.currentUser.value?.telefono ?? '';
+  }
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final AuthController authController = Get.find<AuthController>();
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final bool isSmallScreen = screenWidth < 600;
@@ -63,7 +95,6 @@ class PerfilEditSection extends StatelessWidget {
     bool isMediumScreen, 
     bool isVeryShortScreen
   ) {
-    // Tamaños adaptativos
     double avatarSize = isVeryShortScreen ? 80 : (isSmallScreen ? 100 : 120);
     double avatarFontSize = isVeryShortScreen ? 32 : (isSmallScreen ? 40 : 48);
     double titleSize = isVeryShortScreen ? 14 : (isSmallScreen ? 16 : 18);
@@ -84,62 +115,97 @@ class PerfilEditSection extends StatelessWidget {
             ),
           ),
           SizedBox(height: isVeryShortScreen ? 12 : 20),
-          Stack(
-            children: [
-              Container(
-                width: avatarSize,
-                height: avatarSize,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.getBorderLight(context),
-                    width: isSmallScreen ? 3 : 4,
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    authController.userDisplayName.isNotEmpty
-                        ? authController.userDisplayName[0].toUpperCase()
-                        : 'U',
-                    style: TextStyle(
-                      fontSize: avatarFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  width: isVeryShortScreen ? 28 : (isSmallScreen ? 32 : 36),
-                  height: isVeryShortScreen ? 28 : (isSmallScreen ? 32 : 36),
+          
+          Obx(() {
+            final isUploading = authController.isUploadingPhoto.value;
+            final photoUrl = authController.userPhotoUrl;
+            
+            return Stack(
+              children: [
+                // Avatar con foto o iniciales
+                Container(
+                  width: avatarSize,
+                  height: avatarSize,
                   decoration: BoxDecoration(
                     color: AppTheme.primaryColor,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: AppTheme.getSurfaceColor(context),
-                      width: isSmallScreen ? 2 : 3,
+                      color: AppTheme.getBorderLight(context),
+                      width: isSmallScreen ? 3 : 4,
                     ),
+                    image: photoUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(photoUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _showInfoSnackbar,
-                      borderRadius: BorderRadius.circular(18),
-                      child: Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: isVeryShortScreen ? 14 : (isSmallScreen ? 16 : 18),
+                  child: photoUrl == null
+                      ? Center(
+                          child: Text(
+                            authController.userDisplayName.isNotEmpty
+                                ? authController.userDisplayName[0].toUpperCase()
+                                : 'U',
+                            style: TextStyle(
+                              fontSize: avatarFontSize,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+                
+                // Loading overlay
+                if (isUploading)
+                  Container(
+                    width: avatarSize,
+                    height: avatarSize,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ],
-          ),
+                
+                // Botón de cámara
+                if (!isUploading)
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: isVeryShortScreen ? 28 : (isSmallScreen ? 32 : 36),
+                      height: isVeryShortScreen ? 28 : (isSmallScreen ? 32 : 36),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.getSurfaceColor(context),
+                          width: isSmallScreen ? 2 : 3,
+                        ),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _showPhotoOptionsDialog(context),
+                          borderRadius: BorderRadius.circular(18),
+                          child: Icon(
+                            Icons.camera_alt,
+                            color: Colors.white,
+                            size: isVeryShortScreen ? 14 : (isSmallScreen ? 16 : 18),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          }),
+          
           if (!isVeryShortScreen) ...[
             SizedBox(height: isSmallScreen ? 12 : 16),
             Text(
@@ -174,16 +240,12 @@ class PerfilEditSection extends StatelessWidget {
       isVeryShortScreen: isVeryShortScreen,
       child: Column(
         children: [
-          _buildAdaptiveField(
-            context, 
-            'Teléfono', 
-            currentUser.telefono, 
-            Icons.phone_outlined, 
-            editable: true,
-            isSmallScreen: isSmallScreen,
-            isVeryShortScreen: isVeryShortScreen,
-          ),
+          // Campo de teléfono editable
+          _buildEditablePhoneField(context, isSmallScreen, isVeryShortScreen),
+          
           SizedBox(height: fieldSpacing),
+          
+          // Email (no editable)
           _buildAdaptiveField(
             context, 
             'Email', 
@@ -192,7 +254,10 @@ class PerfilEditSection extends StatelessWidget {
             isSmallScreen: isSmallScreen,
             isVeryShortScreen: isVeryShortScreen,
           ),
+          
           SizedBox(height: fieldSpacing),
+          
+          // RUT (no editable)
           _buildAdaptiveField(
             context, 
             'RUT', 
@@ -203,6 +268,94 @@ class PerfilEditSection extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildEditablePhoneField(BuildContext context, bool isSmallScreen, bool isVeryShortScreen) {
+    double labelSize = isVeryShortScreen ? 12 : (isSmallScreen ? 13 : 14);
+    double labelSpacing = isVeryShortScreen ? 6 : 8;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Teléfono',
+          style: TextStyle(
+            fontSize: labelSize,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.getTextSecondary(context),
+          ),
+        ),
+        SizedBox(height: labelSpacing),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                style: TextStyle(
+                  color: AppTheme.getTextPrimary(context),
+                  fontSize: isVeryShortScreen ? 14 : 16,
+                ),
+                decoration: InputDecoration(
+                  prefixIcon: Icon(
+                    Icons.phone_outlined,
+                    size: isVeryShortScreen ? 18 : 20,
+                    color: AppTheme.getTextSecondary(context),
+                  ),
+                  filled: true,
+                  fillColor: AppTheme.getInputBackground(context),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: isVeryShortScreen ? 12 : 16,
+                    vertical: isVeryShortScreen ? 12 : 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: isVeryShortScreen ? 8 : 12),
+            Obx(() {
+              final isLoading = authController.isLoading.value;
+              
+              return ElevatedButton(
+                onPressed: isLoading ? null : _updatePhone,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isVeryShortScreen ? 12 : 16,
+                    vertical: isVeryShortScreen ? 12 : 16,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Icon(Icons.save, size: isVeryShortScreen ? 18 : 20),
+              );
+            }),
+          ],
+        ),
+      ],
     );
   }
 
@@ -224,17 +377,149 @@ class PerfilEditSection extends StatelessWidget {
       isVeryShortScreen: isVeryShortScreen,
       child: Column(
         children: [
-          _buildAdaptivePasswordField(context, 'Contraseña Actual', isSmallScreen, isVeryShortScreen),
+          _buildPasswordField(
+            context, 
+            'Contraseña Actual', 
+            _currentPasswordController,
+            _showCurrentPassword,
+            () => setState(() => _showCurrentPassword = !_showCurrentPassword),
+            isSmallScreen, 
+            isVeryShortScreen,
+          ),
           SizedBox(height: fieldSpacing),
-          _buildAdaptivePasswordField(context, 'Nueva Contraseña', isSmallScreen, isVeryShortScreen),
+          _buildPasswordField(
+            context, 
+            'Nueva Contraseña', 
+            _newPasswordController,
+            _showNewPassword,
+            () => setState(() => _showNewPassword = !_showNewPassword),
+            isSmallScreen, 
+            isVeryShortScreen,
+          ),
           SizedBox(height: fieldSpacing),
-          _buildAdaptivePasswordField(context, 'Confirmar Contraseña', isSmallScreen, isVeryShortScreen),
+          _buildPasswordField(
+            context, 
+            'Confirmar Contraseña', 
+            _confirmPasswordController,
+            _showConfirmPassword,
+            () => setState(() => _showConfirmPassword = !_showConfirmPassword),
+            isSmallScreen, 
+            isVeryShortScreen,
+          ),
           SizedBox(height: buttonSpacing),
-          _buildAdaptiveButton(context, isSmallScreen, isVeryShortScreen),
+          _buildChangePasswordButton(context, isSmallScreen, isVeryShortScreen),
         ],
       ),
     );
   }
+
+  Widget _buildPasswordField(
+    BuildContext context, 
+    String label,
+    TextEditingController controller,
+    bool showPassword,
+    VoidCallback toggleVisibility,
+    bool isSmallScreen, 
+    bool isVeryShortScreen
+  ) {
+    double labelSize = isVeryShortScreen ? 12 : (isSmallScreen ? 13 : 14);
+    double labelSpacing = isVeryShortScreen ? 6 : 8;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: labelSize,
+            fontWeight: FontWeight.w500,
+            color: AppTheme.getTextSecondary(context),
+          ),
+        ),
+        SizedBox(height: labelSpacing),
+        TextFormField(
+          controller: controller,
+          obscureText: !showPassword,
+          style: TextStyle(
+            color: AppTheme.getTextPrimary(context),
+            fontSize: isVeryShortScreen ? 14 : 16,
+          ),
+          decoration: InputDecoration(
+            prefixIcon: Icon(
+              Icons.lock_outline, 
+              size: isVeryShortScreen ? 18 : 20, 
+              color: AppTheme.getTextSecondary(context),
+            ),
+            suffixIcon: IconButton(
+              icon: Icon(
+                showPassword ? Icons.visibility : Icons.visibility_off,
+                size: isVeryShortScreen ? 18 : 20,
+                color: AppTheme.getTextSecondary(context),
+              ),
+              onPressed: toggleVisibility,
+            ),
+            filled: true,
+            fillColor: AppTheme.getInputBackground(context),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isVeryShortScreen ? 12 : 16,
+              vertical: isVeryShortScreen ? 12 : 16,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChangePasswordButton(BuildContext context, bool isSmallScreen, bool isVeryShortScreen) {
+    double buttonPadding = isVeryShortScreen ? 12 : (isSmallScreen ? 14 : 16);
+    double fontSize = isVeryShortScreen ? 14 : (isSmallScreen ? 15 : 16);
+    double iconSize = isVeryShortScreen ? 16 : (isSmallScreen ? 18 : 20);
+
+    return Obx(() {
+      final isLoading = authController.isLoading.value;
+      
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: isLoading ? null : _changePassword,
+          icon: isLoading
+              ? SizedBox(
+                  width: iconSize,
+                  height: iconSize,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Icon(Icons.save, size: iconSize),
+          label: Text(
+            isLoading ? 'Guardando...' : (isVeryShortScreen ? 'Guardar' : 'Guardar Cambios'),
+            style: TextStyle(fontSize: fontSize),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFF59E0B),
+            foregroundColor: Colors.white,
+            padding: EdgeInsets.symmetric(vertical: buttonPadding),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+        ),
+      );
+    });
+  }
+
+  // Dialogs y métodos de acción continúan en el siguiente mensaje...
 
   Widget _buildAdaptiveCard(
     BuildContext context, {
@@ -246,7 +531,6 @@ class PerfilEditSection extends StatelessWidget {
     double borderRadius = isSmallScreen ? 12 : 16;
 
     if (isVeryShortScreen) {
-      // Versión compacta sin sombra
       return Container(
         width: double.infinity,
         padding: EdgeInsets.all(padding),
@@ -262,7 +546,6 @@ class PerfilEditSection extends StatelessWidget {
       );
     }
 
-    // Versión normal con sombra
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(padding),
@@ -300,7 +583,6 @@ class PerfilEditSection extends StatelessWidget {
     double iconSpacing = isVeryShortScreen ? 8 : (isSmallScreen ? 10 : 12);
 
     if (isVeryShortScreen) {
-      // Versión compacta con header simplificado
       return Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -339,7 +621,6 @@ class PerfilEditSection extends StatelessWidget {
       );
     }
 
-    // Versión normal con header colorido
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -395,7 +676,6 @@ class PerfilEditSection extends StatelessWidget {
     String label, 
     String value, 
     IconData icon, {
-    bool editable = false,
     required bool isSmallScreen,
     required bool isVeryShortScreen,
   }) {
@@ -406,8 +686,7 @@ class PerfilEditSection extends StatelessWidget {
     double iconSpacing = isVeryShortScreen ? 8 : (isSmallScreen ? 10 : 12);
     double labelSpacing = isVeryShortScreen ? 6 : 8;
 
-    if (isVeryShortScreen && !editable) {
-      // Layout horizontal compacto para campos no editables
+    if (isVeryShortScreen) {
       return Row(
         children: [
           Container(
@@ -452,7 +731,6 @@ class PerfilEditSection extends StatelessWidget {
       );
     }
 
-    // Layout vertical normal
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -469,9 +747,7 @@ class PerfilEditSection extends StatelessWidget {
           width: double.infinity,
           padding: EdgeInsets.all(padding),
           decoration: BoxDecoration(
-            color: editable 
-                ? AppTheme.getInputBackground(context)
-                : AppTheme.getInputBackground(context).withValues(alpha: 0.5),
+            color: AppTheme.getInputBackground(context).withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(color: AppTheme.getBorderLight(context)),
           ),
@@ -484,16 +760,13 @@ class PerfilEditSection extends StatelessWidget {
                   value,
                   style: TextStyle(
                     fontSize: valueSize,
-                    color: editable 
-                        ? AppTheme.getTextPrimary(context)
-                        : AppTheme.getTextSecondary(context),
+                    color: AppTheme.getTextSecondary(context),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if (!editable)
-                Icon(Icons.lock_outline, size: 16, color: AppTheme.getTextSecondary(context)),
+              Icon(Icons.lock_outline, size: 16, color: AppTheme.getTextSecondary(context)),
             ],
           ),
         ),
@@ -501,90 +774,86 @@ class PerfilEditSection extends StatelessWidget {
     );
   }
 
-  Widget _buildAdaptivePasswordField(
-    BuildContext context, 
-    String label, 
-    bool isSmallScreen, 
-    bool isVeryShortScreen
-  ) {
-    double labelSize = isVeryShortScreen ? 12 : (isSmallScreen ? 13 : 14);
-    double labelSpacing = isVeryShortScreen ? 6 : 8;
+  // ========== MÉTODOS DE ACCIÓN ==========
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: labelSize,
-            fontWeight: FontWeight.w500,
-            color: AppTheme.getTextSecondary(context),
-          ),
+  void _showPhotoOptionsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.getSurfaceColor(context),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
         ),
-        SizedBox(height: labelSpacing),
-        TextFormField(
-          obscureText: true,
-          style: TextStyle(
-            color: AppTheme.getTextPrimary(context),
-            fontSize: isVeryShortScreen ? 14 : 16,
-          ),
-          decoration: InputDecoration(
-            prefixIcon: Icon(
-              Icons.lock_outline, 
-              size: isVeryShortScreen ? 18 : 20, 
-              color: AppTheme.getTextSecondary(context),
+        title: Row(
+          children: [
+            Icon(
+              Icons.add_a_photo,
+              color: AppTheme.primaryColor,
+              size: 28,
             ),
-            suffixIcon: Icon(
-              Icons.visibility_off, 
-              size: isVeryShortScreen ? 18 : 20, 
-              color: AppTheme.getTextSecondary(context),
+            const SizedBox(width: 12),
+            Text(
+              'Cambiar Foto',
+              style: TextStyle(
+                color: AppTheme.getTextPrimary(context),
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            filled: true,
-            fillColor: AppTheme.getInputBackground(context),
-            contentPadding: EdgeInsets.symmetric(
-              horizontal: isVeryShortScreen ? 12 : 16,
-              vertical: isVeryShortScreen ? 12 : 16,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-            ),
-          ),
+          ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildAdaptiveButton(BuildContext context, bool isSmallScreen, bool isVeryShortScreen) {
-    double buttonPadding = isVeryShortScreen ? 12 : (isSmallScreen ? 14 : 16);
-    double fontSize = isVeryShortScreen ? 14 : (isSmallScreen ? 15 : 16);
-    double iconSize = isVeryShortScreen ? 16 : (isSmallScreen ? 18 : 20);
-
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _showInfoSnackbar,
-        icon: Icon(Icons.save, size: iconSize),
-        label: Text(
-          isVeryShortScreen ? 'Guardar' : 'Guardar Cambios',
-          style: TextStyle(fontSize: fontSize),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.primaryColor,
-          foregroundColor: Colors.white,
-          padding: EdgeInsets.symmetric(vertical: buttonPadding),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF3B82F6)),
+              title: Text(
+                'Tomar Foto',
+                style: TextStyle(color: AppTheme.getTextPrimary(context)),
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+                authController.uploadProfilePhoto(fromCamera: true);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.folder, color: Color(0xFF10B981)),
+              title: Text(
+                'Desde Archivo',
+                style: TextStyle(color: AppTheme.getTextPrimary(context)),
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+                authController.uploadProfilePhoto(fromCamera: false);
+              },
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Future<void> _updatePhone() async {
+    final newPhone = _phoneController.text.trim();
+    final success = await authController.updatePhone(newPhone);
+    
+    if (success) {
+      // Ya se muestra el SnackBar en el controller
+    }
+  }
+
+  Future<void> _changePassword() async {
+    final success = await authController.changePassword(
+      currentPassword: _currentPasswordController.text,
+      newPassword: _newPasswordController.text,
+      confirmPassword: _confirmPasswordController.text,
+    );
+    
+    if (success) {
+      // Limpiar campos
+      _currentPasswordController.clear();
+      _newPasswordController.clear();
+      _confirmPasswordController.clear();
+    }
   }
 
   String _formatRut(String rut) {
@@ -602,16 +871,5 @@ class PerfilEditSection extends StatelessWidget {
     }
     
     return '$formatted-$dv';
-  }
-
-  void _showInfoSnackbar() {
-    Get.snackbar(
-      'Información', 
-      'Solo diseño - Sin funcionalidad',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.blue.withValues(alpha: 0.1),
-      colorText: Colors.blue,
-      margin: const EdgeInsets.all(16),
-    );
   }
 }
