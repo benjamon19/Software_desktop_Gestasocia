@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -16,6 +17,11 @@ class AuthController extends GetxController {
   Rxn<Usuario> currentUser = Rxn<Usuario>();
   RxBool isLoading = false.obs;
   RxBool isUploadingPhoto = false.obs;
+
+  // Getter para obtener Auth de la app principal
+  FirebaseAuth get _mainAuth => FirebaseAuth.instanceFor(
+    app: Firebase.app(),
+  );
 
   @override
   void onInit() {
@@ -46,7 +52,7 @@ class AuthController extends GetxController {
           );
           
           // Cargar datos del usuario
-          final user = FirebaseAuth.instance.currentUser;
+          final user = _mainAuth.currentUser;
           if (user != null) {
             await _loadUserData(user.uid);
             
@@ -66,7 +72,7 @@ class AuthController extends GetxController {
       } else {
         Get.log('=== NO HAY SESIÓN PERSISTENTE - VERIFICAR USUARIO ACTUAL ===');
         // Si no hay sesión persistente pero hay usuario en Firebase, cerrarlo
-        final currentFirebaseUser = FirebaseAuth.instance.currentUser;
+        final currentFirebaseUser = _mainAuth.currentUser;
         if (currentFirebaseUser != null) {
           Get.log('=== CERRANDO SESIÓN DE FIREBASE (NO PERSISTENTE) ===');
           await FirebaseService.signOut();
@@ -80,6 +86,7 @@ class AuthController extends GetxController {
     }
   }
 
+  // Storage de la app secundaria
   FirebaseStorage get _externalStorage => FirebaseStorage.instanceFor(
       app: Firebase.app('storageApp'),
       bucket: 'gestasocia-bucket-4b6ea.firebasestorage.app',
@@ -154,7 +161,7 @@ class AuthController extends GetxController {
       }
 
       Get.log('=== REGISTRO COMPLETADO EXITOSAMENTE ===');
-      _showSuccessSnackbar("¡Éxito!", "Usuario registrado correctamente");
+      _showSuccessSnackbar("Éxito", "Usuario registrado correctamente");
       return true;
 
     } catch (e) {
@@ -211,7 +218,7 @@ class AuthController extends GetxController {
       );
 
       // Cargar datos del usuario
-      final user = FirebaseAuth.instance.currentUser;
+      final user = _mainAuth.currentUser;
       if (user != null) {
         await _loadUserData(user.uid);
         firebaseUser.value = user;
@@ -230,7 +237,7 @@ class AuthController extends GetxController {
         Get.offAllNamed('/dashboard');
       }
 
-      _showSuccessSnackbar("¡Éxito!", "Sesión iniciada correctamente");
+      _showSuccessSnackbar("Éxito", "Sesión iniciada correctamente");
       return true;
 
     } catch (e) {
@@ -246,183 +253,163 @@ class AuthController extends GetxController {
   // Cerrar sesión
   Future<void> logout() async {
     try {
-      // SIEMPRE limpiar la sesión persistente al cerrar sesión
+      Get.log('=== INICIANDO LOGOUT ===');
+      isLoading.value = true;
+
+      // Limpiar sesión persistente
       await _clearPersistentSession();
       
-      // Limpiar variables locales
+      // Cerrar sesión en Firebase
+      await FirebaseService.signOut();
+      
+      // Limpiar estado local
       firebaseUser.value = null;
       currentUser.value = null;
       
-      await FirebaseService.signOut();
-      _showSuccessSnackbar("Sesión cerrada", "Has cerrado sesión correctamente");
+      Get.log('=== LOGOUT COMPLETADO - NAVEGANDO A LOGIN ===');
       Get.offAllNamed('/login');
+      
     } catch (e) {
-      String errorMessage = _extractErrorMessage(e);
-      _showErrorSnackbar("Error", "Error al cerrar sesión: $errorMessage");
+      Get.log('Error en logout: $e');
+      _showErrorSnackbar("Error", "No se pudo cerrar sesión correctamente");
+    } finally {
+      isLoading.value = false;
     }
   }
 
-  // ========== NUEVAS FUNCIONALIDADES ==========
-
-  /// Subir foto de perfil - VERSIÓN MEJORADA
-  Future<bool> uploadProfilePhoto({required bool fromCamera}) async {
+  // Subir foto de perfil
+  Future<bool> uploadProfilePhoto({bool fromCamera = false}) async {
     try {
-      Get.log('=== INICIANDO SUBIDA DE FOTO ===');
       isUploadingPhoto.value = true;
-
-      // Verificar que el usuario esté autenticado
-      final userId = currentUserId;
-      if (userId == null) {
-        _showErrorSnackbar("Error", "Usuario no autenticado");
-        return false;
-      }
-
-      // Obtener imagen
       File? imageFile;
 
       if (fromCamera) {
         // Tomar foto con la cámara
-        final ImagePicker picker = ImagePicker();
+        final picker = ImagePicker();
         final XFile? photo = await picker.pickImage(
           source: ImageSource.camera,
           maxWidth: 1024,
           maxHeight: 1024,
           imageQuality: 85,
         );
-
+        
         if (photo == null) {
-          Get.log('Usuario canceló la toma de foto');
+          Get.log('Usuario canceló la captura de foto');
           return false;
         }
-
+        
         imageFile = File(photo.path);
+        Get.log('Foto capturada: ${photo.path}');
+        
       } else {
-        // Seleccionar archivo de imagen
+        // Seleccionar desde archivos
         FilePickerResult? result = await FilePicker.platform.pickFiles(
           type: FileType.image,
           allowMultiple: false,
         );
 
         if (result == null || result.files.isEmpty) {
-          Get.log('Usuario canceló la selección de archivo');
+          Get.log('Usuario canceló la selección');
           return false;
         }
 
-        final path = result.files.single.path;
-        if (path == null) {
-          _showErrorSnackbar("Error", "No se pudo obtener la ruta del archivo");
+        final filePath = result.files.first.path;
+        if (filePath == null) {
+          _showErrorSnackbar("Error", "No se pudo acceder al archivo");
           return false;
         }
 
-        imageFile = File(path);
+        imageFile = File(filePath);
+        Get.log('Archivo seleccionado: $filePath');
       }
 
-      // Validar que el archivo existe
-      if (!await imageFile.exists()) {
-        _showErrorSnackbar("Error", "El archivo no existe");
-        return false;
-      }
-
-      // Validar tamaño del archivo (máximo 5MB)
+      // Validar tamaño (máximo 5MB)
       final fileSize = await imageFile.length();
-      Get.log('Tamaño del archivo: ${fileSize / 1024 / 1024} MB');
-      
       if (fileSize > 5 * 1024 * 1024) {
-        _showErrorSnackbar("Error", "La imagen es muy grande. Máximo 5MB");
+        _showErrorSnackbar("Error", "La imagen no debe superar 5MB");
         return false;
       }
 
-      if (fileSize == 0) {
-        _showErrorSnackbar("Error", "El archivo está vacío");
+      final userId = currentUserId;
+      if (userId == null) {
+        _showErrorSnackbar("Error", "Usuario no autenticado");
         return false;
       }
 
-      Get.log('Subiendo imagen para usuario: $userId');
+      Get.log('=== SUBIENDO FOTO A STORAGE EXTERNO ===');
+      
+      // Usar el storage externo (app secundaria)
+      final storageRef = _externalStorage.ref().child('usuarios/$userId/profile.jpg');
+      
+      Get.log('Referencia de Storage: ${storageRef.fullPath}');
+      Get.log('Bucket: ${storageRef.bucket}');
 
-      // Crear referencia a Firebase Storage con timestamp para evitar caché
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final storageRef = _externalStorage
-          .ref()
-          .child('profile_photos/$userId-$timestamp.jpg');
+      final uploadTask = storageRef.putFile(imageFile);
 
-      Get.log('Ruta de storage: ${storageRef.fullPath}');
+      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+        final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        Get.log('Progreso de subida: ${progress.toStringAsFixed(2)}%');
+      });
 
-      // Configurar metadata
-      final metadata = SettableMetadata(
-        contentType: 'image/jpeg',
-        customMetadata: {
-          'uploadedBy': userId,
-          'uploadedAt': DateTime.now().toIso8601String(),
-        },
-      );
+      final snapshot = await uploadTask;
+      Get.log('Estado de subida: ${snapshot.state}');
 
-      // Subir archivo con manejo de errores mejorado
-      try {
-        Get.log('Iniciando upload...');
-        final uploadTask = storageRef.putFile(imageFile, metadata);
-        
-        // Monitorear progreso
-        uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-          final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          Get.log('Progreso: ${progress.toStringAsFixed(2)}%');
-        });
+      if (snapshot.state == TaskState.success) {
+        final downloadUrl = await storageRef.getDownloadURL();
+        Get.log('URL de descarga obtenida: $downloadUrl');
 
-        final snapshot = await uploadTask;
-        Get.log('Upload completado, obteniendo URL...');
-
-        // Obtener URL de descarga
-        final downloadUrl = await snapshot.ref.getDownloadURL();
-        Get.log('URL obtenida: $downloadUrl');
-
-        // Actualizar en Firestore
-        Get.log('Actualizando Firestore...');
+        // Actualizar Firestore
         await FirebaseService.updateUser(userId, {'photoUrl': downloadUrl});
+        Get.log('Firestore actualizado');
 
         // Actualizar localmente
         currentUser.value = currentUser.value?.copyWith(photoUrl: downloadUrl);
         currentUser.refresh();
 
-        Get.log('=== FOTO SUBIDA EXITOSAMENTE ===');
-        _showSuccessSnackbar("¡Éxito!", "Foto de perfil actualizada");
+        _showSuccessSnackbar("Éxito", "Foto de perfil actualizada");
         return true;
-
-      } on FirebaseException catch (e) {
-        Get.log('Firebase Error: ${e.code} - ${e.message}');
-        
-        // Manejo de errores específicos de Firebase Storage
-        switch (e.code) {
-          case 'unauthorized':
-            _showErrorSnackbar(
-              "Permiso Denegado", 
-              "No tienes permiso para subir fotos. Contacta al administrador."
-            );
-            break;
-          case 'canceled':
-            Get.log('Upload cancelado por el usuario');
-            return false;
-          case 'unknown':
-            _showErrorSnackbar(
-              "Error Desconocido", 
-              "Error: ${e.message ?? 'Desconocido'}"
-            );
-            break;
-          case 'object-not-found':
-            _showErrorSnackbar("Error", "No se encontró el archivo");
-            break;
-          case 'bucket-not-found':
-            _showErrorSnackbar("Error", "Configuración de Storage incorrecta");
-            break;
-          case 'quota-exceeded':
-            _showErrorSnackbar("Error", "Se excedió la cuota de almacenamiento");
-            break;
-          default:
-            _showErrorSnackbar(
-              "Error de Storage", 
-              "Código: ${e.code}\n${e.message ?? 'Error desconocido'}"
-            );
-        }
+      } else {
+        Get.log('Estado de subida no exitoso: ${snapshot.state}');
+        _showErrorSnackbar("Error", "No se pudo completar la subida");
         return false;
       }
+
+    } on FirebaseException catch (e) {
+      Get.log('Firebase Error: ${e.code} - ${e.message}');
+      
+      // Manejo de errores específicos de Firebase Storage
+      switch (e.code) {
+        case 'unauthorized':
+          _showErrorSnackbar(
+            "Permiso Denegado", 
+            "No tienes permiso para subir fotos. Contacta al administrador."
+          );
+          break;
+        case 'canceled':
+          Get.log('Upload cancelado por el usuario');
+          return false;
+        case 'unknown':
+          _showErrorSnackbar(
+            "Error Desconocido", 
+            "Error: ${e.message ?? 'Desconocido'}"
+          );
+          break;
+        case 'object-not-found':
+          _showErrorSnackbar("Error", "No se encontró el archivo");
+          break;
+        case 'bucket-not-found':
+          _showErrorSnackbar("Error", "Configuración de Storage incorrecta");
+          break;
+        case 'quota-exceeded':
+          _showErrorSnackbar("Error", "Se excedió la cuota de almacenamiento");
+          break;
+        default:
+          _showErrorSnackbar(
+            "Error de Storage", 
+            "Código: ${e.code}\n${e.message ?? 'Error desconocido'}"
+          );
+      }
+      return false;
 
     } catch (e, stackTrace) {
       Get.log('Error subiendo foto: $e');
@@ -437,9 +424,7 @@ class AuthController extends GetxController {
     }
   }
 
-  // [RESTO DE MÉTODOS - updatePhone, changePassword, etc.]
-
-  /// Actualizar teléfono del usuario
+  // Actualizar teléfono del usuario
   Future<bool> updatePhone(String newPhone) async {
     try {
       if (newPhone.trim().isEmpty) {
@@ -468,7 +453,7 @@ class AuthController extends GetxController {
       currentUser.value = currentUser.value?.copyWith(telefono: newPhone);
       currentUser.refresh();
 
-      _showSuccessSnackbar("¡Éxito!", "Teléfono actualizado correctamente");
+      _showSuccessSnackbar("Éxito", "Teléfono actualizado correctamente");
       return true;
 
     } catch (e) {
@@ -480,74 +465,160 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Cambiar contraseña del usuario
+  // Cambiar contraseña del usuario
   Future<bool> changePassword({
     required String currentPassword,
     required String newPassword,
     required String confirmPassword,
   }) async {
+    Get.log('[1/10] INICIO changePassword');
+    
+    // Validaciones
+    if (currentPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
+      Get.log('[2/10] ERROR: Campos vacíos');
+      _showErrorSnackbar("Error", "Completa todos los campos");
+      return false;
+    }
+    
+    if (newPassword != confirmPassword) {
+      Get.log('[2/10] ERROR: Contraseñas no coinciden');
+      _showErrorSnackbar("Error", "Las contraseñas no coinciden");
+      return false;
+    }
+    
+    if (newPassword.length < 6) {
+      Get.log('[2/10] ERROR: Contraseña muy corta');
+      _showErrorSnackbar("Error", "La contraseña debe tener al menos 6 caracteres");
+      return false;
+    }
+    
+    if (newPassword == currentPassword) {
+      Get.log('[2/10] ERROR: Contraseña igual');
+      _showErrorSnackbar("Error", "La nueva contraseña debe ser diferente");
+      return false;
+    }
+
+    Get.log('[2/10] Validaciones pasadas');
+    Get.log('[3/10] Obteniendo usuario actual');
+    
+    // Usar _mainAuth en lugar de .instance
+    final user = _mainAuth.currentUser;
+    
+    if (user == null) {
+      Get.log('[4/10] ERROR: No hay usuario');
+      _showErrorSnackbar("Error", "Usuario no autenticado");
+      return false;
+    }
+
+    if (user.email == null) {
+      Get.log('[4/10] ERROR: Usuario sin email');
+      _showErrorSnackbar("Error", "Usuario no tiene email");
+      return false;
+    }
+
+    Get.log('[4/10] Usuario encontrado: ${user.email}');
+    Get.log('[5/10] Creando credencial para re-autenticación');
+
     try {
-      // Validaciones
-      if (currentPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
-        _showErrorSnackbar("Error", "Completa todos los campos");
-        return false;
-      }
-
-      if (newPassword != confirmPassword) {
-        _showErrorSnackbar("Error", "Las contraseñas no coinciden");
-        return false;
-      }
-
-      if (newPassword.length < 6) {
-        _showErrorSnackbar("Error", "La contraseña debe tener al menos 6 caracteres");
-        return false;
-      }
-
-      if (newPassword == currentPassword) {
-        _showErrorSnackbar("Error", "La nueva contraseña debe ser diferente");
-        return false;
-      }
-
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null || user.email == null) {
-        _showErrorSnackbar("Error", "Usuario no autenticado");
-        return false;
-      }
-
-      isLoading.value = true;
-
-      // Re-autenticar usuario con contraseña actual
+      // Crear credencial
       final credential = EmailAuthProvider.credential(
         email: user.email!,
         password: currentPassword,
       );
-
+      
+      Get.log('[5/10] Credencial creada');
+      Get.log('[6/10] Iniciando re-autenticación con timeout de 15 segundos');
+      
+      // Agregar timeout de 15 segundos
+      await user.reauthenticateWithCredential(credential).timeout(
+        Duration(seconds: 15),
+        onTimeout: () {
+          Get.log('[6/10] TIMEOUT: La re-autenticación tardó más de 15 segundos');
+          throw TimeoutException('La operación tardó demasiado tiempo');
+        },
+      );
+      
+      Get.log('[6/10] Re-autenticación exitosa');
+      Get.log('[7/10] Actualizando contraseña con timeout de 15 segundos');
+      
+      // Agregar timeout también aquí
+      await user.updatePassword(newPassword).timeout(
+        Duration(seconds: 15),
+        onTimeout: () {
+          Get.log('[7/10] TIMEOUT: La actualización tardó más de 15 segundos');
+          throw TimeoutException('La operación tardó demasiado tiempo');
+        },
+      );
+      
+      Get.log('[7/10] Contraseña actualizada en Firebase');
+      Get.log('[8/10] Actualizando SharedPreferences');
+      
+      // Actualizar SharedPreferences si existe sesión guardada
       try {
-        await user.reauthenticateWithCredential(credential);
+        final prefs = await SharedPreferences.getInstance();
+        final savedEmail = prefs.getString('user_email');
+        if (savedEmail != null) {
+          await prefs.setString('user_password', newPassword);
+          Get.log('[8/10] SharedPreferences actualizado');
+        } else {
+          Get.log('[8/10] No hay sesión guardada en SharedPreferences');
+        }
       } catch (e) {
-        _showErrorSnackbar("Error", "La contraseña actual es incorrecta");
-        return false;
+        Get.log('[8/10] Error actualizando SharedPreferences (no crítico): $e');
       }
-
-      // Cambiar contraseña
-      await user.updatePassword(newPassword);
-
-      // Actualizar sesión persistente si existe
-      final prefs = await SharedPreferences.getInstance();
-      final savedEmail = prefs.getString('user_email');
-      if (savedEmail != null) {
-        await prefs.setString('user_password', newPassword);
-      }
-
-      _showSuccessSnackbar("¡Éxito!", "Contraseña actualizada correctamente");
+      
+      Get.log('[9/10] Proceso completado exitosamente');
+      _showSuccessSnackbar("Éxito", "Contraseña actualizada correctamente");
+      Get.log('[10/10] FIN - Retornando true');
+      
       return true;
 
-    } catch (e) {
-      Get.log('Error cambiando contraseña: $e');
-      _showErrorSnackbar("Error", "No se pudo cambiar la contraseña: ${e.toString()}");
+    } on TimeoutException catch (e) {
+      Get.log('[ERROR] TimeoutException: $e');
+      _showErrorSnackbar(
+        "Error de Timeout", 
+        "La operación tardó demasiado. Verifica tu conexión a internet."
+      );
+      Get.log('[10/10] FIN - Retornando false (Timeout)');
       return false;
-    } finally {
-      isLoading.value = false;
+      
+    } on FirebaseAuthException catch (e) {
+      Get.log('[ERROR] FirebaseAuthException capturada');
+      Get.log('Código: ${e.code}');
+      Get.log('Mensaje: ${e.message}');
+      
+      String errorMessage;
+      switch (e.code) {
+        case 'wrong-password':
+        case 'invalid-credential':
+          errorMessage = "La contraseña actual es incorrecta";
+          break;
+        case 'requires-recent-login':
+          errorMessage = "Por seguridad, debes iniciar sesión nuevamente";
+          break;
+        case 'weak-password':
+          errorMessage = "La nueva contraseña es demasiado débil";
+          break;
+        case 'too-many-requests':
+          errorMessage = "Demasiados intentos. Intenta más tarde";
+          break;
+        case 'network-request-failed':
+          errorMessage = "Error de red. Verifica tu conexión a internet";
+          break;
+        default:
+          errorMessage = "Error: ${e.message ?? 'Desconocido'}";
+      }
+      
+      _showErrorSnackbar("Error", errorMessage);
+      Get.log('[10/10] FIN - Retornando false (FirebaseAuth)');
+      return false;
+      
+    } catch (e, stackTrace) {
+      Get.log('[ERROR] Excepción inesperada: $e');
+      Get.log('StackTrace: $stackTrace');
+      _showErrorSnackbar("Error", "No se pudo cambiar la contraseña");
+      Get.log('[10/10] FIN - Retornando false (General)');
+      return false;
     }
   }
 
@@ -573,9 +644,7 @@ class AuthController extends GetxController {
     }
   }
 
-  // ========== HELPERS PARA MANEJO DE ERRORES ==========
-
-  /// Extraer mensaje de error limpio
+  // Extraer mensaje de error limpio
   String _extractErrorMessage(dynamic error) {
     if (error is Exception) {
       return error.toString().replaceFirst('Exception: ', '');
@@ -583,7 +652,7 @@ class AuthController extends GetxController {
     return error.toString();
   }
 
-  /// Mostrar snackbar de error
+  // Mostrar snackbar de error
   void _showErrorSnackbar(String title, String message) {
     Get.snackbar(
       title, 
@@ -597,7 +666,7 @@ class AuthController extends GetxController {
     );
   }
 
-  /// Mostrar snackbar de éxito
+  // Mostrar snackbar de éxito
   void _showSuccessSnackbar(String title, String message) {
     Get.snackbar(
       title, 

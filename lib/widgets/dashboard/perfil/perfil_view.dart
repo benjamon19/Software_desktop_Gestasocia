@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../controllers/auth_controller.dart';
 import '../../../utils/app_theme.dart';
-import 'sections/perfil_info_section.dart';
+import 'sections/info_section.dart';
 import 'sections/perfil_edit_section.dart';
 
 class PerfilView extends StatefulWidget {
@@ -379,7 +379,7 @@ class _PerfilViewState extends State<PerfilView> {
       case 0:
         return const PerfilInfoSection();
       case 1:
-        return const PerfilEditSection();
+        return const PerfilEditSectionSimple();
       default:
         return const PerfilInfoSection();
     }
