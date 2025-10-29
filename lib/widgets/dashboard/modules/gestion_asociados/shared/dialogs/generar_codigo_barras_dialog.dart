@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:barcode_widget/barcode_widget.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:get/get.dart';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/asociados_controller.dart';
 
@@ -16,33 +14,34 @@ class GenerarCodigoBarrasDialog {
     required String asociadoId,
     required String nombreCompleto,
     required String rut,
+    String? sap,
     String? codigoExistente,
   }) {
-    // Si ya tiene código Y NO está vacío, mostrar directamente
     if (codigoExistente != null && codigoExistente.isNotEmpty) {
       _showBarcodeViewer(
         context,
         nombreCompleto: nombreCompleto,
         rut: rut,
+        sap: sap,
         codigoBarras: codigoExistente,
       );
     } else {
-      // Si no tiene código, preguntar si quiere generar
       _showConfirmationDialog(
         context,
         asociadoId: asociadoId,
         nombreCompleto: nombreCompleto,
         rut: rut,
+        sap: sap,
       );
     }
   }
 
-  // Dialog de confirmación para generar código nuevo
   static void _showConfirmationDialog(
     BuildContext context, {
     required String asociadoId,
     required String nombreCompleto,
     required String rut,
+    String? sap,
   }) {
     showDialog(
       context: context,
@@ -127,34 +126,28 @@ class GenerarCodigoBarrasDialog {
           ),
           ElevatedButton.icon(
             onPressed: () async {
-              // NO cerrar el dialog todavía
               final navigator = Navigator.of(context);
-              
-              // Generar código
+
               final String codigoBarras = _generateUniqueBarcode(rut);
-              
-              // Guardar en Firebase
+
               final controller = Get.find<AsociadosController>();
-              final success = await controller.updateAsociadoBarcode(asociadoId, codigoBarras);
-              
+              final success =
+                  await controller.updateAsociadoBarcode(asociadoId, codigoBarras);
+
               if (success) {
-                // Cerrar dialog de confirmación
                 navigator.pop();
-                
-                // Pequeño delay para asegurar que se cerró el anterior
                 await Future.delayed(const Duration(milliseconds: 100));
-                
-                // MOSTRAR INMEDIATAMENTE el código generado
+
                 if (context.mounted) {
                   _showBarcodeViewer(
                     context,
                     nombreCompleto: nombreCompleto,
                     rut: rut,
+                    sap: sap,
                     codigoBarras: codigoBarras,
                   );
                 }
               } else {
-                // Mostrar error
                 Get.snackbar(
                   'Error',
                   'No se pudo generar el código de barras',
@@ -187,6 +180,7 @@ class GenerarCodigoBarrasDialog {
     BuildContext context, {
     required String nombreCompleto,
     required String rut,
+    String? sap,
     required String codigoBarras,
   }) {
     final ScreenshotController screenshotController = ScreenshotController();
@@ -200,92 +194,48 @@ class GenerarCodigoBarrasDialog {
 
           Future<void> downloadBarcode() async {
             if (isDownloading) return;
-            
+
             setState(() {
               isDownloading = true;
             });
 
             try {
-              // Esperar un poco para que el widget esté renderizado
               await Future.delayed(const Duration(milliseconds: 300));
-              
               final Uint8List? imageBytes = await screenshotController.capture(
                 pixelRatio: 3.0,
               );
-              
+
               if (imageBytes == null) {
                 throw Exception('Error al capturar la imagen');
               }
 
-              final String fileName = 'codigo_barras_${rut.replaceAll(RegExp(r'[^0-9]'), '')}.png';
+              final String fileName =
+                  'codigo_barras_${rut.replaceAll(RegExp(r'[^0-9]'), '')}.png';
 
-              // Detectar plataforma correctamente
-              if (!kIsWeb) {
-                if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-                  // ESCRITORIO: Guardar en Documentos
-                  final directory = await getApplicationDocumentsDirectory();
-                  final String path = '${directory.path}/$fileName';
-                  final File file = File(path);
-                  await file.writeAsBytes(imageBytes);
+              String? filePath = await FilePicker.platform.saveFile(
+                dialogTitle: 'Guardar Código de Barras...',
+                fileName: fileName,
+                allowedExtensions: ['png'],
+                type: FileType.custom,
+              );
 
-                  if (builderContext.mounted) {
-                    Get.snackbar(
-                      'Éxito',
-                      'Imagen guardada correctamente',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: const Color(0xFF059669).withValues(alpha: 0.8),
-                      colorText: Colors.white,
-                      margin: const EdgeInsets.all(16),
-                      borderRadius: 8,
-                      duration: const Duration(seconds: 4),
-                      mainButton: TextButton(
-                        onPressed: () {
-                          try {
-                            if (Platform.isWindows) {
-                              Process.run('explorer', ['/select,', path]);
-                            } else if (Platform.isMacOS) {
-                              Process.run('open', ['-R', path]);
-                            } else if (Platform.isLinux) {
-                              Process.run('xdg-open', [directory.path]);
-                            }
-                          } catch (_) {
-                            // Error al abrir carpeta, no hacer nada
-                          }
-                        },
-                        child: const Text(
-                          'Abrir carpeta',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    );
-                  }
-                } else if (Platform.isAndroid || Platform.isIOS) {
-                  // MÓVIL: Usar share
-                  final tempDir = await getTemporaryDirectory();
-                  final String tempPath = '${tempDir.path}/$fileName';
-                  final File tempFile = File(tempPath);
-                  await tempFile.writeAsBytes(imageBytes);
+              if (filePath != null) {
+                final File file = File(filePath);
+                await file.writeAsBytes(imageBytes);
 
-                  await Share.shareXFiles(
-                    [XFile(tempPath)],
-                    text: 'Código de barras de $nombreCompleto',
+                if (builderContext.mounted) {
+                  Get.snackbar(
+                    'Éxito',
+                    'Imagen guardada en: $filePath',
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor:
+                        const Color(0xFF059669).withValues(alpha: 0.8),
+                    colorText: Colors.white,
+                    margin: const EdgeInsets.all(16),
+                    borderRadius: 8,
+                    duration: const Duration(seconds: 4),
                   );
-
-                  if (builderContext.mounted) {
-                    Get.snackbar(
-                      'Compartir',
-                      'Selecciona "Guardar en archivos" o "Guardar en galería"',
-                      snackPosition: SnackPosition.BOTTOM,
-                      backgroundColor: const Color(0xFF059669).withValues(alpha: 0.8),
-                      colorText: Colors.white,
-                      margin: const EdgeInsets.all(16),
-                      borderRadius: 8,
-                      duration: const Duration(seconds: 3),
-                    );
-                  }
                 }
-              } else {
-                throw Exception('La descarga en navegador no está implementada');
               }
             } catch (e) {
               if (builderContext.mounted) {
@@ -343,7 +293,6 @@ class GenerarCodigoBarrasDialog {
                       width: 360,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.1),
@@ -367,10 +316,6 @@ class GenerarCodigoBarrasDialog {
                                   AppTheme.primaryColor.withValues(alpha: 0.8),
                                 ],
                               ),
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
-                              ),
                             ),
                             child: Column(
                               children: [
@@ -380,10 +325,11 @@ class GenerarCodigoBarrasDialog {
                                     color: Colors.white.withValues(alpha: 0.2),
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
-                                    Icons.business,
+                                  child: Image.asset(
+                                    'assets/images/gestasocia_icon.png',
+                                    width: 40,
+                                    height: 40,
                                     color: Colors.white,
-                                    size: 40,
                                   ),
                                 ),
                                 const SizedBox(height: 12),
@@ -419,7 +365,8 @@ class GenerarCodigoBarrasDialog {
                                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                                      color:
+                                          AppTheme.primaryColor.withValues(alpha: 0.3),
                                       width: 3,
                                     ),
                                   ),
@@ -440,23 +387,53 @@ class GenerarCodigoBarrasDialog {
                                   textAlign: TextAlign.center,
                                 ),
                                 const SizedBox(height: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 6,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[100],
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    'RUT: $rut',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black54,
-                                      fontWeight: FontWeight.w500,
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        'RUT: $rut',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black54,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    if (sap != null && sap.isNotEmpty) ...[
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[50],
+                                          borderRadius: BorderRadius.circular(20),
+                                          border: Border.all(
+                                            color: Colors.blue[200]!,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'SAP: $sap',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.blue[700],
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                                 const SizedBox(height: 32),
                                 Container(
@@ -490,14 +467,6 @@ class GenerarCodigoBarrasDialog {
                                         ),
                                       ),
                                     ],
-                                  ),
-                                ),
-                                const SizedBox(height: 24),
-                                Text(
-                                  'Generado: ${_formatDate(DateTime.now())}',
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.black45,
                                   ),
                                 ),
                               ],
@@ -536,7 +505,8 @@ class GenerarCodigoBarrasDialog {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF059669),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -552,14 +522,8 @@ class GenerarCodigoBarrasDialog {
   static String _generateUniqueBarcode(String rut) {
     final timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(5);
     final rutNumeros = rut.replaceAll(RegExp(r'[^0-9]'), '');
-    final rutCorto = rutNumeros.length >= 4 ? rutNumeros.substring(0, 4) : rutNumeros;
+    final rutCorto =
+        rutNumeros.length >= 4 ? rutNumeros.substring(0, 4) : rutNumeros;
     return 'GESTA$rutCorto$timestamp';
-  }
-
-  static String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}/'
-           '${date.month.toString().padLeft(2, '0')}/'
-           '${date.year} ${date.hour.toString().padLeft(2, '0')}:'
-           '${date.minute.toString().padLeft(2, '0')}';
   }
 }

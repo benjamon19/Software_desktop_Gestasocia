@@ -49,55 +49,21 @@ class SearchSection extends StatelessWidget {
         Expanded(
           flex: 5,
           child: RutSearchField(
-            key: controller.searchFieldKey, // NUEVO: Key para acceso externo
+            key: controller.searchFieldKey,
             onSearch: controller.searchAsociado,
-            onChanged: (query) => controller.onSearchQueryChanged(query), // NUEVO: Búsqueda en tiempo real
+            onChanged: (query) => controller.onSearchQueryChanged(query),
             isLoading: controller.isLoading.value,
           ),
         ),
         
         const SizedBox(width: 12),
         
-        // Menú desplegable "Advanced" (sin cambios)
-        PopupMenuButton<String>(
-          onSelected: (String value) {
-            if (value == 'biometric') {
-              controller.biometricSearch();
-            } else if (value == 'qr') {
-              controller.qrCodeSearch();
-            }
+        // Botón de código de barras
+        InkWell(
+          onTap: controller.isLoading.value ? null : () {
+            controller.qrCodeSearch();
           },
-          enabled: !controller.isLoading.value,
-          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-            PopupMenuItem<String>(
-              value: 'biometric',
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.fingerprint,
-                    size: 18,
-                    color: AppTheme.getTextPrimary(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('Búsqueda biométrica'),
-                ],
-              ),
-            ),
-            PopupMenuItem<String>(
-              value: 'qr',
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.qr_code_scanner,
-                    size: 18,
-                    color: AppTheme.getTextPrimary(context),
-                  ),
-                  const SizedBox(width: 8),
-                  Text('Escanear código QR'),
-                ],
-              ),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(8),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -112,24 +78,18 @@ class SearchSection extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.auto_awesome, // Icono de IA
+                  Icons.qr_code_scanner,
                   size: 16,
                   color: AppTheme.primaryColor,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  'Advanced',
+                  'Código de barras',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: AppTheme.primaryColor,
                   ),
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 16,
-                  color: AppTheme.primaryColor,
                 ),
               ],
             ),

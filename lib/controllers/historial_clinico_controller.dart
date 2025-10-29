@@ -69,9 +69,8 @@ class HistorialClinicoController extends GetxController {
       historialList.value = loadedHistoriales;
       _applyFilters();
       
-      Get.log('✅ ${loadedHistoriales.length} historiales cargados desde Firebase');
     } catch (e) {
-      Get.log('❌ Error cargando historiales: $e');
+      Get.log('Error cargando historiales: $e');
       Get.snackbar(
         'Error',
         'No se pudieron cargar los historiales clínicos',

@@ -4,13 +4,16 @@ import 'config/app_initializer.dart';
 import 'controllers/theme_controller.dart';
 import 'utils/app_routes.dart';
 import 'utils/app_theme.dart';
+import 'controllers/usuario_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   await AppInitializer.initialize();
+  Get.put(UsuarioController());
   
   runApp(const MyApp());
+  
 }
 
 class MyApp extends StatelessWidget {

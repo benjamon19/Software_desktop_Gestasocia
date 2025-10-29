@@ -37,6 +37,20 @@ class Asociado {
 
   // Getters útiles
   String get nombreCompleto => '$nombre $apellido';
+
+  // ========== CÓDIGO AÑADIDO ==========
+  int get edad {
+    final hoy = DateTime.now();
+    int edadCalculada = hoy.year - fechaNacimiento.year;
+    
+    // Ajustar si aún no ha cumplido años este año
+    if (hoy.month < fechaNacimiento.month ||
+        (hoy.month == fechaNacimiento.month && hoy.day < fechaNacimiento.day)) {
+      edadCalculada--;
+    }
+    return edadCalculada;
+  }
+  // =====================================
   
   String get rutFormateado {
     if (rut.length < 2) return rut;
@@ -57,14 +71,14 @@ class Asociado {
 
   String get fechaNacimientoFormateada {
     return '${fechaNacimiento.day.toString().padLeft(2, '0')}/'
-           '${fechaNacimiento.month.toString().padLeft(2, '0')}/'
-           '${fechaNacimiento.year}';
+          '${fechaNacimiento.month.toString().padLeft(2, '0')}/'
+          '${fechaNacimiento.year}';
   }
 
   String get fechaIngresoFormateada {
     return '${fechaIngreso.day.toString().padLeft(2, '0')}/'
-           '${fechaIngreso.month.toString().padLeft(2, '0')}/'
-           '${fechaIngreso.year}';
+          '${fechaIngreso.month.toString().padLeft(2, '0')}/'
+          '${fechaIngreso.year}';
   }
 
   String get estado => isActive ? 'Activo' : 'Inactivo';

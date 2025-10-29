@@ -42,6 +42,8 @@ dependencies:
   screenshot: ^3.0.0
   path_provider: ^2.1.1
   share_plus: ^7.2.1
+  pdf: ^3.10.8
+  excel: ^4.0.3
   
   # Imágenes y archivos
   image_picker: ^1.1.2   # Para cámara y galería

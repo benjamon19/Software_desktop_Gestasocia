@@ -36,6 +36,7 @@ class ToolsActions extends StatelessWidget {
                       context,
                       asociadoId: asociado.id!,
                       nombreCompleto: asociado.nombreCompleto,
+                      sap: asociado.sap,
                       rut: asociado.rut,
                       codigoExistente: asociado.codigoBarras,
                     )

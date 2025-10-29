@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
+import '../../controllers/usuario_controller.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/app_routes.dart';
 import '../../widgets/interactive_link.dart';
@@ -34,12 +35,12 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: KeyboardListener( // ✅ Envuelve todo en KeyboardListener para detectar Enter
+      body: KeyboardListener(
         focusNode: FocusNode(),
         onKeyEvent: (event) {
           if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.enter) {
             if (!authController.isLoading.value) {
-              _handleLogin(); // ✅ Ejecuta login cuando presionan Enter
+              _handleLogin();
             }
           }
         },
@@ -186,8 +187,16 @@ class _LoginPageState extends State<LoginPage> {
     // PASAR EL VALOR DE rememberMe al AuthController
     bool success = await authController.login(emailOrRut, password, rememberMe: rememberMe);
 
-    // Limpiar campos si fue exitoso
+    // Si el login fue exitoso, establecer el usuario en UsuarioController
     if (success) {
+      try {
+        final usuarioController = Get.find<UsuarioController>();
+        await usuarioController.loadCurrentUser(emailOrRut);
+      } catch (e) {
+        // Error silencioso
+      }
+      
+      // Limpiar campos
       emailController.clear();
       passwordController.clear();
       setState(() {

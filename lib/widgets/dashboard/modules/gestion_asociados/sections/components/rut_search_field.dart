@@ -57,8 +57,8 @@ class _RutSearchFieldState extends State<RutSearchField> {
         focusNode: _focusNode,
         enabled: !widget.isLoading,
         decoration: InputDecoration(
-          labelText: 'RUT del Asociado',
-          hintText: '12345678-9 o escribir para filtrar',
+          labelText: 'SAP o RUT del Asociado',
+          hintText: '12345 (SAP) o 12345678-9 (RUT)',
           prefixIcon: Icon(
             Icons.badge,
             color: AppTheme.primaryColor,
@@ -129,7 +129,7 @@ class _RutSearchFieldState extends State<RutSearchField> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9kK\-]')),
           LengthLimitingTextInputFormatter(12),
-          _RutFormatter(),
+          _DelayedRutFormatter(), // ← NUEVO: Formatter que espera hasta el final
         ],
         onFieldSubmitted: (_) => _handleSearch(),
         onChanged: (value) {
@@ -139,38 +139,52 @@ class _RutSearchFieldState extends State<RutSearchField> {
             widget.onChanged!(value.trim());
           }
         },
-        validator: _validateRut,
+        validator: _validateInput,
       ),
     );
   }
 
   void _handleSearch() {
-    final rut = _rutController.text.trim();
-    if (rut.isNotEmpty && _validateRut(rut) == null) {
+    final input = _rutController.text.trim();
+    if (input.isNotEmpty && _validateInput(input) == null) {
       _focusNode.unfocus();
-      widget.onSearch(rut);
+      widget.onSearch(input);
     }
   }
 
-  String? _validateRut(String? value) {
+  String? _validateInput(String? value) {
     if (value == null || value.isEmpty) {
       return null;
     }
     
+    // Si es SAP (5 dígitos), es válido
+    if (_isSAP(value)) {
+      return null;
+    }
+    
+    // Si no es SAP, validar como RUT
     if (!_isValidRutFormat(value)) {
-      return 'Formato de RUT inválido';
+      return 'Formato inválido. Use SAP (5 dígitos) o RUT (12345678-9)';
     }
     
     return null;
   }
 
+  bool _isSAP(String input) {
+    // SAP es exactamente 5 dígitos
+    return RegExp(r'^[0-9]{5}$').hasMatch(input);
+  }
+
   bool _isValidRutFormat(String rut) {
-    final rutRegex = RegExp(r'^\d{7,8}-[0-9kK]$');
-    return rutRegex.hasMatch(rut);
+    // Acepta RUT con guión o sin guión (para cuando está escribiendo)
+    final rutWithDash = RegExp(r'^\d{7,8}-[0-9kK]$');
+    final rutWithoutDash = RegExp(r'^\d{8,9}$');
+    return rutWithDash.hasMatch(rut) || rutWithoutDash.hasMatch(rut);
   }
 }
 
-class _RutFormatter extends TextInputFormatter {
+// ← NUEVO: Formatter que SOLO formatea cuando ya escribiste 8-9 dígitos
+class _DelayedRutFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
@@ -178,20 +192,24 @@ class _RutFormatter extends TextInputFormatter {
   ) {
     String text = newValue.text.replaceAll('-', '');
     
-    if (text.length <= 1) {
+    // Si tiene menos de 8 caracteres, NO formatear (dejar escribir libremente)
+    if (text.length < 8) {
       return newValue;
     }
     
-    String formatted = '';
-    if (text.length > 1) {
+    // Si tiene 8 o 9 caracteres (RUT completo), formatear con guión
+    if (text.length >= 8 && text.length <= 9) {
       String body = text.substring(0, text.length - 1);
       String dv = text.substring(text.length - 1);
-      formatted = '$body-$dv';
+      String formatted = '$body-$dv';
+      
+      return TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
     }
     
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
+    // Si pasa de 9, mantener el formato
+    return newValue;
   }
 }
