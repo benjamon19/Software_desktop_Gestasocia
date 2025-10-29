@@ -70,7 +70,7 @@ class ExportService {
             pw.SizedBox(height: 20),
             _buildInfoSection('Datos Personales', [
               _buildInfoRow('Nombre Completo', asociado.nombreCompleto),
-              _buildInfoRow('RUT', asociado.rutFormateado),
+              _buildInfoRow('RUT', _formatearRut(asociado.rut)),
               _buildInfoRow(
                 'Fecha de Nacimiento',
                 '${asociado.fechaNacimiento.day}/${asociado.fechaNacimiento.month}/${asociado.fechaNacimiento.year}',
@@ -122,7 +122,7 @@ class ExportService {
                     (carga) => pw.TableRow(
                       children: [
                         _buildTableCell(carga.nombreCompleto),
-                        _buildTableCell(carga.rutFormateado),
+                        _buildTableCell(_formatearRut(carga.rut)),
                         _buildTableCell(carga.parentesco),
                         _buildTableCell('${carga.edad} años'),
                       ],
@@ -172,7 +172,7 @@ class ExportService {
 
       int row = 1;
       _addExcelRow(sheet, row++, 'Nombre Completo', asociado.nombreCompleto);
-      _addExcelRow(sheet, row++, 'RUT', asociado.rutFormateado);
+      _addExcelRow(sheet, row++, 'RUT', _formatearRut(asociado.rut));
       _addExcelRow(
         sheet,
         row++,
@@ -222,7 +222,7 @@ class ExportService {
               .value = TextCellValue(carga.apellido);
           sheet
               .cell(CellIndex.indexByColumnRow(columnIndex: 2, rowIndex: row))
-              .value = TextCellValue(carga.rutFormateado);
+              .value = TextCellValue(_formatearRut(carga.rut));
           sheet
               .cell(CellIndex.indexByColumnRow(columnIndex: 3, rowIndex: row))
               .value = TextCellValue(carga.parentesco);
@@ -245,6 +245,28 @@ class ExportService {
   }
 
   // ========== HELPERS ==========
+
+  /// Formatea un RUT chileno limpiando primero cualquier formato previo
+  static String _formatearRut(String rut) {
+    // Limpiar el RUT de puntos y guiones
+    String rutLimpio = rut.replaceAll(RegExp(r'[.-]'), '');
+    
+    if (rutLimpio.length < 2) return rut;
+    
+    String cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
+    String dv = rutLimpio.substring(rutLimpio.length - 1);
+    
+    // Formatear con puntos de miles
+    String cuerpoFormateado = '';
+    for (int i = cuerpo.length - 1, count = 0; i >= 0; i--, count++) {
+      if (count > 0 && count % 3 == 0) {
+        cuerpoFormateado = '.$cuerpoFormateado';
+      }
+      cuerpoFormateado = cuerpo[i] + cuerpoFormateado;
+    }
+    
+    return '$cuerpoFormateado-$dv';
+  }
 
   static pw.Widget _buildInfoSection(String title, List<pw.Widget> children) {
     return pw.Column(

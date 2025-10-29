@@ -195,14 +195,6 @@ class _LoginPageState extends State<LoginPage> {
       } catch (e) {
         // Error silencioso
       }
-      
-      // Limpiar campos
-      emailController.clear();
-      passwordController.clear();
-      setState(() {
-        isPasswordVisible = false;
-        rememberMe = false;
-      });
     }
   }
 }

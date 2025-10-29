@@ -13,7 +13,6 @@ void main() async {
   Get.put(UsuarioController());
   
   runApp(const MyApp());
-  
 }
 
 class MyApp extends StatelessWidget {
@@ -29,7 +28,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeController.themeMode,
-      initialRoute: AppRoutes.splash,
+      initialRoute: AppRoutes.login, 
       getPages: AppRoutes.routes,
     ));
   }
