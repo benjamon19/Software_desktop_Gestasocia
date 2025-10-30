@@ -5,6 +5,7 @@ import 'controllers/theme_controller.dart';
 import 'utils/app_routes.dart';
 import 'utils/app_theme.dart';
 import 'controllers/usuario_controller.dart';
+import 'widgets/desktop_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +29,11 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeController.themeMode,
-      initialRoute: AppRoutes.login, 
+      initialRoute: AppRoutes.login,
       getPages: AppRoutes.routes,
+      builder: (context, child) {
+        return DesktopWrapper(child: child ?? const SizedBox.shrink());
+      },
     ));
   }
 }

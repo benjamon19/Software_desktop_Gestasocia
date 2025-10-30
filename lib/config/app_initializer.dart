@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
+import 'package:window_manager/window_manager.dart';
 import 'firebase_config.dart';
 import 'window_config.dart';
 import '../controllers/auth_controller.dart';
@@ -22,6 +24,9 @@ class AppInitializer {
     if (!_isDesktop) return;
 
     try {
+      // Inicializar window_manager
+      await windowManager.ensureInitialized();
+      
       if (kDebugMode) {
         print('Aplicación desktop iniciada con configuración optimizada');
       }
@@ -32,12 +37,27 @@ class AppInitializer {
     }
   }
 
-  /// Configurar ventana de escritorio
+  /// Configurar ventana de escritorio con barra OCULTA (para usar personalizada)
   static Future<void> _configureWindow() async {
+    if (!_isDesktop) return;
+    
     try {
       await WindowConfig.initialize();
+      
+      // Configurar con barra oculta para usar la personalizada
+      WindowOptions windowOptions = const WindowOptions(
+        titleBarStyle: TitleBarStyle.hidden, // ⭐ Ocultar la barra nativa
+        skipTaskbar: false,
+        backgroundColor: Colors.transparent,
+      );
+      
+      await windowManager.waitUntilReadyToShow(windowOptions, () async {
+        await windowManager.show();
+        await windowManager.focus();
+      });
+      
       if (kDebugMode) {
-        print('Configuración de ventana completada');
+        print('Configuración de ventana completada con barra personalizada');
       }
     } catch (e) {
       if (kDebugMode) {
@@ -49,20 +69,20 @@ class AppInitializer {
   /// Inicializar Firebase con manejo robusto de errores
   static Future<void> _initializeFirebase() async {
     try {
-      // 🔹 App principal (Auth, Firestore, etc.)
+      //App principal (Auth, Firestore, etc.)
       await Firebase.initializeApp(
         options: FirebaseConfig.webOptions,
         name: '[DEFAULT]',
       );
 
-      // 🔸 App secundaria (solo Storage)
+      //App secundaria (solo Storage)
       await Firebase.initializeApp(
         options: FirebaseConfig.storageOptions,
         name: 'storageApp',
       );
 
       if (kDebugMode) {
-        print('✅ Firebase y StorageApp inicializados correctamente');
+        print('Firebase y StorageApp inicializados correctamente');
       }
     } catch (e) {
       await _handleFirebaseInitializationError(e);
