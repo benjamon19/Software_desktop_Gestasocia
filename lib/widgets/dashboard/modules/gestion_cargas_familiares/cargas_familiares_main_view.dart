@@ -115,9 +115,6 @@ class CargasFamiliaresMainView extends StatelessWidget {
             children: [
               Expanded(
                 flex: 2,
-
-              const SizedBox(width: 20),
-
                 child: Column(
                   children: [
                     SearchSection(controller: controller),
@@ -133,6 +130,11 @@ class CargasFamiliaresMainView extends StatelessWidget {
                   ],
                 ),
               ),
+
+              const SizedBox(width: 20),
+
+              Expanded(
+                flex: 1,
                 child: PendingActionsSection(),
               ),
             ],
