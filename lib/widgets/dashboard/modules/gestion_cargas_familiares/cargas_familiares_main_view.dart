@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../utils/app_theme.dart';
 import '../../../../controllers/cargas_familiares_controller.dart' as cargas_controller;
 import 'sections/metrics_section/metrics_section.dart';
 import 'sections/pending_actions_section/pending_actions_section.dart';
@@ -18,61 +17,55 @@ class CargasFamiliaresMainView extends StatelessWidget {
     final cargas_controller.CargasFamiliaresController controller =
         Get.put(cargas_controller.CargasFamiliaresController());
 
-    return Container(
-      padding: const EdgeInsets.all(30),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context, controller),
-          const SizedBox(height: 30),
-          Expanded(
-            child: Obx(() => _buildMainContent(context, controller)),
-          ),
-        ],
+    return Scaffold(
+      body: Container(
+        padding: const EdgeInsets.all(20),
+        child: Obx(() {
+          // Si está cargando, mostrar SOLO el loading centrado
+          if (controller.isLoading.value) {
+            return const LoadingIndicator(message: 'Cargando cargas familiares...');
+          }
+
+          // Si no está cargando, mostrar el contenido normal
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!controller.hasSelectedCarga)
+                Column(
+                  children: [
+                    const MetricsSection(),
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              
+              Expanded(
+                child: _buildMainContent(context, controller),
+              ),
+            ],
+          );
+        }),
       ),
+      floatingActionButton: Obx(() => _buildFloatingActionButton(controller)),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
-  Widget _buildHeader(BuildContext context, cargas_controller.CargasFamiliaresController controller) {
-    return Obx(() => Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text(
-                  controller.hasSelectedCarga
-                      ? 'Información completa y gestión de la carga familiar'
-                      : 'Gestión y control de cargas familiares',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.getTextSecondary(context),
-                  ),
-                ),
-              ],
-            ),
-            if (controller.hasSelectedCarga)
-              OutlinedButton.icon(
-                onPressed: controller.backToList,
-                icon: const Icon(Icons.arrow_back, size: 18),
-                label: const Text('Volver'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.getTextSecondary(context),
-                  side: BorderSide(color: AppTheme.getBorderLight(context)),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              ),
-          ],
-        ));
+  Widget _buildFloatingActionButton(cargas_controller.CargasFamiliaresController controller) {
+    if (!controller.hasSelectedCarga) {
+      return const SizedBox.shrink();
+    } else {
+      return FloatingActionButton(
+        mini: true,
+        onPressed: () => _goBackToList(controller),
+        backgroundColor: Colors.grey[600],
+        foregroundColor: Colors.white,
+        tooltip: 'Volver a la lista',
+        child: const Icon(Icons.arrow_back, size: 20),
+      );
+    }
   }
 
   Widget _buildMainContent(BuildContext context, cargas_controller.CargasFamiliaresController controller) {
-    if (controller.isLoading.value) {
-      return const LoadingIndicator(message: 'Cargando cargas familiares...');
-    }
-
     if (controller.hasSelectedCarga) {
       return _buildDetailView(controller);
     }
@@ -81,21 +74,25 @@ class CargasFamiliaresMainView extends StatelessWidget {
   }
 
   Widget _buildDetailView(cargas_controller.CargasFamiliaresController controller) {
+    final carga = controller.selectedCarga.value!;
+    final cargaMap = _cargaToMap(carga);
+    
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           flex: 2,
           child: CargaDetailSection(
-            carga: controller.selectedCarga.value!,
+            carga: cargaMap,
             onEdit: controller.editCarga,
+            onBack: () => _goBackToList(controller),
           ),
         ),
         const SizedBox(width: 20),
         Expanded(
           flex: 1,
           child: ActionsSection(
-            carga: controller.selectedCarga.value!,
+            carga: cargaMap,
             controller: controller,
           ),
         ),
@@ -104,43 +101,50 @@ class CargasFamiliaresMainView extends StatelessWidget {
   }
 
   Widget _buildDashboardView(BuildContext context, cargas_controller.CargasFamiliaresController controller) {
-    return Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const MetricsSection(),
-        const SizedBox(height: 30),
-
         Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          flex: 2,
+          child: Column(
             children: [
-              Expanded(
-                flex: 2,
-                child: Column(
-                  children: [
-                    SearchSection(controller: controller),
-                    const SizedBox(height: 20),
+              SearchSection(controller: controller),
+              const SizedBox(height: 20),
 
-                    Expanded(
-                      child: CargasListSection(
-                        cargas: controller.filteredCargas.toList(),
-                        onCargaSelected: (carga) => controller.selectCarga(carga),
-                        controller: controller,
-                      ),
-                    ),
-                  ],
+              Expanded(
+                child: CargasListSection(
+                  cargas: controller.filteredCargas.toList(),
+                  onCargaSelected: (carga) => controller.selectCarga(carga),
+                  controller: controller,
                 ),
-              ),
-
-              const SizedBox(width: 20),
-
-              Expanded(
-                flex: 1,
-                child: PendingActionsSection(),
               ),
             ],
           ),
         ),
+
+        const SizedBox(width: 20),
+
+        Expanded(
+          flex: 1,
+          child: PendingActionsSection(),
+        ),
       ],
     );
+  }
+
+  void _goBackToList(cargas_controller.CargasFamiliaresController controller) {
+    controller.backToList();
+  }
+
+  Map<String, dynamic> _cargaToMap(dynamic carga) {
+    final map = carga.toMap();
+    map['id'] = carga.id;
+    map['edad'] = carga.edad;
+    map['estado'] = carga.estado;
+    map['rutFormateado'] = carga.rutFormateado;
+    map['nombreCompleto'] = carga.nombreCompleto;
+    map['fechaNacimientoFormateada'] = carga.fechaNacimientoFormateada;
+    map['fechaCreacionFormateada'] = carga.fechaCreacionFormateada;
+    return map;
   }
 }

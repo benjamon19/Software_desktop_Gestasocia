@@ -4,7 +4,10 @@ import '../../../../../../utils/app_theme.dart';
 class LoadingIndicator extends StatelessWidget {
   final String? message;
 
-  const LoadingIndicator({super.key, this.message});
+  const LoadingIndicator({
+    super.key,
+    this.message,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,12 +15,15 @@ class LoadingIndicator extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 60, height: 60,
-            child: CircularProgressIndicator(strokeWidth: 4, valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor)),
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            message ?? 'Buscando cargas...',
+            style: TextStyle(
+              color: AppTheme.getTextSecondary(context),
+              fontSize: 16,
+            ),
           ),
-          const SizedBox(height: 24),
-          Text(message ?? 'Cargando...', style: TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 16)),
         ],
       ),
     );

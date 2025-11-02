@@ -1,21 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../../../utils/app_theme.dart';
-import '../../../../../../models/carga_familiar.dart';
+import '../../../../../../controllers/cargas_familiares_controller.dart';
 import 'components/carga_header.dart';
 import 'components/personal_info_card.dart';
-import 'components/medical_info_card.dart';
-import 'components/family_info_card.dart';
 
-class CargaDetailSection extends StatelessWidget {
+class CargaDetailSection extends StatefulWidget {
   final Map<String, dynamic> carga;
   final VoidCallback onEdit;
+  final VoidCallback? onBack;
 
-  const CargaDetailSection({super.key, required this.carga, required this.onEdit});
+  const CargaDetailSection({
+    super.key,
+    required this.carga,
+    required this.onEdit,
+    this.onBack,
+  });
+
+  @override
+  State<CargaDetailSection> createState() => _CargaDetailSectionState();
+}
+
+class _CargaDetailSectionState extends State<CargaDetailSection> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Convertir el Map a CargaFamiliar
-    final cargaFamiliar = CargaFamiliar.fromMap(carga, carga['id'] ?? '');
+    final CargasFamiliaresController controller = Get.find<CargasFamiliaresController>();
     
     return Container(
       decoration: BoxDecoration(
@@ -32,23 +49,60 @@ class CargaDetailSection extends StatelessWidget {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CargaHeader(carga: carga, onEdit: onEdit),
+          Obx(() {
+            final currentCarga = controller.selectedCarga.value;
+            if (currentCarga == null) {
+              return const SizedBox();
+            }
+            return CargaHeader(
+              carga: _cargaToMap(currentCarga),
+              onEdit: widget.onEdit,
+            );
+          }),
+          
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  PersonalInfoCard(carga: cargaFamiliar),
-                  const SizedBox(height: 20),
-                  MedicalInfoCard(carga: carga),
-                  const SizedBox(height: 20),
-                  FamilyInfoCard(carga: carga),
-                ],
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                child: Obx(() {
+                  final currentCarga = controller.selectedCarga.value;
+                  if (currentCarga == null) {
+                    return const SizedBox();
+                  }
+                  
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      PersonalInfoCard(carga: _cargaToMap(currentCarga)),
+                    ],
+                  );
+                }),
               ),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Map<String, dynamic> _cargaToMap(dynamic carga) {
+    return {
+      'id': carga.id,
+      'nombre': carga.nombre,
+      'apellido': carga.apellido,
+      'nombreCompleto': carga.nombreCompleto,
+      'rut': carga.rut,
+      'fechaNacimiento': carga.fechaNacimientoFormateada,
+      'edad': carga.edad,
+      'parentesco': carga.parentesco,
+      'estado': carga.estado,
+      'isActive': carga.isActive,
+      'fechaCreacion': carga.fechaCreacionFormateada,
+      'asociadoId': carga.asociadoId,
+    };
   }
 }

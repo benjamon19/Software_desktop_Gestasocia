@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../../../utils/app_theme.dart';
 import '../../../../../../../controllers/asociados_controller.dart';
+import '../../../../../../../controllers/cargas_familiares_controller.dart';
+import '../../../../../../../controllers/dashboard_page_controller.dart';
 import '../../../../../../../models/asociado.dart';
 
 class FamilyChargesCard extends StatefulWidget {
@@ -27,7 +29,6 @@ class _FamilyChargesCardState extends State<FamilyChargesCard> {
 
   @override
   Widget build(BuildContext context) {
-    // Obtener el controller para acceder a las cargas familiares reales
     final AsociadosController controller = Get.find<AsociadosController>();
     
     return Padding(
@@ -35,16 +36,13 @@ class _FamilyChargesCardState extends State<FamilyChargesCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header reactivo que muestra el número real de cargas DEL ASOCIADO PASADO POR PARÁMETRO
           Obx(() {
-            // Usar el ID del asociado pasado por parámetro
             final asociadoId = widget.asociado.id;
             
             if (asociadoId == null) {
               return const SizedBox();
             }
             
-            // FILTRAR solo las cargas del asociado ACTUAL (el del widget, no el seleccionado)
             final cargasDelAsociado = controller.cargasFamiliares
                 .where((carga) => carga.asociadoId == asociadoId)
                 .toList();
@@ -68,28 +66,45 @@ class _FamilyChargesCardState extends State<FamilyChargesCard> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Cargas Familiares',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.getTextPrimary(context),
-          ),
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.family_restroom,
+                color: Color(0xFF10B981),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Cargas Familiares',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.getTextPrimary(context),
+              ),
+            ),
+          ],
         ),
         Row(
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                color: const Color(0xFF10B981).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
                 '$chargesCount',
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: AppTheme.primaryColor,
+                  color: Color(0xFF10B981),
                 ),
               ),
             ),
@@ -119,10 +134,11 @@ class _FamilyChargesCardState extends State<FamilyChargesCard> {
       ),
       child: Container(
         decoration: BoxDecoration(
+          color: AppTheme.getSurfaceColor(context),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: AppTheme.getBorderLight(context).withValues(alpha: 0.5),
           ),
-          borderRadius: BorderRadius.circular(8),
         ),
         child: Scrollbar(
           controller: _scrollController,
@@ -135,9 +151,8 @@ class _FamilyChargesCardState extends State<FamilyChargesCard> {
                 : const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.all(8),
             itemCount: cargas.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
+            separatorBuilder: (context, index) => const SizedBox(height: 6),
             itemBuilder: (context, index) {
-              // Ahora usa el modelo CargaFamiliar real
               final carga = cargas[index];
               return _buildFamilyChargeItem(context, carga);
             },
@@ -177,111 +192,125 @@ class _FamilyChargesCardState extends State<FamilyChargesCard> {
   }
 
   Widget _buildFamilyChargeItem(BuildContext context, dynamic carga) {
-    // Determinar si debe tener fondo especial basado en diferentes criterios
-    final bool hasSpecialBackground = _shouldHaveSpecialBackground(carga);
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        // Fondo condicional
-        color: hasSpecialBackground 
-            ? AppTheme.primaryColor.withValues(alpha: 0.05)  // Fondo azul suave
-            : AppTheme.getInputBackground(context),           // Fondo normal
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: hasSpecialBackground
-              ? AppTheme.primaryColor.withValues(alpha: 0.2)  // Borde azul
-              : AppTheme.getBorderLight(context),              // Borde normal
+    final hovered = false.obs;
+
+    return ObxValue<RxBool>(
+      (hover) => InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _goToCargaProfile(carga),
+        onHover: (value) => hover.value = value,
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: hover.value
+                ? AppTheme.primaryColor.withAlpha(10)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              _buildCargaAvatar(context, carga),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildCargaInfo(context, carga),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: AppTheme.getTextSecondary(context),
+              ),
+            ],
+          ),
         ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              _getFamilyIcon(carga.parentesco),
-              color: AppTheme.primaryColor,
-              size: 20,
-            ),
-          ),
-          
-          const SizedBox(width: 16),
-          
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  carga.nombreCompleto,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.getTextPrimary(context),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${carga.parentesco} • RUT: ${carga.rut}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.getTextSecondary(context),
-                  ),
-                ),
-                Text(
-                  'Edad: ${carga.edad} años • Nacimiento: ${carga.fechaNacimientoFormateada}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.getTextSecondary(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // Indicador de estado
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: carga.isActive ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              carga.estado,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: carga.isActive ? Colors.green : Colors.red,
-              ),
-            ),
-          ),
-        ],
-      ),
+      hovered,
     );
   }
 
-  // Método para determinar qué cargas deben tener fondo especial
-  bool _shouldHaveSpecialBackground(dynamic carga) {
-    // OPCIÓN 1: Alternar cada elemento (índice par/impar)
-    // return carga.hashCode % 2 == 0;
-    
-    // OPCIÓN 2: Destacar ciertos parentescos
-    final parentescosEspeciales = ['Cónyuge', 'Hijo/a', 'Padre', 'Madre'];
-    return parentescosEspeciales.contains(carga.parentesco);
-    
-    // OPCIÓN 3: Destacar por edad (menores de 18 años)
-    // return carga.edad < 18;
-    
-    // OPCIÓN 4: Destacar cargas recién creadas (menos de 30 días)
-    // final diasDesdeCreacion = DateTime.now().difference(carga.fechaCreacion).inDays;
-    // return diasDesdeCreacion <= 30;
-    
-    // OPCIÓN 5: Combinación de criterios
-    // return carga.edad < 18 || ['Cónyuge'].contains(carga.parentesco);
+  Widget _buildCargaAvatar(BuildContext context, dynamic carga) {
+    return Stack(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade200,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppTheme.getBorderLight(context),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            _getParentescoIcon(carga.parentesco),
+            size: 24,
+            color: Colors.grey.shade600,
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: carga.estaActivo
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFFEF4444),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                width: 1,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCargaInfo(BuildContext context, dynamic carga) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          carga.nombreCompleto,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.getTextPrimary(context),
+          ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            Icon(Icons.badge, size: 12, color: AppTheme.getTextSecondary(context)),
+            const SizedBox(width: 4),
+            Text(
+              carga.rutFormateado,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppTheme.getTextSecondary(context),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Icon(Icons.favorite_outline, size: 12, color: AppTheme.getTextSecondary(context)),
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                '${carga.parentesco} • ${carga.edad} años',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.getTextSecondary(context),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildScrollHint(BuildContext context) {
@@ -300,26 +329,52 @@ class _FamilyChargesCardState extends State<FamilyChargesCard> {
     );
   }
 
-  IconData _getFamilyIcon(String parentesco) {
+  void _goToCargaProfile(dynamic carga) {
+    try {
+      final CargasFamiliaresController cargasController = Get.find<CargasFamiliaresController>();
+      
+      final cargaMap = {
+        'id': carga.id,
+        'nombre': carga.nombre,
+        'apellido': carga.apellido,
+        'nombreCompleto': carga.nombreCompleto,
+        'rut': carga.rut,
+        'rutFormateado': carga.rutFormateado,
+        'parentesco': carga.parentesco,
+        'edad': carga.edad,
+        'fechaNacimiento': carga.fechaNacimientoFormateada,
+        'fechaCreacion': carga.fechaCreacionFormateada,
+        'estado': carga.estado,
+        'isActive': carga.isActive,
+        'asociadoId': carga.asociadoId,
+      };
+      
+      cargasController.selectCarga(cargaMap);
+      
+      // Cambiar al módulo de Cargas Familiares (índice 2)
+      Get.find<DashboardPageController>().changeModule(2);
+      
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'No se pudo abrir el perfil de la carga familiar',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
+  IconData _getParentescoIcon(String? parentesco) {
+    if (parentesco == null) return Icons.person;
+
     switch (parentesco.toLowerCase()) {
-      case 'cónyuge':
-      case 'esposo':
-      case 'esposa':
-        return Icons.favorite;
       case 'hijo':
+        return Icons.boy;
       case 'hija':
-      case 'hijo/a':
-        return Icons.child_care;
+        return Icons.girl;
+      case 'cónyuge':
+        return Icons.favorite;
       case 'padre':
       case 'madre':
-        return Icons.elderly;
-      case 'hermano':
-      case 'hermana':
-      case 'hermano/a':
-        return Icons.people;
-      case 'abuelo':
-      case 'abuela':
-      case 'abuelo/a':
         return Icons.elderly;
       default:
         return Icons.person;

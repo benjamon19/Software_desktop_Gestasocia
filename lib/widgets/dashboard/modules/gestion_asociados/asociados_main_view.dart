@@ -19,27 +19,30 @@ class AsociadosMainView extends StatelessWidget {
     return Scaffold(
       body: Container(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Solo mostrar SearchSection cuando NO hay asociado seleccionado
-            Obx(() {
-              if (!controller.hasSelectedAsociado) {
-                return Column(
+        child: Obx(() {
+          // Si está cargando, mostrar pantalla completa de carga
+          if (controller.isLoading.value) {
+            return const LoadingIndicator(message: 'Cargando asociados...');
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Solo mostrar SearchSection cuando NO hay asociado seleccionado
+              if (!controller.hasSelectedAsociado)
+                Column(
                   children: [
                     SearchSection(controller: controller),
                     const SizedBox(height: 20),
                   ],
-                );
-              }
-              return const SizedBox.shrink();
-            }),
-            
-            Expanded(
-              child: Obx(() => _buildMainContent(context, controller)),
-            ),
-          ],
-        ),
+                ),
+              
+              Expanded(
+                child: _buildMainContent(context, controller),
+              ),
+            ],
+          );
+        }),
       ),
       floatingActionButton: Obx(() => _buildFloatingActionButton(controller)),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
@@ -68,10 +71,6 @@ class AsociadosMainView extends StatelessWidget {
   }
 
   Widget _buildMainContent(BuildContext context, AsociadosController controller) {
-    if (controller.isLoading.value) {
-      return const LoadingIndicator();
-    }
-
     if (controller.hasSelectedAsociado) {
       return _buildProfileView(controller);
     }
@@ -154,23 +153,12 @@ class AsociadosMainView extends StatelessWidget {
   }
 
   Widget _buildRefreshButton(AsociadosController controller, bool isSmallScreen) {
-    return Obx(() => IconButton(
-      onPressed: controller.isLoading.value
-          ? null
-          : () => controller.loadAsociados(),
-      icon: controller.isLoading.value
-          ? SizedBox(
-              width: isSmallScreen ? 16 : 20,
-              height: isSmallScreen ? 16 : 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-              ),
-            )
-          : Icon(Icons.refresh, color: AppTheme.primaryColor, size: isSmallScreen ? 18 : 20),
+    return IconButton(
+      onPressed: () => controller.loadAsociados(),
+      icon: Icon(Icons.refresh, color: AppTheme.primaryColor, size: isSmallScreen ? 18 : 20),
       tooltip: 'Recargar lista',
       padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
-    ));
+    );
   }
 
   Widget _buildCounterBadge(AsociadosController controller, bool isSmallScreen, bool isVerySmall) {

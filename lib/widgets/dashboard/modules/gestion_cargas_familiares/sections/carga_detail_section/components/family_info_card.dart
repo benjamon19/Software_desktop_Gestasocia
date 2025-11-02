@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../../../../utils/app_theme.dart';
+import '../../../../../../../models/carga_familiar.dart';
+import '../../../../../../../controllers/asociados_controller.dart';
 import '../../../shared/widgets/section_title.dart';
 
 class FamilyInfoCard extends StatelessWidget {
-  final Map<String, dynamic> carga;
+  final CargaFamiliar carga; // ⭐ CAMBIAR de Map a CargaFamiliar
 
   const FamilyInfoCard({super.key, required this.carga});
 
   @override
   Widget build(BuildContext context) {
     // Manejo seguro de datos anidados
-    final contactoEmergencia = carga['contactoEmergencia'] as Map<String, dynamic>? ?? {};
+    final contactoEmergencia = carga.contactoEmergencia ?? {};
     
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
@@ -19,20 +22,24 @@ class FamilyInfoCard extends StatelessWidget {
         children: [
           const SectionTitle(title: 'Información Familiar'),
           const SizedBox(height: 16),
+          
+          // Asociado Titular
           _buildInfoItem(
             context, 
-            'Asociado ID', 
-            carga['asociadoId']?.toString() ?? 'No especificado', 
+            'Asociado Titular', 
+            _getAsociadoNombre(carga.asociadoId), 
             Icons.person_outlined
           ),
+          
           const SizedBox(height: 16),
+          
           Row(
             children: [
               Expanded(
                 child: _buildInfoItem(
                   context, 
                   'Parentesco', 
-                  carga['parentesco']?.toString() ?? 'No especificado', 
+                  carga.parentesco, 
                   Icons.family_restroom_outlined
                 )
               ),
@@ -41,7 +48,7 @@ class FamilyInfoCard extends StatelessWidget {
                 child: _buildInfoItem(
                   context, 
                   'Estado', 
-                  carga['isActive'] == true ? 'Activa' : 'Inactiva', 
+                  carga.estado, 
                   Icons.toggle_on_outlined
                 )
               ),
@@ -113,6 +120,18 @@ class FamilyInfoCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getAsociadoNombre(String? asociadoId) {
+    if (asociadoId == null || asociadoId.isEmpty) return 'Sin titular';
+    try {
+      final AsociadosController asociadosController = Get.find<AsociadosController>();
+      final asociado = asociadosController.getAsociadoById(asociadoId);
+      if (asociado != null) return asociado.nombreCompleto;
+    } catch (e) {
+      // Error silencioso
+    }
+    return 'Titular: ${asociadoId.substring(0, asociadoId.length > 8 ? 8 : asociadoId.length)}...';
   }
 
   Widget _buildInfoItem(BuildContext context, String label, String value, IconData icon) {

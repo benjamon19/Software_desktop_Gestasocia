@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../../../../utils/app_theme.dart';
-import '../../../../../../../models/carga_familiar.dart';
+import '../../../../../../../controllers/cargas_familiares_controller.dart';
+import '../../../../../../../controllers/asociados_controller.dart';
 
 class PersonalInfoCard extends StatelessWidget {
-  final CargaFamiliar carga;
+  final Map<String, dynamic> carga;
 
   const PersonalInfoCard({
     super.key,
@@ -12,6 +14,8 @@ class PersonalInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final CargasFamiliaresController controller = Get.find<CargasFamiliaresController>();
+    
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -19,7 +23,13 @@ class PersonalInfoCard extends StatelessWidget {
         children: [
           _buildSectionTitle(context),
           const SizedBox(height: 20),
-          _buildInfoGrid(context),
+          Obx(() {
+            final currentCarga = controller.selectedCarga.value;
+            if (currentCarga == null) {
+              return const SizedBox();
+            }
+            return _buildInfoGrid(context, currentCarga);
+          }),
         ],
       ),
     );
@@ -31,12 +41,12 @@ class PersonalInfoCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            color: const Color(0xFF10B981).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
+          child: const Icon(
             Icons.family_restroom_outlined,
-            color: AppTheme.primaryColor,
+            color: Color(0xFF10B981),
             size: 20,
           ),
         ),
@@ -53,19 +63,18 @@ class PersonalInfoCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoGrid(BuildContext context) {
+  Widget _buildInfoGrid(BuildContext context, dynamic currentCarga) {
     return Column(
       children: [
-        // Primera fila: Nombre Completo y RUT
         Row(
           children: [
             Expanded(
               child: _buildInfoItem(
                 context,
                 'Nombre Completo',
-                carga.nombreCompleto, // El modelo ya garantiza que no es null
+                currentCarga.nombreCompleto,
                 Icons.person_outline,
-                AppTheme.primaryColor,
+                const Color(0xFF10B981),
               ),
             ),
             const SizedBox(width: 16),
@@ -73,7 +82,7 @@ class PersonalInfoCard extends StatelessWidget {
               child: _buildInfoItem(
                 context,
                 'RUT',
-                carga.rutFormateado, // El modelo ya garantiza que no es null
+                _formatearRut(currentCarga.rut),
                 Icons.badge_outlined,
                 Colors.blue,
               ),
@@ -83,14 +92,13 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Segunda fila: Fecha de Nacimiento y Edad
         Row(
           children: [
             Expanded(
               child: _buildInfoItem(
                 context,
                 'Fecha de Nacimiento',
-                carga.fechaNacimientoFormateada, // El modelo ya garantiza que no es null
+                currentCarga.fechaNacimientoFormateada,
                 Icons.cake_outlined,
                 Colors.orange,
               ),
@@ -100,7 +108,7 @@ class PersonalInfoCard extends StatelessWidget {
               child: _buildInfoItem(
                 context,
                 'Edad',
-                '${carga.edad} años', // El modelo garantiza que edad no es null
+                '${currentCarga.edad} años',
                 Icons.timeline_outlined,
                 Colors.purple,
               ),
@@ -110,14 +118,13 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Tercera fila: Parentesco y Estado
         Row(
           children: [
             Expanded(
               child: _buildInfoItem(
                 context,
                 'Parentesco',
-                carga.parentesco, // El modelo ya garantiza que no es null
+                currentCarga.parentesco,
                 Icons.favorite_outline,
                 Colors.pink,
               ),
@@ -126,10 +133,10 @@ class PersonalInfoCard extends StatelessWidget {
             Expanded(
               child: _buildInfoItem(
                 context,
-                'Estado',
-                carga.estado, // El modelo ya garantiza que no es null
-                _getEstadoIcon(carga.isActive), // isActive es bool, no bool?
-                _getEstadoColor(carga.isActive), // isActive es bool, no bool?
+                'Asociado Titular',
+                _getAsociadoNombre(currentCarga.asociadoId),
+                Icons.account_circle_outlined,
+                const Color(0xFF10B981),
               ),
             ),
           ],
@@ -137,11 +144,10 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Cuarta fila: Fecha de Creación (ancho completo)
         _buildInfoItem(
           context,
           'Fecha de Registro',
-          carga.fechaCreacionFormateada, // El modelo ya garantiza que no es null
+          currentCarga.fechaCreacionFormateada,
           Icons.calendar_today_outlined,
           Colors.teal,
         ),
@@ -163,7 +169,6 @@ class PersonalInfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header con icono y label
           Row(
             children: [
               Container(
@@ -195,7 +200,6 @@ class PersonalInfoCard extends StatelessWidget {
           
           const SizedBox(height: 12),
           
-          // Valor
           Text(
             value.isEmpty ? 'No especificado' : value,
             style: TextStyle(
@@ -212,11 +216,31 @@ class PersonalInfoCard extends StatelessWidget {
     );
   }
 
-  IconData _getEstadoIcon(bool isActive) {
-    return isActive ? Icons.check_circle_outline : Icons.cancel_outlined;
+  String _formatearRut(String rutRaw) {
+    final clean = rutRaw.replaceAll(RegExp(r'[^0-9kK]'), '').toUpperCase();
+    if (clean.isEmpty) return '';
+    if (clean.length <= 1) return clean;
+    
+    String cuerpo = clean.substring(0, clean.length - 1);
+    String dv = clean.substring(clean.length - 1);
+    
+    cuerpo = cuerpo.replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
+    );
+    
+    return '$cuerpo-$dv';
   }
 
-  Color _getEstadoColor(bool isActive) {
-    return isActive ? Colors.green : Colors.red;
+  String _getAsociadoNombre(String? asociadoId) {
+    if (asociadoId == null || asociadoId.isEmpty) return 'Sin titular';
+    try {
+      final AsociadosController asociadosController = Get.find<AsociadosController>();
+      final asociado = asociadosController.getAsociadoById(asociadoId);
+      if (asociado != null) return asociado.nombreCompleto;
+    } catch (e) {
+      // Error silencioso
+    }
+    return 'Titular desconocido';
   }
 }

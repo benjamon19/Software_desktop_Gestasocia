@@ -7,7 +7,9 @@ class CargasFamiliaresController extends GetxController {
   RxBool isLoading = false.obs;
   RxList<Map<String, dynamic>> filteredCargas = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> allCargas = <Map<String, dynamic>>[].obs;
-  Rxn<Map<String, dynamic>> selectedCarga = Rxn<Map<String, dynamic>>();
+  RxList<CargaFamiliar> cargasFamiliares = <CargaFamiliar>[].obs;
+  Rxn<Map<String, dynamic>> selectedCargaMap = Rxn<Map<String, dynamic>>();
+  Rxn<CargaFamiliar> selectedCarga = Rxn<CargaFamiliar>();
   RxString searchText = ''.obs;
 
   @override
@@ -30,6 +32,8 @@ class CargasFamiliaresController extends GetxController {
       dev.log('DOCUMENTOS EN FIRESTORE: ${snapshot.docs.length}', name: 'CargasFamiliaresController');
 
       List<Map<String, dynamic>> cargasReales = [];
+      List<CargaFamiliar> cargasModelos = [];
+      
       for (var doc in snapshot.docs) {
         try {
           final data = doc.data() as Map<String, dynamic>;
@@ -45,6 +49,7 @@ class CargasFamiliaresController extends GetxController {
           cargaMap['fechaCreacionFormateada'] = carga.fechaCreacionFormateada;
 
           cargasReales.add(cargaMap);
+          cargasModelos.add(carga);
 
           dev.log('CARGA REAL: ${carga.nombreCompleto}', name: 'CargasFamiliaresController');
         } catch (e) {
@@ -54,11 +59,14 @@ class CargasFamiliaresController extends GetxController {
 
       allCargas.value = cargasReales;
       filteredCargas.value = cargasReales;
+      cargasFamiliares.value = cargasModelos;
+      
       dev.log('CARGAS REALES CARGADAS: ${cargasReales.length}', name: 'CargasFamiliaresController');
     } catch (e) {
       dev.log('ERROR CONECTANDO FIRESTORE O CARGANDO DATOS: $e', name: 'CargasFamiliaresController', error: e);
       allCargas.value = [];
       filteredCargas.value = [];
+      cargasFamiliares.value = [];
     } finally {
       isLoading.value = false;
       dev.log('CARGA FINALIZADA: ${filteredCargas.length} cargas', name: 'CargasFamiliaresController');
@@ -102,11 +110,18 @@ class CargasFamiliaresController extends GetxController {
 
   void selectCarga(Map<String, dynamic> carga) {
     dev.log('SELECCIONANDO CARGA: ${carga['nombre']}', name: 'CargasFamiliaresController');
-    selectedCarga.value = carga;
+    selectedCargaMap.value = carga;
+    
+    final cargaId = carga['id'];
+    if (cargaId != null) {
+      final cargaModelo = cargasFamiliares.firstWhereOrNull((c) => c.id == cargaId);
+      selectedCarga.value = cargaModelo;
+    }
   }
 
   void backToList() {
     dev.log('VOLVIENDO A LISTA', name: 'CargasFamiliaresController');
+    selectedCargaMap.value = null;
     selectedCarga.value = null;
   }
 
@@ -117,7 +132,7 @@ class CargasFamiliaresController extends GetxController {
 
   void editCarga() {
     if (selectedCarga.value != null) {
-      Get.snackbar('Editar', 'Editar: ${selectedCarga.value!['nombre']}');
+      Get.snackbar('Editar', 'Editar: ${selectedCarga.value!.nombreCompleto}');
     }
   }
 

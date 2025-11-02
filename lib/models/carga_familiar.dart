@@ -13,6 +13,10 @@ class CargaFamiliar {
   DateTime? ultimaActividad;
   String? codigoBarras;
   String? sap;
+  String? ultimaVisita;
+  String? proximaCita;
+  List<String>? alertas;
+  Map<String, dynamic>? contactoEmergencia;
 
   CargaFamiliar({
     this.id,
@@ -27,14 +31,22 @@ class CargaFamiliar {
     this.ultimaActividad,
     this.codigoBarras,
     this.sap,
+    this.ultimaVisita,
+    this.proximaCita,
+    this.alertas,
+    this.contactoEmergencia,
   });
 
   String get nombreCompleto => '$nombre $apellido';
   
   String get rutFormateado {
-    if (rut.length < 2) return rut;
-    String cuerpo = rut.substring(0, rut.length - 1);
-    String dv = rut.substring(rut.length - 1);
+    // Limpiar el RUT de puntos y guiones existentes
+    final rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
+    
+    if (rutLimpio.length < 2) return rutLimpio;
+    
+    String cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
+    String dv = rutLimpio.substring(rutLimpio.length - 1);
     
     String cuerpoFormateado = '';
     for (int i = cuerpo.length - 1; i >= 0; i--) {
@@ -140,10 +152,30 @@ class CargaFamiliar {
       'ultimaActividad': ultimaActividad,
       'codigoBarras': codigoBarras,
       'sap': sap,
+      'ultimaVisita': ultimaVisita,
+      'proximaCita': proximaCita,
+      'alertas': alertas,
+      'contactoEmergencia': contactoEmergencia,
     };
   }
 
   factory CargaFamiliar.fromMap(Map<String, dynamic> map, String id) {
+    List<String>? parseAlertas(dynamic alertas) {
+      if (alertas == null) return null;
+      if (alertas is List) {
+        return alertas.map((e) => e.toString()).toList();
+      }
+      return null;
+    }
+
+    Map<String, dynamic>? parseContactoEmergencia(dynamic contacto) {
+      if (contacto == null) return null;
+      if (contacto is Map) {
+        return Map<String, dynamic>.from(contacto);
+      }
+      return null;
+    }
+
     return CargaFamiliar(
       id: id,
       asociadoId: map['asociadoId'] ?? '',
@@ -157,6 +189,10 @@ class CargaFamiliar {
       ultimaActividad: map['ultimaActividad'] != null ? _parseDateTime(map['ultimaActividad']) : null,
       codigoBarras: map['codigoBarras'],
       sap: map['sap'],
+      ultimaVisita: map['ultimaVisita']?.toString(),
+      proximaCita: map['proximaCita']?.toString(),
+      alertas: parseAlertas(map['alertas']),
+      contactoEmergencia: parseContactoEmergencia(map['contactoEmergencia']),
     );
   }
 
@@ -191,6 +227,10 @@ class CargaFamiliar {
     DateTime? ultimaActividad,
     String? codigoBarras,
     String? sap,
+    String? ultimaVisita,
+    String? proximaCita,
+    List<String>? alertas,
+    Map<String, dynamic>? contactoEmergencia,
   }) {
     return CargaFamiliar(
       id: id ?? this.id,
@@ -205,6 +245,10 @@ class CargaFamiliar {
       ultimaActividad: ultimaActividad ?? this.ultimaActividad,
       codigoBarras: codigoBarras ?? this.codigoBarras,
       sap: sap ?? this.sap,
+      ultimaVisita: ultimaVisita ?? this.ultimaVisita,
+      proximaCita: proximaCita ?? this.proximaCita,
+      alertas: alertas ?? this.alertas,
+      contactoEmergencia: contactoEmergencia ?? this.contactoEmergencia,
     );
   }
 

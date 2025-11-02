@@ -2,18 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/dashboard_page_controller.dart';
 import '../widgets/dashboard/sidebar_menu.dart';
 import '../widgets/dashboard/top_bar.dart';
 import '../widgets/dashboard/dashboard_content.dart';
-// IMPORTACIÓN - Módulo de Asociados
 import '../widgets/dashboard/modules/gestion_asociados/asociados_main_view.dart';
-// IMPORTACIÓN - Módulo de Cargas Familiares
 import '../widgets/dashboard/modules/gestion_cargas_familiares/cargas_familiares_main_view.dart';
-// IMPORTACIÓN - Módulo de Historial Clínico
 import '../widgets/dashboard/modules/gestion_historial_clinico/historial_clinico_main_view.dart';
-// IMPORTACIÓN - Configuración
 import '../widgets/dashboard/configuracion/configuracion_view.dart';
-// IMPORTACIÓN - Perfil 
 import '../widgets/dashboard/perfil/perfil_view.dart';
 import '../utils/dashboard_data.dart';
 import '../utils/app_theme.dart';
@@ -28,22 +24,19 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   final AuthController authController = Get.find<AuthController>();
   final ThemeController themeController = Get.find<ThemeController>();
+  final DashboardPageController dashboardController = Get.find<DashboardPageController>();
   
-  // ACTUALIZADO: Estados para el sidebar
-  bool isDrawerOpen = true; // Mantener para compatibilidad
-  bool isSidebarCollapsed = false; // NUEVO: Estado de colapso del sidebar
-  int selectedIndex = 0;
+  bool isDrawerOpen = true;
+  bool isSidebarCollapsed = false;
 
-  // NUEVO: Método para alternar el colapso del sidebar
   void _toggleSidebar() {
     setState(() {
       isSidebarCollapsed = !isSidebarCollapsed;
     });
   }
 
-  // NUEVO: Método para obtener el título de la página actual
   String _getCurrentPageTitle() {
-    switch (selectedIndex) {
+    switch (dashboardController.selectedIndex.value) {
       case 0:
         return DashboardData.menuItems[0]['title'];
       case 1:
@@ -55,27 +48,21 @@ class _DashboardPageState extends State<DashboardPage> {
       case 4:
         return DashboardData.menuItems[4]['title'];
       case 5:
-        return 'Configuración'; // Título personalizado para configuración
-      case 6: // NUEVO: Caso para perfil
-        return 'Mi Perfil'; // Título personalizado para perfil
+        return 'Configuración';
+      case 6:
+        return 'Mi Perfil';
       default:
         return DashboardData.menuItems[0]['title'];
     }
   }
 
-  // NUEVO: Método para manejar la navegación desde el TopBar
   void _handleNavigateToSection(int index) {
     debugPrint('Dashboard recibió navegación a index: $index');
-    setState(() {
-      selectedIndex = index;
-    });
+    dashboardController.changeModule(index);
   }
 
-  // NUEVO: Método para manejar la selección de items del sidebar
   void _handleItemSelected(int index) {
-    setState(() {
-      selectedIndex = index;
-    });
+    dashboardController.changeModule(index);
   }
 
   @override
@@ -84,35 +71,32 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: AppTheme.getBackgroundColor(context),
       body: Row(
         children: [
-          // ACTUALIZADO: Sidebar Menu con animaciones
-          SidebarMenu(
-            selectedIndex: selectedIndex,
+          Obx(() => SidebarMenu(
+            selectedIndex: dashboardController.selectedIndex.value,
             onItemSelected: _handleItemSelected,
             isCollapsed: isSidebarCollapsed,
             onToggleCollapse: _toggleSidebar,
-          ),
+          )),
                      
-          // Main Content
           Expanded(
             child: Column(
               children: [
-                // ACTUALIZADO: Top Bar con controles de sidebar
-                TopBar(
+                Obx(() => TopBar(
                   isDrawerOpen: isDrawerOpen,
-                  isSidebarCollapsed: isSidebarCollapsed, // NUEVO
+                  isSidebarCollapsed: isSidebarCollapsed,
                   currentPageTitle: _getCurrentPageTitle(),
-                  onMenuToggle: () => setState(() => isDrawerOpen = !isDrawerOpen), // Mantener para compatibilidad
-                  onSidebarToggle: _toggleSidebar, // NUEVO
+                  onMenuToggle: () => setState(() => isDrawerOpen = !isDrawerOpen),
+                  onSidebarToggle: _toggleSidebar,
                   authController: authController,
                   onNavigateToSection: _handleNavigateToSection,
-                ),             
-                // Page Content
+                )),
+                
                 Expanded(
-                  child: AnimatedContainer(
+                  child: Obx(() => AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOutCubic,
                     child: _buildPageContent(),
-                  ),
+                  )),
                 ),
               ],
             ),
@@ -123,31 +107,30 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildPageContent() {
-    switch (selectedIndex) {
+    switch (dashboardController.selectedIndex.value) {
       case 0:
-        return const DashboardContent(); // Vista home
+        return const DashboardContent();
       case 1:
-        return const AsociadosMainView(); // Vista de Asociados
+        return const AsociadosMainView();
       case 2:
-        return const CargasFamiliaresMainView(); // Vista de Cargas Familiares
+        return const CargasFamiliaresMainView();
       case 3:
-        return const HistorialClinicoMainView(); // Vista de Historial Clínico
+        return const HistorialClinicoMainView();
       case 4:
         return _buildPlaceholderView(
           title: 'Reserva de Horas',
           icon: Icons.schedule_outlined,
           description: 'Sistema de reservas médicas\n(Próximamente)',
         );
-      case 5: // Mantener case 5 para que TopBar pueda navegar aquí
-        return const ConfiguracionView(); // Solo accesible desde TopBar
-      case 6: // NUEVO: Case para perfil
-        return const PerfilView(); // Vista de perfil
+      case 5:
+        return const ConfiguracionView();
+      case 6:
+        return const PerfilView();
       default:
         return const DashboardContent();
     }
   }
 
-  // Widget temporal para las secciones que aún no están implementadas
   Widget _buildPlaceholderView({
     required String title,
     required IconData icon,
@@ -160,7 +143,7 @@ class _DashboardPageState extends State<DashboardPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(30),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
@@ -191,7 +174,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 30),
             ElevatedButton(
-              onPressed: () => setState(() => selectedIndex = 0),
+              onPressed: () => dashboardController.changeModule(0),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primaryColor,
                 foregroundColor: Colors.white,

@@ -70,9 +70,13 @@ class Asociado {
   }
   
   String get rutFormateado {
-    if (rut.length < 2) return rut;
-    String cuerpo = rut.substring(0, rut.length - 1);
-    String dv = rut.substring(rut.length - 1);
+    // Limpiar el RUT de puntos y guiones existentes
+    final rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
+    
+    if (rutLimpio.length < 2) return rutLimpio;
+    
+    String cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
+    String dv = rutLimpio.substring(rutLimpio.length - 1);
     
     String cuerpoFormateado = '';
     for (int i = cuerpo.length - 1; i >= 0; i--) {

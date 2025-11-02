@@ -21,7 +21,7 @@ class PageContent extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(30),
+              padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
                 color: Color(0xFFEBF8FF),
                 shape: BoxShape.circle,

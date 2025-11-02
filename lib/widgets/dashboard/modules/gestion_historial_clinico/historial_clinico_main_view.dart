@@ -17,7 +17,7 @@ class HistorialClinicoMainView extends StatelessWidget {
     final HistorialClinicoController controller = Get.put(HistorialClinicoController());
 
     return Container(
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.all(20),
       child: Obx(() {
         // Si está en vista de detalle, mostrar el layout de detalle
         if (controller.isDetailView && controller.hasSelectedHistorial) {

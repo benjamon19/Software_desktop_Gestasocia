@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../../../../../utils/app_theme.dart';
+import '../../../../../../../models/carga_familiar.dart';
 import '../../../shared/widgets/section_title.dart';
 
 class MedicalInfoCard extends StatelessWidget {
-  final Map<String, dynamic> carga;
+  final CargaFamiliar carga; // ⭐ CAMBIAR de Map a CargaFamiliar
 
   const MedicalInfoCard({super.key, required this.carga});
 
   @override
   Widget build(BuildContext context) {
     // Manejo seguro de alertas
-    final alertas = carga['alertas'] as List<dynamic>? ?? [];
+    final alertas = carga.alertas ?? [];
     
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
@@ -25,7 +26,7 @@ class MedicalInfoCard extends StatelessWidget {
                 child: _buildInfoItem(
                   context, 
                   'Última Visita', 
-                  carga['ultimaVisita']?.toString() ?? 'No registrada', 
+                  carga.ultimaVisita ?? 'No registrada', 
                   Icons.medical_services_outlined
                 )
               ),
@@ -34,7 +35,7 @@ class MedicalInfoCard extends StatelessWidget {
                 child: _buildInfoItem(
                   context, 
                   'Próxima Cita', 
-                  carga['proximaCita']?.toString() ?? 'No agendada', 
+                  carga.proximaCita ?? 'No agendada', 
                   Icons.event_outlined
                 )
               ),
@@ -56,14 +57,14 @@ class MedicalInfoCard extends StatelessWidget {
                     children: [
                       const Icon(Icons.warning_amber, color: Color(0xFFEF4444), size: 20),
                       const SizedBox(width: 8),
-                      Text('Urgencias (${carga['alertas'].length})', 
+                      Text('Urgencias (${alertas.length})', 
                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFEF4444))),
                     ],
                   ),
                   const SizedBox(height: 8),
                   ...alertas.map<Widget>((alerta) => 
                     Text(
-                      '• ${alerta?.toString() ?? 'Alerta sin descripción'}', 
+                      '• $alerta', 
                       style: const TextStyle(
                         fontSize: 12, 
                         color: Color(0xFFEF4444)
