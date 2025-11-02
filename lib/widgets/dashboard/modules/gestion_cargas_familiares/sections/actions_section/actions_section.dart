@@ -65,7 +65,7 @@ class _ActionsSectionState extends State<ActionsSection> {
                       onTransfer: widget.controller.transferCarga,
                     ),
                     
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
                     
                     // Herramientas
                     ToolsActions(
@@ -73,12 +73,12 @@ class _ActionsSectionState extends State<ActionsSection> {
                       onViewHistory: widget.controller.viewHistory,
                     ),
                     
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
                     
                     // Opciones Avanzadas
                     const AdvancedOptionsActions(),
                     
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
                     
                     // Zona de Peligro
                     DangerZoneActions(
@@ -86,7 +86,7 @@ class _ActionsSectionState extends State<ActionsSection> {
                       onDelete: widget.controller.deleteCarga,
                     ),
                     
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
                   ],
                 ),
               ),

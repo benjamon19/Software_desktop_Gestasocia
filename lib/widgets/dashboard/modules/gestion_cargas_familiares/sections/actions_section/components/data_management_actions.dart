@@ -28,7 +28,7 @@ class DataManagementActions extends StatelessWidget {
           onPressed: onEdit,
         ),
         
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         
         ActionButton(
           icon: Icons.swap_horiz,

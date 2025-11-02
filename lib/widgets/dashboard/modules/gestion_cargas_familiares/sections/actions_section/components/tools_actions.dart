@@ -28,7 +28,7 @@ class ToolsActions extends StatelessWidget {
           onPressed: onGenerateBarcode,
         ),
         
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         
         ActionButton(
           icon: Icons.history,

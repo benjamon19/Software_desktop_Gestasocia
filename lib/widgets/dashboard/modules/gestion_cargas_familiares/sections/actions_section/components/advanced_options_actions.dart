@@ -23,7 +23,7 @@ class AdvancedOptionsActions extends StatelessWidget {
           onPressed: () => _showExportOptions(context),
         ),
         
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         
         ActionButton(
           icon: Icons.backup,
