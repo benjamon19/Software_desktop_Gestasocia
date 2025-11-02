@@ -14,8 +14,9 @@ class Asociado {
   DateTime fechaCreacion;
   DateTime fechaIngreso;
   bool isActive;
-  String? codigoBarras; // Código de barras único
-  String? sap; // Código SAP de 5 dígitos único
+  String? codigoBarras;
+  String? sap;
+  DateTime? ultimaActividad;
 
   Asociado({
     this.id,
@@ -33,31 +34,46 @@ class Asociado {
     this.isActive = true,
     this.codigoBarras,
     this.sap,
+    this.ultimaActividad,
   });
 
-  // Getters útiles
   String get nombreCompleto => '$nombre $apellido';
 
-  // ========== CÓDIGO AÑADIDO ==========
   int get edad {
     final hoy = DateTime.now();
     int edadCalculada = hoy.year - fechaNacimiento.year;
     
-    // Ajustar si aún no ha cumplido años este año
     if (hoy.month < fechaNacimiento.month ||
         (hoy.month == fechaNacimiento.month && hoy.day < fechaNacimiento.day)) {
       edadCalculada--;
     }
     return edadCalculada;
   }
-  // =====================================
+
+  bool get isActivoPorActividad {
+    if (ultimaActividad == null) {
+      final mesesSinActividad = DateTime.now().difference(fechaIngreso).inDays ~/ 30;
+      return mesesSinActividad < 2;
+    }
+    
+    final mesesSinActividad = DateTime.now().difference(ultimaActividad!).inDays ~/ 30;
+    return mesesSinActividad < 2;
+  }
+
+  bool get estaActivo {
+    if (!isActive) return false;
+    return isActivoPorActividad;
+  }
+
+  Asociado actualizarActividad() {
+    return copyWith(ultimaActividad: DateTime.now());
+  }
   
   String get rutFormateado {
     if (rut.length < 2) return rut;
     String cuerpo = rut.substring(0, rut.length - 1);
     String dv = rut.substring(rut.length - 1);
     
-    // Formatear cuerpo con puntos
     String cuerpoFormateado = '';
     for (int i = cuerpo.length - 1; i >= 0; i--) {
       if ((cuerpo.length - i) % 3 == 1 && i != cuerpo.length - 1) {
@@ -81,12 +97,10 @@ class Asociado {
           '${fechaIngreso.year}';
   }
 
-  String get estado => isActive ? 'Activo' : 'Inactivo';
+  String get estado => estaActivo ? 'Activo' : 'Inactivo';
 
-  // Validación de RUT chileno (reutilizada del modelo Usuario)
   static bool validarRUT(String rut) {
     try {
-      // Limpiar RUT (quitar puntos y guión)
       String rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
       
       if (rutLimpio.length < 2) return false;
@@ -94,10 +108,8 @@ class Asociado {
       String cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
       String dv = rutLimpio.substring(rutLimpio.length - 1).toUpperCase();
       
-      // Validar que el cuerpo sean solo números
       if (!RegExp(r'^[0-9]+$').hasMatch(cuerpo)) return false;
       
-      // Calcular dígito verificador
       int suma = 0;
       int multiplicador = 2;
       
@@ -115,17 +127,14 @@ class Asociado {
     }
   }
 
-  // Validación de email
   static bool validarEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
-  // Validar SAP (5 dígitos)
   static bool validarSAP(String sap) {
     return RegExp(r'^[0-9]{5}$').hasMatch(sap);
   }
 
-  // Convertir a Map para Firestore
   Map<String, dynamic> toMap() {
     return {
       'nombre': nombre,
@@ -142,10 +151,10 @@ class Asociado {
       'isActive': isActive,
       'codigoBarras': codigoBarras,
       'sap': sap,
+      'ultimaActividad': ultimaActividad,
     };
   }
 
-  // Crear desde Map de Firestore
   factory Asociado.fromMap(Map<String, dynamic> map, String id) {
     return Asociado(
       id: id,
@@ -163,10 +172,10 @@ class Asociado {
       isActive: map['isActive'] ?? true,
       codigoBarras: map['codigoBarras'],
       sap: map['sap'],
+      ultimaActividad: map['ultimaActividad'] != null ? _parseDateTime(map['ultimaActividad']) : null,
     );
   }
 
-  // Helper para manejar diferentes tipos de fecha
   static DateTime _parseDateTime(dynamic fecha) {
     if (fecha == null) return DateTime.now();
     
@@ -179,14 +188,12 @@ class Asociado {
         return DateTime.now();
       }
     } else if (fecha is Timestamp) {
-      // Para Timestamp de Firestore
       return fecha.toDate();
     } else {
       return DateTime.now();
     }
   }
 
-  // Crear copia con cambios
   Asociado copyWith({
     String? id,
     String? nombre,
@@ -203,6 +210,7 @@ class Asociado {
     bool? isActive,
     String? codigoBarras,
     String? sap,
+    DateTime? ultimaActividad,
   }) {
     return Asociado(
       id: id ?? this.id,
@@ -220,6 +228,7 @@ class Asociado {
       isActive: isActive ?? this.isActive,
       codigoBarras: codigoBarras ?? this.codigoBarras,
       sap: sap ?? this.sap,
+      ultimaActividad: ultimaActividad ?? this.ultimaActividad,
     );
   }
 

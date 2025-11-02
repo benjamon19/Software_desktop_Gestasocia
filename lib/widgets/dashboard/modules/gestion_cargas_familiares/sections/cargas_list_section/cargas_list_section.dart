@@ -18,7 +18,6 @@ class CargasListSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Ordenar la lista de cargas alfabéticamente por el nombre completo
     final sortedCargas = [...cargas];
     sortedCargas.sort((a, b) {
       final nombreA = '${a['nombre']} ${a['apellido']}'.toLowerCase();
@@ -32,10 +31,8 @@ class CargasListSection extends StatelessWidget {
 
     return Column(
       children: [
-        // Header de la sección (visible siempre)
         _buildHeader(context, isSmallScreen, isVerySmall),
         const SizedBox(height: 12),
-        // Contenido principal (lista o estado vacío)
         Expanded(
           child: _buildListContent(context, isSmallScreen, isVerySmall, sortedCargas),
         ),
@@ -45,25 +42,34 @@ class CargasListSection extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context, bool isSmallScreen, bool isVerySmall) {
     return Container(
-      padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 10 : 12)),
+      padding: EdgeInsets.all(isVerySmall ? 10 : (isSmallScreen ? 14 : 18)),
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
       ),
       child: Row(
         children: [
+          Icon(
+            Icons.family_restroom,
+            color: AppTheme.primaryColor,
+            size: isVerySmall ? 16 : (isSmallScreen ? 18 : 22),
+          ),
+          SizedBox(width: isVerySmall ? 8 : 12),
+          Expanded(
+            child: Text(
+              isVerySmall ? 'Cargas' : 'Lista de Cargas',
+              style: TextStyle(
+                fontSize: isVerySmall ? 12 : (isSmallScreen ? 14 : 18),
+                fontWeight: FontWeight.bold,
+                color: AppTheme.getTextPrimary(context),
+              ),
+            ),
+          ),
+          if (!isVerySmall) ...[
+            _buildRefreshButton(controller, isSmallScreen, isVerySmall),
+            SizedBox(width: isSmallScreen ? 6 : 8),
+          ],
           _buildCounterBadge(context, isSmallScreen, isVerySmall, cargas.length),
-          const Spacer(),
-          _buildRefreshButton(controller, isSmallScreen, isVerySmall),
         ],
       ),
     );
@@ -117,7 +123,6 @@ class CargasListSection extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Lista de cargas ultra compacta
           Expanded(
             child: ListView.separated(
               padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 10 : 12)),
@@ -142,7 +147,7 @@ class CargasListSection extends StatelessWidget {
         color: AppTheme.primaryColor,
         size: isVerySmall ? 14 : (isSmallScreen ? 16 : 18),
       ),
-      tooltip: 'Recargar',
+      tooltip: 'Recargar lista',
       padding: EdgeInsets.all(isVerySmall ? 4 : 8),
       constraints: BoxConstraints(
         minWidth: isVerySmall ? 24 : 32,
@@ -162,7 +167,7 @@ class CargasListSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(isVerySmall ? 8 : 12),
       ),
       child: Text(
-        '$count${isVerySmall ? '' : (isSmallScreen ? '' : ' cargas')}',
+        '$count cargas',
         style: TextStyle(
           fontSize: isVerySmall ? 10 : (isSmallScreen ? 11 : 12),
           fontWeight: FontWeight.w600,
@@ -183,7 +188,6 @@ class CargasListSection extends StatelessWidget {
   }
 }
 
-// Widget separado para manejar el hover sin GetX
 class _CargaItemWidget extends StatefulWidget {
   final Map<String, dynamic> carga;
   final Function(Map<String, dynamic>) onCargaSelected;
@@ -244,6 +248,8 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
     final iconSize = isVerySmall ? 14.0 : (isSmallScreen ? 18.0 : 22.0);
     final indicatorSize = isVerySmall ? 6.0 : (isSmallScreen ? 8.0 : 10.0);
 
+    final isActive = carga['isActive'] == true;
+
     return Stack(
       children: [
         Container(
@@ -263,7 +269,6 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
             color: _getParentescoColor(carga['parentesco'] ?? '')
           ),
         ),
-        // Indicador de estado
         Positioned(
           bottom: 0,
           right: 0,
@@ -271,7 +276,7 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
             width: indicatorSize,
             height: indicatorSize,
             decoration: BoxDecoration(
-              color: (carga['isActive'] == true) ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+              color: isActive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
               shape: BoxShape.circle,
               border: Border.all(
                 color: Theme.of(context).scaffoldBackgroundColor,
@@ -285,15 +290,14 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
   }
 
   Widget _buildCargaInfo(BuildContext context, Map<String, dynamic> carga, bool isSmallScreen, bool isVerySmall) {
-    // Obtener el asociadoId del mapa
     final String? asociadoId = carga['asociadoId']?.toString();
     final String asociadoNombre = _getAsociadoNombre(asociadoId);
+    final edad = carga['edad'] ?? _calcularEdad(carga['fechaNacimiento']);
     
     return Expanded(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Nombre de la carga familiar
           Text(
             isVerySmall
                 ? '${carga['nombre']?.toString().split(' ')[0] ?? 'Sin'} ${carga['apellido']?.toString().split(' ')[0] ?? 'nombre'}'
@@ -306,8 +310,6 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
             overflow: TextOverflow.ellipsis,
           ),
           if (!isVerySmall) SizedBox(height: 1),
-          
-          // Información del asociado titular
           Text(
             'Titular: $asociadoNombre',
             style: TextStyle(
@@ -317,9 +319,7 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
             ),
             overflow: TextOverflow.ellipsis,
           ),
-          
           if (isVerySmall)
-            // Ultra compacto: solo parentesco
             Text(
               carga['parentesco'] ?? 'Sin parentesco',
               style: TextStyle(
@@ -329,9 +329,8 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
               overflow: TextOverflow.ellipsis,
             )
           else if (isSmallScreen)
-            // Compacto: parentesco y edad
             Text(
-              '${carga['parentesco'] ?? 'Sin parentesco'} • ${_calcularEdad(carga['fechaNacimiento'])}a',
+              '${carga['parentesco'] ?? 'Sin parentesco'} • ${edad}a',
               style: TextStyle(
                 fontSize: 10,
                 color: _getParentescoColor(carga['parentesco'] ?? ''),
@@ -339,7 +338,6 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
               overflow: TextOverflow.ellipsis,
             )
           else
-            // Normal: información completa pero compacta
             Row(
               children: [
                 Icon(_getParentescoIcon(carga['parentesco'] ?? ''),
@@ -347,7 +345,7 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    '${carga['parentesco'] ?? 'Sin parentesco'} • ${_calcularEdad(carga['fechaNacimiento'])} años',
+                    '${carga['parentesco'] ?? 'Sin parentesco'} • $edad años',
                     style: TextStyle(
                       fontSize: 11,
                       color: _getParentescoColor(carga['parentesco'] ?? ''),
@@ -364,29 +362,18 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
 
   String _getAsociadoNombre(String? asociadoId) {
     if (asociadoId == null || asociadoId.isEmpty) return 'Sin titular';
-    
     try {
-      // Obtener el AsociadosController
       final AsociadosController asociadosController = Get.find<AsociadosController>();
-      
-      // Usar el método getAsociadoById
       final asociado = asociadosController.getAsociadoById(asociadoId);
-      
-      if (asociado != null) {
-        return asociado.nombreCompleto;
-      }
-      
+      if (asociado != null) return asociado.nombreCompleto;
     } catch (e) {
-      // Si hay error al acceder al controller
+      // Error silencioso
     }
-    
-    // Fallback: mostrar ID truncado si no se encuentra el asociado
     return 'Titular: ${asociadoId.substring(0, 8)}...';
   }
 
   int _calcularEdad(dynamic fechaNacimiento) {
     if (fechaNacimiento == null) return 0;
-    
     DateTime fecha;
     if (fechaNacimiento is DateTime) {
       fecha = fechaNacimiento;
@@ -399,7 +386,6 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
     } else {
       return 0;
     }
-    
     final now = DateTime.now();
     int age = now.year - fecha.year;
     if (now.month < fecha.month || (now.month == fecha.month && now.day < fecha.day)) {
@@ -410,25 +396,12 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
 
   IconData _getParentescoIcon(String parentesco) {
     switch (parentesco.toLowerCase()) {
-      case 'hijo/a':
-        return Icons.child_care;
+      case 'hijo':
+        return Icons.boy;
+      case 'hija':
+        return Icons.girl;
       case 'cónyuge':
         return Icons.favorite;
-      case 'padre':
-      case 'madre':
-        return Icons.elderly;
-      case 'hermano/a':
-        return Icons.people;
-      case 'abuelo/a':
-        return Icons.family_restroom;
-      case 'nieto/a':
-        return Icons.face;
-      case 'tío/a':
-        return Icons.diversity_1;
-      case 'sobrino/a':
-        return Icons.supervised_user_circle;
-      case 'otro':
-        return Icons.person_pin;
       default:
         return Icons.person;
     }
@@ -436,27 +409,14 @@ class _CargaItemWidgetState extends State<_CargaItemWidget> {
 
   Color _getParentescoColor(String parentesco) {
     switch (parentesco.toLowerCase()) {
-      case 'hijo/a':
-        return const Color(0xFF10B981); // Verde esmeralda
+      case 'hijo':
+        return const Color(0xFF3B82F6);
+      case 'hija':
+        return const Color(0xFFEC4899);
       case 'cónyuge':
-        return const Color(0xFFEC4899); // Rosa fucsia
-      case 'padre':
-      case 'madre':
-        return const Color(0xFF8B5CF6); // Púrpura intenso
-      case 'hermano/a':
-        return const Color(0xFFF59E0B); // Naranja
-      case 'abuelo/a':
-        return const Color(0xFF6366F1); // Azul índigo
-      case 'nieto/a':
-        return const Color(0xFFF97316); // Naranja oscuro
-      case 'tío/a':
-        return const Color(0xFFEF4444); // Rojo vibrante
-      case 'sobrino/a':
-        return const Color(0xFF06B6D4); // Cian
-      case 'otro':
-        return const Color(0xFF6B7280); // Gris
+        return const Color(0xFFEF4444);
       default:
-        return const Color(0xFF6B7280); // Gris por defecto
+        return const Color(0xFF6B7280);
     }
   }
 }

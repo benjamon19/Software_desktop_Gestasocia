@@ -4,7 +4,6 @@ import 'dart:developer' as dev;
 import '../models/carga_familiar.dart';
 
 class CargasFamiliaresController extends GetxController {
-  // Variables observables
   RxBool isLoading = false.obs;
   RxList<Map<String, dynamic>> filteredCargas = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> allCargas = <Map<String, dynamic>>[].obs;
@@ -36,7 +35,6 @@ class CargasFamiliaresController extends GetxController {
           final data = doc.data() as Map<String, dynamic>;
           final carga = CargaFamiliar.fromMap(data, doc.id);
 
-          // Usar el método toMap() del modelo y agregar campos calculados
           final Map<String, dynamic> cargaMap = carga.toMap();
           cargaMap['id'] = carga.id;
           cargaMap['edad'] = carga.edad;
@@ -67,7 +65,6 @@ class CargasFamiliaresController extends GetxController {
     }
   }
 
-  // Métodos de búsqueda
   void searchCargas(String query) {
     searchText.value = query;
     dev.log('BUSCANDO: "$query"', name: 'CargasFamiliaresController');
@@ -103,7 +100,6 @@ class CargasFamiliaresController extends GetxController {
     dev.log('BÚSQUEDA LIMPIADA - MOSTRANDO TODAS: ${filteredCargas.length}', name: 'CargasFamiliaresController');
   }
 
-  // Métodos de navegación
   void selectCarga(Map<String, dynamic> carga) {
     dev.log('SELECCIONANDO CARGA: ${carga['nombre']}', name: 'CargasFamiliaresController');
     selectedCarga.value = carga;
@@ -114,13 +110,11 @@ class CargasFamiliaresController extends GetxController {
     selectedCarga.value = null;
   }
 
-  // Métodos CRUD básicos
   Future<void> refreshCargas() async {
     dev.log('REFRESCANDO CARGAS', name: 'CargasFamiliaresController');
     await loadCargas();
   }
 
-  // Métodos de acción (placeholder)
   void editCarga() {
     if (selectedCarga.value != null) {
       Get.snackbar('Editar', 'Editar: ${selectedCarga.value!['nombre']}');
@@ -133,7 +127,6 @@ class CargasFamiliaresController extends GetxController {
   void updateMedicalInfo() {}
   void viewHistory() {}
 
-  // Getters
   bool get hasSelectedCarga => selectedCarga.value != null;
   bool get isListView => !hasSelectedCarga;
   bool get isDetailView => hasSelectedCarga;

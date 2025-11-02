@@ -49,7 +49,7 @@ class PendingActionsSection extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  isVerySmall ? '8' : '8 pendientes',
+                  isVerySmall ? '6' : '6 pendientes',
                   style: TextStyle(
                     fontSize: isVerySmall ? 11 : (isSmallScreen ? 12 : 13),
                     color: AppTheme.getTextSecondary(context),
@@ -67,39 +67,17 @@ class PendingActionsSection extends StatelessWidget {
             color: AppTheme.getTextSecondary(context).withValues(alpha: 0.1),
           ),
           
-          // Lista de acciones compacta
+          // Lista de acciones compacta (SOLO 2 ITEMS)
           Expanded(
             child: ListView(
               padding: EdgeInsets.all(isVerySmall ? 12 : (isSmallScreen ? 14 : 16)),
               children: [
                 _buildActionItem(
                   context: context,
-                  title: 'Validar Documentos',
-                  subtitle: isVerySmall ? '5 cargas' : '5 cargas requieren validación',
-                  icon: Icons.description_outlined,
-                  count: 5,
-                  isSmallScreen: isSmallScreen,
-                  isVerySmall: isVerySmall,
-                  onTap: () {},
-                ),
-                SizedBox(height: isVerySmall ? 8 : 10),
-                _buildActionItem(
-                  context: context,
-                  title: 'Renovación Carnets',
-                  subtitle: isVerySmall ? '3 carnets' : '3 carnets vencen pronto',
-                  icon: Icons.badge_outlined,
-                  count: 3,
-                  isSmallScreen: isSmallScreen,
-                  isVerySmall: isVerySmall,
-                  onTap: () {},
-                ),
-                SizedBox(height: isVerySmall ? 8 : 10),
-                _buildActionItem(
-                  context: context,
-                  title: 'Info Médica',
-                  subtitle: isVerySmall ? '7 cargas' : '7 cargas sin actualizar',
-                  icon: Icons.medical_services_outlined,
-                  count: 7,
+                  title: 'Contactos',
+                  subtitle: isVerySmall ? '4 sin contacto' : '4 cargas sin contacto',
+                  icon: Icons.contact_emergency_outlined,
+                  count: 4,
                   isSmallScreen: isSmallScreen,
                   isVerySmall: isVerySmall,
                   onTap: () {},
@@ -111,17 +89,6 @@ class PendingActionsSection extends StatelessWidget {
                   subtitle: isVerySmall ? '2 por aprobar' : '2 solicitudes por aprobar',
                   icon: Icons.swap_horiz_outlined,
                   count: 2,
-                  isSmallScreen: isSmallScreen,
-                  isVerySmall: isVerySmall,
-                  onTap: () {},
-                ),
-                SizedBox(height: isVerySmall ? 8 : 10),
-                _buildActionItem(
-                  context: context,
-                  title: 'Contactos',
-                  subtitle: isVerySmall ? '4 sin contacto' : '4 cargas sin contacto',
-                  icon: Icons.contact_emergency_outlined,
-                  count: 4,
                   isSmallScreen: isSmallScreen,
                   isVerySmall: isVerySmall,
                   onTap: () {},

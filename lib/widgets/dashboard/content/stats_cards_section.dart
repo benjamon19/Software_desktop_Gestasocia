@@ -1,30 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../utils/app_theme.dart';
+import '../../../controllers/asociados_controller.dart';
 
 class StatsCardsSection extends StatelessWidget {
   const StatsCardsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final AsociadosController controller = Get.find<AsociadosController>();
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final bool isSmallScreen = screenWidth < 600;
-    final bool hasVerticalSpace = screenHeight > 600; // Detecta si hay espacio vertical
+    final bool hasVerticalSpace = screenHeight > 600;
     
     return Row(
       children: [
+        // ⭐ ESTA ES LA ÚNICA TARJETA QUE CAMBIA
         Expanded(
-          child: StatCard(
+          child: Obx(() => StatCard(
             title: 'Pacientes Activos',
-            value: '1,284',
+            value: controller.totalAsociadosActivos.toString(),
             icon: Icons.people_outline,
             iconColor: const Color(0xFF4299E1),
             backgroundColor: const Color(0xFFEBF8FF),
             isSmallScreen: isSmallScreen,
             hasVerticalSpace: hasVerticalSpace,
-          ),
+          )),
         ),
         SizedBox(width: isSmallScreen ? 8 : 12),
+        // Las demás tarjetas quedan igual
         Expanded(
           child: StatCard(
             title: 'Citas Hoy',
@@ -65,6 +70,7 @@ class StatsCardsSection extends StatelessWidget {
   }
 }
 
+// El resto del código de StatCard queda igual...
 class StatCard extends StatelessWidget {
   final String title;
   final String value;
@@ -87,11 +93,9 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Si hay espacio vertical, usar layout vertical (original)
     if (hasVerticalSpace) {
       return _buildVerticalLayout(context);
     } else {
-      // Si no hay espacio, usar layout horizontal (compacto)
       return _buildHorizontalLayout(context);
     }
   }
@@ -116,7 +120,6 @@ class StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Valor principal (ARRIBA)
           Text(
             value,
             style: TextStyle(
@@ -127,10 +130,7 @@ class StatCard extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
-
           SizedBox(height: isSmallScreen ? 6 : 8),
-
-          // Título (MEDIO)
           Text(
             title,
             style: TextStyle(
@@ -143,10 +143,7 @@ class StatCard extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-
           SizedBox(height: isSmallScreen ? 8 : 10),
-
-          // Icono (ABAJO)
           Container(
             padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
             decoration: BoxDecoration(
@@ -169,8 +166,8 @@ class StatCard extends StatelessWidget {
   Widget _buildHorizontalLayout(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmallScreen ? 12 : 16,  // Aumentado de 8/12 a 12/16
-        vertical: isSmallScreen ? 12 : 14,    // Aumentado de 8/10 a 12/14
+        horizontal: isSmallScreen ? 12 : 16,
+        vertical: isSmallScreen ? 12 : 14,
       ),
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
@@ -187,9 +184,8 @@ class StatCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Icono (IZQUIERDA)
           Container(
-            padding: EdgeInsets.all(isSmallScreen ? 8 : 10),  // Aumentado de 6/8 a 8/10
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 10),
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
                   ? iconColor.withValues(alpha: 0.2)
@@ -199,37 +195,30 @@ class StatCard extends StatelessWidget {
             child: Icon(
               icon,
               color: iconColor,
-              size: isSmallScreen ? 16 : 18,  // Aumentado de 14/16 a 16/18
+              size: isSmallScreen ? 16 : 18,
             ),
           ),
-
-          SizedBox(width: isSmallScreen ? 12 : 14),  // Aumentado de 8/10 a 12/14
-
-          // Contenido (DERECHA)
+          SizedBox(width: isSmallScreen ? 12 : 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Valor
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: isSmallScreen ? 18 : 20,  // Aumentado de 16/18 a 18/20
+                    fontSize: isSmallScreen ? 18 : 20,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.getTextPrimary(context),
                     height: 1.0,
                     letterSpacing: -0.3,
                   ),
                 ),
-
-                SizedBox(height: isSmallScreen ? 2 : 3),  // Espaciado entre valor y título
-
-                // Título
+                SizedBox(height: isSmallScreen ? 2 : 3),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: isSmallScreen ? 10 : 11,  // Aumentado de 9/10 a 10/11
+                    fontSize: isSmallScreen ? 10 : 11,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.getTextSecondary(context),
                     letterSpacing: 0.1,

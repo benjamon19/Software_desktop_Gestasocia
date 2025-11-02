@@ -183,6 +183,7 @@ class AsociadosController extends GetxController {
         return false;
       }
 
+      final ahora = DateTime.now();
       final nuevoAsociado = Asociado(
         nombre: nombre.trim(),
         apellido: apellido.trim(),
@@ -193,8 +194,10 @@ class AsociadosController extends GetxController {
         telefono: telefono.trim(),
         direccion: direccion.trim(),
         plan: plan,
-        fechaCreacion: DateTime.now(),
-        fechaIngreso: DateTime.now(),
+        fechaCreacion: ahora,
+        fechaIngreso: ahora,
+        isActive: true,
+        ultimaActividad: ahora,
       );
 
       final docRef = await FirebaseFirestore.instance
@@ -325,26 +328,28 @@ class AsociadosController extends GetxController {
 
       // Guardar asociado anterior para comparación
       final asociadoAnterior = _allAsociados.firstWhere((a) => a.id == asociado.id);
+      
+      final asociadoActualizado = asociado.actualizarActividad();
 
       await FirebaseFirestore.instance
           .collection('asociados')
-          .doc(asociado.id)
-          .update(asociado.toMap());
+          .doc(asociadoActualizado.id)
+          .update(asociadoActualizado.toMap());
 
-      final index = _allAsociados.indexWhere((a) => a.id == asociado.id);
+      final index = _allAsociados.indexWhere((a) => a.id == asociadoActualizado.id);
       if (index != -1) {
-        _allAsociados[index] = asociado;
+        _allAsociados[index] = asociadoActualizado;
         _filterAsociados(searchQuery.value);
       }
 
       selectedAsociado.value = null;
       await Future.delayed(const Duration(milliseconds: 50));
-      selectedAsociado.value = asociado;
+      selectedAsociado.value = asociadoActualizado;
 
       _showSuccessSnackbar("Éxito!", "Asociado actualizado correctamente");
       
       // Registrar edición con comparación
-      _registrarEdicion(asociadoAnterior, asociado);
+      _registrarEdicion(asociadoAnterior, asociadoActualizado);
       
       return true;
 
@@ -443,6 +448,7 @@ class AsociadosController extends GetxController {
         return false;
       }
 
+      final ahora = DateTime.now();
       final nuevaCarga = CargaFamiliar(
         asociadoId: selectedAsociado.value!.id!,
         nombre: nombre.trim(),
@@ -450,7 +456,9 @@ class AsociadosController extends GetxController {
         rut: rut.trim(),
         parentesco: parentesco,
         fechaNacimiento: fechaNacimiento,
-        fechaCreacion: DateTime.now(),
+        fechaCreacion: ahora,
+        isActive: true,
+        ultimaActividad: ahora,
       );
 
       final docRef = await FirebaseFirestore.instance
@@ -459,6 +467,18 @@ class AsociadosController extends GetxController {
 
       final cargaConId = nuevaCarga.copyWith(id: docRef.id);
       cargasFamiliares.add(cargaConId);
+
+      final asociadoActualizado = selectedAsociado.value!.actualizarActividad();
+      await FirebaseFirestore.instance
+          .collection('asociados')
+          .doc(asociadoActualizado.id)
+          .update({'ultimaActividad': asociadoActualizado.ultimaActividad});
+      
+      final index = _allAsociados.indexWhere((a) => a.id == asociadoActualizado.id);
+      if (index != -1) {
+        _allAsociados[index] = asociadoActualizado;
+      }
+      selectedAsociado.value = asociadoActualizado;
 
       _showSuccessSnackbar("Éxito!", "Carga familiar agregada correctamente");
       
@@ -571,24 +591,33 @@ class AsociadosController extends GetxController {
 
   Future<bool> updateAsociadoBarcode(String asociadoId, String codigoBarras) async {
     try {
+      final asociado = _allAsociados.firstWhereOrNull((a) => a.id == asociadoId);
+      if (asociado == null) return false;
+
+      final asociadoActualizado = asociado.copyWith(
+        codigoBarras: codigoBarras,
+        ultimaActividad: DateTime.now(),
+      );
+
       await FirebaseFirestore.instance
           .collection('asociados')
           .doc(asociadoId)
-          .update({
-        'codigoBarras': codigoBarras,
-      });
+          .update(asociadoActualizado.toMap());
       
       if (selectedAsociado.value?.id == asociadoId) {
-        selectedAsociado.value = selectedAsociado.value?.copyWith(
-          codigoBarras: codigoBarras,
-        );
+        selectedAsociado.value = asociadoActualizado;
         selectedAsociado.refresh();
       }
       
       final index = asociados.indexWhere((a) => a.id == asociadoId);
       if (index != -1) {
-        asociados[index] = asociados[index].copyWith(codigoBarras: codigoBarras);
+        asociados[index] = asociadoActualizado;
         asociados.refresh();
+      }
+
+      final allIndex = _allAsociados.indexWhere((a) => a.id == asociadoId);
+      if (allIndex != -1) {
+        _allAsociados[allIndex] = asociadoActualizado;
       }
       
       Get.snackbar(
@@ -669,14 +698,19 @@ class AsociadosController extends GetxController {
         if (asociado.id != null && (asociado.sap == null || asociado.sap!.isEmpty)) {
           final sap = await _generateUniqueSAP();
           
+          final asociadoActualizado = asociado.copyWith(
+            sap: sap,
+            ultimaActividad: DateTime.now(),
+          );
+
           await FirebaseFirestore.instance
               .collection('asociados')
               .doc(asociado.id)
-              .update({'sap': sap});
+              .update(asociadoActualizado.toMap());
           
           final index = _allAsociados.indexWhere((a) => a.id == asociado.id);
           if (index != -1) {
-            _allAsociados[index] = _allAsociados[index].copyWith(sap: sap);
+            _allAsociados[index] = asociadoActualizado;
           }
           
           // Registrar en historial
@@ -799,4 +833,5 @@ class AsociadosController extends GetxController {
   int get totalAllAsociados => _allAsociados.length;
   bool get hasAsociados => asociados.isNotEmpty;
   int get totalCargasFamiliares => cargasFamiliares.length;
+  int get totalAsociadosActivos => _allAsociados.where((a) => a.estaActivo).length;
 }

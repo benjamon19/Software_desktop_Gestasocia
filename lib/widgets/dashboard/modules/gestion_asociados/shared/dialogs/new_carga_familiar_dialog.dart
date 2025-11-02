@@ -13,8 +13,8 @@ class NewCargaFamiliarDialog {
     final apellidoController = TextEditingController();
     final rutController = TextEditingController();
     
-    // Variables reactivas
-    final selectedParentesco = 'Hijo/a'.obs;
+    // Variables reactivas - ⭐ VALOR POR DEFECTO CORREGIDO
+    final selectedParentesco = 'Hijo'.obs;
     final selectedDate = Rxn<DateTime>();
     final isLoading = false.obs;
 
@@ -145,20 +145,14 @@ class NewCargaFamiliarDialog {
                   
                   Row(
                     children: [
+                      // ⭐ PARENTESCO CORREGIDO - Solo Hijo, Hija, Cónyuge
                       Expanded(child: Obx(() => _buildDropdown(
                         context, 
                         'Parentesco', 
                         [
-                          'Hijo/a',
-                          'Cónyuge', 
-                          'Padre',
-                          'Madre',
-                          'Hermano/a',
-                          'Abuelo/a',
-                          'Nieto/a',
-                          'Tío/a',
-                          'Sobrino/a',
-                          'Otro'
+                          'Hijo',
+                          'Hija',
+                          'Cónyuge',
                         ], 
                         Icons.family_restroom,
                         selectedParentesco,
@@ -202,7 +196,7 @@ class NewCargaFamiliarDialog {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'La carga familiar será asociada automáticamente al plan del titular. Podrás agregar información médica y de contacto después de crearla.',
+                          'La carga familiar será asociada automáticamente al plan del titular. Podrás agregar información extra después de crearla.',
                           style: TextStyle(
                             color: AppTheme.getTextSecondary(context),
                             fontSize: 12,

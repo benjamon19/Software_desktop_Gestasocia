@@ -106,26 +106,18 @@ class CargasFamiliaresMainView extends StatelessWidget {
   Widget _buildDashboardView(BuildContext context, cargas_controller.CargasFamiliaresController controller) {
     return Column(
       children: [
-        // Métricas superiores
         const MetricsSection(),
         const SizedBox(height: 30),
 
-        // Layout principal
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Acciones pendientes (lado izquierdo - 2/3)
               Expanded(
                 flex: 2,
-                child: PendingActionsSection(),
-              ),
 
               const SizedBox(width: 20),
 
-              // Lista de cargas (lado derecho - 1/3)
-              Expanded(
-                flex: 1,
                 child: Column(
                   children: [
                     SearchSection(controller: controller),
@@ -140,6 +132,8 @@ class CargasFamiliaresMainView extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+                child: PendingActionsSection(),
               ),
             ],
           ),

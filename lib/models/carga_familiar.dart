@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CargaFamiliar {
   String? id;
-  String asociadoId; // Referencia al asociado titular
+  String asociadoId;
   String nombre;
   String apellido;
   String rut;
@@ -10,6 +10,9 @@ class CargaFamiliar {
   DateTime fechaNacimiento;
   DateTime fechaCreacion;
   bool isActive;
+  DateTime? ultimaActividad;
+  String? codigoBarras;
+  String? sap;
 
   CargaFamiliar({
     this.id,
@@ -21,9 +24,11 @@ class CargaFamiliar {
     required this.fechaNacimiento,
     required this.fechaCreacion,
     this.isActive = true,
+    this.ultimaActividad,
+    this.codigoBarras,
+    this.sap,
   });
 
-  // Getters útiles
   String get nombreCompleto => '$nombre $apellido';
   
   String get rutFormateado {
@@ -31,7 +36,6 @@ class CargaFamiliar {
     String cuerpo = rut.substring(0, rut.length - 1);
     String dv = rut.substring(rut.length - 1);
     
-    // Formatear cuerpo con puntos
     String cuerpoFormateado = '';
     for (int i = cuerpo.length - 1; i >= 0; i--) {
       if ((cuerpo.length - i) % 3 == 1 && i != cuerpo.length - 1) {
@@ -55,9 +59,27 @@ class CargaFamiliar {
            '${fechaCreacion.year}';
   }
 
-  String get estado => isActive ? 'Activa' : 'Inactiva';
+  bool get isActivoPorActividad {
+    if (ultimaActividad == null) {
+      final mesesSinActividad = DateTime.now().difference(fechaCreacion).inDays ~/ 30;
+      return mesesSinActividad < 2;
+    }
+    
+    final mesesSinActividad = DateTime.now().difference(ultimaActividad!).inDays ~/ 30;
+    return mesesSinActividad < 2;
+  }
 
-  // Calcular edad
+  bool get estaActivo {
+    if (!isActive) return false;
+    return isActivoPorActividad;
+  }
+
+  CargaFamiliar actualizarActividad() {
+    return copyWith(ultimaActividad: DateTime.now());
+  }
+
+  String get estado => estaActivo ? 'Activa' : 'Inactiva';
+
   int get edad {
     final now = DateTime.now();
     int age = now.year - fechaNacimiento.year;
@@ -68,10 +90,8 @@ class CargaFamiliar {
     return age;
   }
 
-  // Validación de RUT chileno (reutilizada del modelo Asociado)
   static bool validarRUT(String rut) {
     try {
-      // Limpiar RUT (quitar puntos y guión)
       String rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
       
       if (rutLimpio.length < 2) return false;
@@ -79,10 +99,8 @@ class CargaFamiliar {
       String cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
       String dv = rutLimpio.substring(rutLimpio.length - 1).toUpperCase();
       
-      // Validar que el cuerpo sean solo números
       if (!RegExp(r'^[0-9]+$').hasMatch(cuerpo)) return false;
       
-      // Calcular dígito verificador
       int suma = 0;
       int multiplicador = 2;
       
@@ -100,16 +118,15 @@ class CargaFamiliar {
     }
   }
 
-  // Validar parentesco
   static bool validarParentesco(String parentesco) {
-    final parentescosValidos = [
-      'Hijo/a', 'Cónyuge', 'Padre', 'Madre', 'Hermano/a', 
-      'Abuelo/a', 'Nieto/a', 'Tío/a', 'Sobrino/a', 'Otro'
-    ];
+    final parentescosValidos = ['Hijo', 'Hija', 'Cónyuge'];
     return parentescosValidos.contains(parentesco);
   }
 
-  // Convertir a Map para Firestore
+  static bool validarSAP(String sap) {
+    return RegExp(r'^[0-9]{5}$').hasMatch(sap);
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'asociadoId': asociadoId,
@@ -120,10 +137,12 @@ class CargaFamiliar {
       'fechaNacimiento': fechaNacimiento,
       'fechaCreacion': fechaCreacion,
       'isActive': isActive,
+      'ultimaActividad': ultimaActividad,
+      'codigoBarras': codigoBarras,
+      'sap': sap,
     };
   }
 
-  // Crear desde Map de Firestore
   factory CargaFamiliar.fromMap(Map<String, dynamic> map, String id) {
     return CargaFamiliar(
       id: id,
@@ -135,10 +154,12 @@ class CargaFamiliar {
       fechaNacimiento: _parseDateTime(map['fechaNacimiento']),
       fechaCreacion: _parseDateTime(map['fechaCreacion']),
       isActive: map['isActive'] ?? true,
+      ultimaActividad: map['ultimaActividad'] != null ? _parseDateTime(map['ultimaActividad']) : null,
+      codigoBarras: map['codigoBarras'],
+      sap: map['sap'],
     );
   }
 
-  // Helper para manejar diferentes tipos de fecha
   static DateTime _parseDateTime(dynamic fecha) {
     if (fecha == null) return DateTime.now();
     
@@ -151,14 +172,12 @@ class CargaFamiliar {
         return DateTime.now();
       }
     } else if (fecha is Timestamp) {
-      // Para Timestamp de Firestore
       return fecha.toDate();
     } else {
       return DateTime.now();
     }
   }
 
-  // Crear copia con cambios
   CargaFamiliar copyWith({
     String? id,
     String? asociadoId,
@@ -169,6 +188,9 @@ class CargaFamiliar {
     DateTime? fechaNacimiento,
     DateTime? fechaCreacion,
     bool? isActive,
+    DateTime? ultimaActividad,
+    String? codigoBarras,
+    String? sap,
   }) {
     return CargaFamiliar(
       id: id ?? this.id,
@@ -180,12 +202,15 @@ class CargaFamiliar {
       fechaNacimiento: fechaNacimiento ?? this.fechaNacimiento,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       isActive: isActive ?? this.isActive,
+      ultimaActividad: ultimaActividad ?? this.ultimaActividad,
+      codigoBarras: codigoBarras ?? this.codigoBarras,
+      sap: sap ?? this.sap,
     );
   }
 
   @override
   String toString() {
-    return 'CargaFamiliar{id: $id, nombreCompleto: $nombreCompleto, rut: $rutFormateado, parentesco: $parentesco}';
+    return 'CargaFamiliar{id: $id, nombreCompleto: $nombreCompleto, rut: $rutFormateado, parentesco: $parentesco, sap: $sap}';
   }
 
   @override

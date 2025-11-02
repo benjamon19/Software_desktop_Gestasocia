@@ -311,9 +311,9 @@ class AsociadosMainView extends StatelessWidget {
             width: indicatorSize,
             height: indicatorSize,
             decoration: BoxDecoration(
-              color: asociado.isActive
-                  ? AppTheme.primaryColor
-                  : Colors.grey.shade400,
+              color: asociado.estaActivo
+                  ? const Color(0xFF10B981)
+                  : const Color(0xFFEF4444),
               shape: BoxShape.circle,
               border: Border.all(
                 color: Theme.of(context).scaffoldBackgroundColor,
@@ -342,7 +342,6 @@ class AsociadosMainView extends StatelessWidget {
           ),
           if (!isVerySmall) SizedBox(height: 2),
           if (isVerySmall)
-            // Ultra compacto: solo RUT
             Text(
               _formatearRut(asociado.rut),
               style: TextStyle(
@@ -352,7 +351,6 @@ class AsociadosMainView extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             )
           else if (isSmallScreen)
-            // Compacto: RUT y email truncado
             Row(
               children: [
                 Icon(Icons.badge, size: 12, color: AppTheme.getTextSecondary(context)),
@@ -378,7 +376,6 @@ class AsociadosMainView extends StatelessWidget {
               ],
             )
           else
-            // Normal: información completa pero compacta
             Row(
               children: [
                 Icon(Icons.badge, size: 12, color: AppTheme.getTextSecondary(context)),

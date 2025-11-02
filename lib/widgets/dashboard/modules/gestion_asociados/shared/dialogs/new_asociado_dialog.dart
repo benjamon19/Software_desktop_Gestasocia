@@ -16,9 +16,9 @@ class NewAsociadoDialog {
     final telefonoController = TextEditingController();
     final direccionController = TextEditingController();
     
-    // Variables reactivas
+    // Variables reactivas - VALORES CORREGIDOS
     final selectedEstadoCivil = 'Soltero'.obs;
-    final selectedPlan = 'Básico'.obs;
+    final selectedPlan = 'Asociado'.obs;
     final selectedDate = Rxn<DateTime>();
     final isLoading = false.obs;
 
@@ -143,11 +143,11 @@ class NewAsociadoDialog {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+                
                   Obx(() => _buildDropdown(
                     context, 
                     'Estado Civil', 
-                    ['Soltero', 'Casado', 'Divorciado', 'Viudo'], 
+                    ['Soltero', 'Casado', 'Viudo'], 
                     Icons.favorite,
                     selectedEstadoCivil,
                   )),
@@ -187,7 +187,7 @@ class NewAsociadoDialog {
                   Obx(() => _buildDropdown(
                     context, 
                     'Plan', 
-                    ['Básico', 'Premium', 'VIP', 'Empresarial'], 
+                    ['Asociado', 'VIP'], 
                     Icons.card_membership,
                     selectedPlan,
                   )),
@@ -329,7 +329,7 @@ class NewAsociadoDialog {
     );
   }
 
-  // TextField especial para RUT con formateo automático (usando tu formatter)
+  // TextField especial para RUT con formateo automático
   static Widget _buildRutTextField(BuildContext context, TextEditingController controller) {
     return TextField(
       controller: controller,
@@ -450,7 +450,7 @@ class NewAsociadoDialog {
   }
 }
 
-// Formateador para RUT chileno (tomado de tu código de NewCargaFamiliarDialog)
+// Formateador para RUT chileno
 class _RutFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

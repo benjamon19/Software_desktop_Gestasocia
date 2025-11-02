@@ -185,7 +185,7 @@ class EditAsociadoDialog {
                       Expanded(child: Obx(() => _buildDropdown(
                         context, 
                         'Estado Civil', 
-                        ['Soltero', 'Casado', 'Divorciado', 'Viudo'], 
+                        ['Soltero', 'Casado', 'Viudo'], 
                         Icons.favorite,
                         selectedEstadoCivil,
                       ))),
@@ -227,7 +227,7 @@ class EditAsociadoDialog {
                   Obx(() => _buildDropdown(
                     context, 
                     'Plan', 
-                    ['Básico', 'Premium', 'VIP', 'Empresarial'], 
+                    ['Asociado', 'VIP'], 
                     Icons.card_membership,
                     selectedPlan,
                   )),
@@ -412,6 +412,9 @@ class EditAsociadoDialog {
   }
 
   static Widget _buildDropdown(BuildContext context, String label, List<String> items, IconData icon, RxString selectedValue) {
+    if (!items.contains(selectedValue.value)) {
+      selectedValue.value = items.first;
+    }
     return SizedBox(
       width: double.infinity,
       child: DropdownButtonFormField<String>(
