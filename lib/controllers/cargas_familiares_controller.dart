@@ -1,148 +1,337 @@
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:developer' as dev;
+import 'package:flutter/material.dart';
+import 'dart:async';
 import '../models/carga_familiar.dart';
+import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/edit_carga_dialog.dart';
+import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/transfer_carga_dialog.dart';
 
 class CargasFamiliaresController extends GetxController {
-  RxBool isLoading = false.obs;
-  RxList<Map<String, dynamic>> filteredCargas = <Map<String, dynamic>>[].obs;
-  RxList<Map<String, dynamic>> allCargas = <Map<String, dynamic>>[].obs;
+  // ==================== ESTADO ====================
+  final RxList<CargaFamiliar> _allCargasFamiliares = <CargaFamiliar>[].obs;
   RxList<CargaFamiliar> cargasFamiliares = <CargaFamiliar>[].obs;
-  Rxn<Map<String, dynamic>> selectedCargaMap = Rxn<Map<String, dynamic>>();
-  Rxn<CargaFamiliar> selectedCarga = Rxn<CargaFamiliar>();
-  RxString searchText = ''.obs;
+  final RxList<Map<String, dynamic>> filteredCargas = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> allCargas = <Map<String, dynamic>>[].obs;
+  final Rxn<CargaFamiliar> selectedCarga = Rxn<CargaFamiliar>();
+  final RxBool isLoading = false.obs;
+  final RxString searchText = ''.obs;
+  final TextEditingController searchController = TextEditingController();
+  Timer? _debounceTimer;
 
+  // ==================== GETTERS ====================
+  bool get hasSelectedCarga => selectedCarga.value != null;
+  bool get hasCargas => cargasFamiliares.isNotEmpty;
+  CargaFamiliar? get currentCarga => selectedCarga.value;
+  int get totalAllCargas => allCargas.length;
+  int get totalCargas => cargasFamiliares.length;
+  int get totalCargasActivas => _allCargasFamiliares.where((c) => c.estaActivo).length;
+
+  // ==================== INICIALIZACIÓN ====================
   @override
   void onInit() {
     super.onInit();
-    dev.log('INICIANDO CONTROLADOR CARGAS', name: 'CargasFamiliaresController');
+
+    searchText.listen((query) {
+      if (_debounceTimer == null || !_debounceTimer!.isActive) {
+        _debounceTimer?.cancel();
+        _debounceTimer = Timer(const Duration(milliseconds: 100), () {
+          _filterCargas();
+        });
+      }
+    });
+
+    searchController.addListener(() {
+      searchText.value = searchController.text;
+    });
+
     loadCargas();
   }
 
+  @override
+  void onClose() {
+    _debounceTimer?.cancel();
+    searchController.dispose();
+    super.onClose();
+  }
+
+  // ==================== CARGA DE DATOS ====================
   Future<void> loadCargas() async {
     try {
       isLoading.value = true;
-      dev.log('INTENTANDO CARGAR DE FIRESTORE', name: 'CargasFamiliaresController');
 
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('cargas_familiares')
-          .get()
-          .timeout(const Duration(seconds: 5));
+          .get();
 
-      dev.log('DOCUMENTOS EN FIRESTORE: ${snapshot.docs.length}', name: 'CargasFamiliaresController');
+      _allCargasFamiliares.clear();
+      cargasFamiliares.clear();
 
-      List<Map<String, dynamic>> cargasReales = [];
-      List<CargaFamiliar> cargasModelos = [];
-      
       for (var doc in snapshot.docs) {
-        try {
-          final data = doc.data() as Map<String, dynamic>;
-          final carga = CargaFamiliar.fromMap(data, doc.id);
-
-          final Map<String, dynamic> cargaMap = carga.toMap();
-          cargaMap['id'] = carga.id;
-          cargaMap['edad'] = carga.edad;
-          cargaMap['estado'] = carga.estado;
-          cargaMap['rutFormateado'] = carga.rutFormateado;
-          cargaMap['nombreCompleto'] = carga.nombreCompleto;
-          cargaMap['fechaNacimientoFormateada'] = carga.fechaNacimientoFormateada;
-          cargaMap['fechaCreacionFormateada'] = carga.fechaCreacionFormateada;
-
-          cargasReales.add(cargaMap);
-          cargasModelos.add(carga);
-
-          dev.log('CARGA REAL: ${carga.nombreCompleto}', name: 'CargasFamiliaresController');
-        } catch (e) {
-          dev.log('ERROR EN DOC ${doc.id}: $e', name: 'CargasFamiliaresController', error: e);
-        }
+        final carga = CargaFamiliar.fromMap(
+          doc.data() as Map<String, dynamic>,
+          doc.id,
+        );
+        _allCargasFamiliares.add(carga);
+        cargasFamiliares.add(carga);
       }
 
-      allCargas.value = cargasReales;
-      filteredCargas.value = cargasReales;
-      cargasFamiliares.value = cargasModelos;
-      
-      dev.log('CARGAS REALES CARGADAS: ${cargasReales.length}', name: 'CargasFamiliaresController');
+      _updateCargasLists();
     } catch (e) {
-      dev.log('ERROR CONECTANDO FIRESTORE O CARGANDO DATOS: $e', name: 'CargasFamiliaresController', error: e);
-      allCargas.value = [];
-      filteredCargas.value = [];
-      cargasFamiliares.value = [];
+      debugPrint('Error al cargar cargas familiares: $e');
+      _showErrorSnackbar("Error", "No se pudieron cargar las cargas familiares");
     } finally {
       isLoading.value = false;
-      dev.log('CARGA FINALIZADA: ${filteredCargas.length} cargas', name: 'CargasFamiliaresController');
     }
   }
 
-  void searchCargas(String query) {
-    searchText.value = query;
-    dev.log('BUSCANDO: "$query"', name: 'CargasFamiliaresController');
+  Future<void> refreshCargas() async {
+    await loadCargas();
+    _showSuccessSnackbar('Actualizado', 'Lista de cargas actualizada');
+  }
 
-    if (query.isEmpty) {
-      filteredCargas.value = allCargas.toList();
-      dev.log('BÚSQUEDA VACÍA - MOSTRANDO TODAS: ${filteredCargas.length}', name: 'CargasFamiliaresController');
-    } else {
-      final queryLower = query.toLowerCase();
-      filteredCargas.value = allCargas.where((carga) {
-        final nombre = (carga['nombre'] ?? '').toString().toLowerCase();
-        final apellido = (carga['apellido'] ?? '').toString().toLowerCase();
-        final rut = (carga['rut'] ?? '').toString().toLowerCase();
-        final rutFormateado = (carga['rutFormateado'] ?? '').toString().toLowerCase();
-        final parentesco = (carga['parentesco'] ?? '').toString().toLowerCase();
-        final nombreCompleto = (carga['nombreCompleto'] ?? '').toString().toLowerCase();
+  // ==================== CONVERSIÓN Y ACTUALIZACIÓN ====================
+  void _updateCargasLists() {
+    final cargasMap = cargasFamiliares.map((carga) => _cargaToMap(carga)).toList();
+    allCargas.value = cargasMap;
+    filteredCargas.value = cargasMap;
+  }
 
-        return nombre.contains(queryLower) ||
-            apellido.contains(queryLower) ||
-            rut.contains(queryLower) ||
-            rutFormateado.contains(queryLower) ||
-            parentesco.contains(queryLower) ||
-            nombreCompleto.contains(queryLower);
-      }).toList();
+  Map<String, dynamic> _cargaToMap(CargaFamiliar carga) {
+    return {
+      'id': carga.id,
+      'nombre': carga.nombre,
+      'apellido': carga.apellido,
+      'nombreCompleto': carga.nombreCompleto,
+      'rut': carga.rut,
+      'rutFormateado': carga.rutFormateado,
+      'parentesco': carga.parentesco,
+      'fechaNacimiento': carga.fechaNacimientoFormateada,
+      'fechaCreacion': carga.fechaCreacionFormateada,
+      'edad': carga.edad,
+      'estado': carga.estado,
+      'isActive': carga.isActive,
+      'asociadoId': carga.asociadoId,
+      'codigoBarras': carga.codigoBarras,
+      'sap': carga.sap,
+      'email': carga.email,
+      'telefono': carga.telefono,
+      'direccion': carga.direccion,
+    };
+  }
 
-      dev.log('RESULTADOS ENCONTRADOS: ${filteredCargas.length}', name: 'CargasFamiliaresController');
-    }
+  // ==================== BÚSQUEDA Y FILTRADO ====================
+  void _filterCargas() {
+    // ========== AQUÍ IMPLEMENTAR BÚSQUEDA ==========
+  }
+
+  void clearSearchField() {
+    // ========== AQUÍ IMPLEMENTAR BÚSQUEDA ==========
+  }
+
+  void resetFilter() {
+    // ========== AQUÍ IMPLEMENTAR BÚSQUEDA ==========
+  }
+
+  // ==================== BÚSQUEDA EXACTA ====================
+  Future<void> searchCargas(String searchTerm) async {
+    // ========== AQUÍ IMPLEMENTAR BÚSQUEDA ==========
+  }
+
+  Future<void> _searchCargaByRut(String rut) async {
+    // ========== AQUÍ IMPLEMENTAR BÚSQUEDA ==========
+  }
+
+  Future<void> _searchCargasBySAP(String sap) async {
+    // ========== AQUÍ IMPLEMENTAR BÚSQUEDA ==========
+  }
+
+  Future<void> _filterCargasByAsociadoId(String asociadoId, String sap) async {
+    // ========== AQUÍ IMPLEMENTAR BÚSQUEDA ==========
   }
 
   void clearSearch() {
-    searchText.value = '';
-    filteredCargas.value = allCargas.toList();
-    dev.log('BÚSQUEDA LIMPIADA - MOSTRANDO TODAS: ${filteredCargas.length}', name: 'CargasFamiliaresController');
+    // ========== AQUÍ IMPLEMENTAR BÚSQUEDA ==========
   }
 
-  void selectCarga(Map<String, dynamic> carga) {
-    dev.log('SELECCIONANDO CARGA: ${carga['nombre']}', name: 'CargasFamiliaresController');
-    selectedCargaMap.value = carga;
-    
-    final cargaId = carga['id'];
-    if (cargaId != null) {
-      final cargaModelo = cargasFamiliares.firstWhereOrNull((c) => c.id == cargaId);
-      selectedCarga.value = cargaModelo;
+  // ==================== NAVEGACIÓN ====================
+  void selectCarga(Map<String, dynamic> cargaMap) {
+    final carga = cargasFamiliares.firstWhereOrNull(
+      (c) => c.id == cargaMap['id'],
+    );
+
+    if (carga != null) {
+      selectedCarga.value = carga;
+      searchText.value = '';
     }
   }
 
   void backToList() {
-    dev.log('VOLVIENDO A LISTA', name: 'CargasFamiliaresController');
-    selectedCargaMap.value = null;
     selectedCarga.value = null;
+    resetFilter();
+    clearSearchField();
   }
 
-  Future<void> refreshCargas() async {
-    dev.log('REFRESCANDO CARGAS', name: 'CargasFamiliaresController');
-    await loadCargas();
-  }
-
+  // ==================== ACCIONES CRUD ====================
   void editCarga() {
-    if (selectedCarga.value != null) {
-      Get.snackbar('Editar', 'Editar: ${selectedCarga.value!.nombreCompleto}');
+    if (selectedCarga.value == null) {
+      _showErrorSnackbar('Error', 'No hay carga seleccionada');
+      return;
+    }
+
+    final context = Get.context;
+    if (context != null) {
+      EditCargaDialog.show(context, selectedCarga.value!);
+    } else {
+      _showErrorSnackbar("Error", "No se pudo abrir el formulario de edición");
     }
   }
 
-  void deleteCarga() {}
-  void transferCarga() {}
-  void generateCarnet() {}
-  void updateMedicalInfo() {}
-  void viewHistory() {}
+  Future<bool> updateCarga(CargaFamiliar cargaActualizada) async {
+    try {
+      isLoading.value = true;
 
-  bool get hasSelectedCarga => selectedCarga.value != null;
-  bool get isListView => !hasSelectedCarga;
-  bool get isDetailView => hasSelectedCarga;
+      if (cargaActualizada.id == null) {
+        _showErrorSnackbar("Error", "No se puede actualizar: ID de carga no válido");
+        return false;
+      }
+
+      final cargaConActividad = cargaActualizada.actualizarActividad();
+
+      await FirebaseFirestore.instance
+          .collection('cargas_familiares')
+          .doc(cargaConActividad.id)
+          .update(cargaConActividad.toMap());
+
+      final index = _allCargasFamiliares.indexWhere((c) => c.id == cargaConActividad.id);
+      if (index != -1) {
+        _allCargasFamiliares[index] = cargaConActividad;
+        cargasFamiliares[index] = cargaConActividad;
+      }
+
+      _updateCargasLists();
+
+      selectedCarga.value = null;
+      await Future.delayed(const Duration(milliseconds: 50));
+      selectedCarga.value = cargaConActividad;
+
+      _showSuccessSnackbar("Éxito!", "Carga familiar actualizada correctamente");
+
+      return true;
+    } catch (e) {
+      debugPrint('Error al actualizar carga: $e');
+      _showErrorSnackbar("Error", "No se pudo actualizar la carga familiar");
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteCarga() async {
+    if (selectedCarga.value?.id == null) {
+      _showErrorSnackbar('Error', 'No hay carga seleccionada');
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+
+      final cargaId = selectedCarga.value!.id!;
+
+      await FirebaseFirestore.instance
+          .collection('cargas_familiares')
+          .doc(cargaId)
+          .delete();
+
+      _allCargasFamiliares.removeWhere((c) => c.id == cargaId);
+      cargasFamiliares.removeWhere((c) => c.id == cargaId);
+
+      _updateCargasLists();
+
+      selectedCarga.value = null;
+      searchText.value = '';
+
+      _showSuccessSnackbar('Eliminado', 'Carga familiar eliminada correctamente');
+    } catch (e) {
+      debugPrint('Error al eliminar carga: $e');
+      _showErrorSnackbar('Error', 'No se pudo eliminar la carga familiar');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ==================== MÉTODOS DE INTERFAZ ====================
+  void transferCarga() {
+    if (selectedCarga.value == null) {
+      _showErrorSnackbar('Error', 'No hay carga seleccionada');
+      return;
+    }
+
+    final context = Get.context;
+    if (context != null) {
+      TransferCargaDialog.show(context, selectedCarga.value!);
+    } else {
+      _showErrorSnackbar('Error', 'No se pudo abrir el diálogo de transferencia');
+    }
+  }
+
+  void generateCarnet() {
+    if (selectedCarga.value == null) {
+      _showErrorSnackbar('Error', 'No hay carga seleccionada');
+      return;
+    }
+
+    _showInfoSnackbar('Información', 'Funcionalidad en desarrollo');
+  }
+
+  void viewHistory() {
+    if (selectedCarga.value == null) {
+      _showErrorSnackbar('Error', 'No hay carga seleccionada');
+      return;
+    }
+
+    _showInfoSnackbar('Información', 'Funcionalidad en desarrollo');
+  }
+
+  void updateMedicalInfo() {
+    if (selectedCarga.value == null) {
+      _showErrorSnackbar('Error', 'No hay carga seleccionada');
+      return;
+    }
+
+    _showInfoSnackbar('Información', 'Funcionalidad en desarrollo');
+  }
+
+  // ==================== HELPERS ====================
+  void _showErrorSnackbar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
+      colorText: Get.theme.colorScheme.onError,
+      duration: const Duration(seconds: 4),
+    );
+  }
+
+  void _showSuccessSnackbar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.8),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  void _showInfoSnackbar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.8),
+      colorText: Colors.white,
+      duration: const Duration(seconds: 2),
+    );
+  }
 }

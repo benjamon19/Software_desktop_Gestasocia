@@ -16,7 +16,11 @@ class CargaFamiliar {
   String? ultimaVisita;
   String? proximaCita;
   List<String>? alertas;
-  Map<String, dynamic>? contactoEmergencia;
+  
+  // Información de contacto de la carga
+  String? email;
+  String? telefono;
+  String? direccion;
 
   CargaFamiliar({
     this.id,
@@ -34,13 +38,14 @@ class CargaFamiliar {
     this.ultimaVisita,
     this.proximaCita,
     this.alertas,
-    this.contactoEmergencia,
+    this.email,
+    this.telefono,
+    this.direccion,
   });
 
   String get nombreCompleto => '$nombre $apellido';
   
   String get rutFormateado {
-    // Limpiar el RUT de puntos y guiones existentes
     final rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
     
     if (rutLimpio.length < 2) return rutLimpio;
@@ -155,7 +160,9 @@ class CargaFamiliar {
       'ultimaVisita': ultimaVisita,
       'proximaCita': proximaCita,
       'alertas': alertas,
-      'contactoEmergencia': contactoEmergencia,
+      'email': email,
+      'telefono': telefono,
+      'direccion': direccion,
     };
   }
 
@@ -164,14 +171,6 @@ class CargaFamiliar {
       if (alertas == null) return null;
       if (alertas is List) {
         return alertas.map((e) => e.toString()).toList();
-      }
-      return null;
-    }
-
-    Map<String, dynamic>? parseContactoEmergencia(dynamic contacto) {
-      if (contacto == null) return null;
-      if (contacto is Map) {
-        return Map<String, dynamic>.from(contacto);
       }
       return null;
     }
@@ -192,7 +191,9 @@ class CargaFamiliar {
       ultimaVisita: map['ultimaVisita']?.toString(),
       proximaCita: map['proximaCita']?.toString(),
       alertas: parseAlertas(map['alertas']),
-      contactoEmergencia: parseContactoEmergencia(map['contactoEmergencia']),
+      email: map['email'],
+      telefono: map['telefono'],
+      direccion: map['direccion'],
     );
   }
 
@@ -230,7 +231,9 @@ class CargaFamiliar {
     String? ultimaVisita,
     String? proximaCita,
     List<String>? alertas,
-    Map<String, dynamic>? contactoEmergencia,
+    String? email,
+    String? telefono,
+    String? direccion,
   }) {
     return CargaFamiliar(
       id: id ?? this.id,
@@ -248,7 +251,9 @@ class CargaFamiliar {
       ultimaVisita: ultimaVisita ?? this.ultimaVisita,
       proximaCita: proximaCita ?? this.proximaCita,
       alertas: alertas ?? this.alertas,
-      contactoEmergencia: contactoEmergencia ?? this.contactoEmergencia,
+      email: email ?? this.email,
+      telefono: telefono ?? this.telefono,
+      direccion: direccion ?? this.direccion,
     );
   }
 

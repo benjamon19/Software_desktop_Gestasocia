@@ -64,8 +64,13 @@ class PersonalInfoCard extends StatelessWidget {
   }
 
   Widget _buildInfoGrid(BuildContext context, dynamic currentCarga) {
+    final email = currentCarga.email ?? '';
+    final telefono = currentCarga.telefono ?? '';
+    final direccion = currentCarga.direccion ?? '';
+
     return Column(
       children: [
+        // Primera fila: Nombre Completo y RUT
         Row(
           children: [
             Expanded(
@@ -92,6 +97,36 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
+        // Segunda fila: Email y Teléfono
+        Row(
+          children: [
+            Expanded(
+              child: _buildInfoItem(
+                context,
+                'Email',
+                email.isNotEmpty ? email : 'No registrado',
+                Icons.email_outlined,
+                const Color(0xFF3B82F6),
+                isEmpty: email.isEmpty,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _buildInfoItem(
+                context,
+                'Teléfono',
+                telefono.isNotEmpty ? telefono : 'No registrado',
+                Icons.phone_outlined,
+                const Color(0xFF10B981),
+                isEmpty: telefono.isEmpty,
+              ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Tercera fila: Fecha de Nacimiento y Edad
         Row(
           children: [
             Expanded(
@@ -118,6 +153,7 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
+        // Cuarta fila: Parentesco y Asociado Titular
         Row(
           children: [
             Expanded(
@@ -144,6 +180,19 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
+        // Quinta fila: Dirección (ocupa toda la fila)
+        _buildInfoItem(
+          context,
+          'Dirección',
+          direccion.isNotEmpty ? direccion : 'No registrada',
+          Icons.location_on_outlined,
+          const Color(0xFFEF4444),
+          isEmpty: direccion.isEmpty,
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Sexta fila: Fecha de Registro
         _buildInfoItem(
           context,
           'Fecha de Registro',
@@ -155,7 +204,14 @@ class PersonalInfoCard extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoItem(BuildContext context, String label, String value, IconData icon, Color iconColor) {
+  Widget _buildInfoItem(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+    Color iconColor, {
+    bool isEmpty = false,
+  }) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -201,11 +257,14 @@ class PersonalInfoCard extends StatelessWidget {
           const SizedBox(height: 12),
           
           Text(
-            value.isEmpty ? 'No especificado' : value,
+            value,
             style: TextStyle(
               fontSize: 15,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.getTextPrimary(context),
+              fontWeight: isEmpty ? FontWeight.normal : FontWeight.w600,
+              color: isEmpty
+                  ? AppTheme.getTextSecondary(context).withValues(alpha: 0.5)
+                  : AppTheme.getTextPrimary(context),
+              fontStyle: isEmpty ? FontStyle.italic : FontStyle.normal,
               height: 1.3,
             ),
             maxLines: 2,

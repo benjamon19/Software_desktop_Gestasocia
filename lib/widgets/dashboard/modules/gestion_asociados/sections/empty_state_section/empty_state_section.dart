@@ -14,8 +14,6 @@ class EmptyStateSection extends StatelessWidget {
           const SizedBox(height: 32),
           _buildTitle(context),
           const SizedBox(height: 16),
-          _buildDescription(context),
-          const SizedBox(height: 40),
           _buildActionSuggestions(context),
         ],
       ),
@@ -49,27 +47,11 @@ class EmptyStateSection extends StatelessWidget {
     );
   }
 
-  Widget _buildDescription(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 400),
-      child: Text(
-        'Actualmente no tienes asociados registrados en el sistema. Puedes agregar un nuevo asociado usando el botón flotante.',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 16,
-          color: AppTheme.getTextSecondary(context),
-          height: 1.6,
-          letterSpacing: 0.1,
-        ),
-      ),
-    );
-  }
-
   Widget _buildActionSuggestions(BuildContext context) {
     return Column(
       children: [
         Text(
-          'Agregar nuevo asociado',
+          'No se encontró ningún asociado o aún no hay registros',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
