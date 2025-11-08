@@ -64,16 +64,16 @@ class TransferCargaDialog {
 
       isLoading.value = true;
 
-      final cargaActualizada = carga.copyWith(
-        asociadoId: selectedAsociado.value!.id!,
+      // Crear solicitud de transferencia (en lugar de transferir directamente)
+      final success = await cargasController.createTransferenciaSolicitud(
+        carga: carga,
+        nuevoAsociadoId: selectedAsociado.value!.id!,
+        nuevoAsociadoNombre: selectedAsociado.value!.nombreCompleto,
       );
-
-      final success = await cargasController.updateCarga(cargaActualizada);
 
       isLoading.value = false;
 
       if (success && context.mounted) {
-        cargasController.selectedCarga.refresh();
         Navigator.of(context).pop();
       }
     }

@@ -12,8 +12,6 @@ class NewCargaFamiliarDialog {
     final nombreController = TextEditingController();
     final apellidoController = TextEditingController();
     final rutController = TextEditingController();
-    
-    // Variables reactivas - ⭐ VALOR POR DEFECTO CORREGIDO
     final selectedParentesco = 'Hijo'.obs;
     final selectedDate = Rxn<DateTime>();
     final isLoading = false.obs;

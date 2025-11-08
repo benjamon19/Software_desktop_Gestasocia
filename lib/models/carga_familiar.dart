@@ -12,7 +12,6 @@ class CargaFamiliar {
   bool isActive;
   DateTime? ultimaActividad;
   String? codigoBarras;
-  String? sap;
   String? ultimaVisita;
   String? proximaCita;
   List<String>? alertas;
@@ -34,7 +33,6 @@ class CargaFamiliar {
     this.isActive = true,
     this.ultimaActividad,
     this.codigoBarras,
-    this.sap,
     this.ultimaVisita,
     this.proximaCita,
     this.alertas,
@@ -140,10 +138,6 @@ class CargaFamiliar {
     return parentescosValidos.contains(parentesco);
   }
 
-  static bool validarSAP(String sap) {
-    return RegExp(r'^[0-9]{5}$').hasMatch(sap);
-  }
-
   Map<String, dynamic> toMap() {
     return {
       'asociadoId': asociadoId,
@@ -156,7 +150,6 @@ class CargaFamiliar {
       'isActive': isActive,
       'ultimaActividad': ultimaActividad,
       'codigoBarras': codigoBarras,
-      'sap': sap,
       'ultimaVisita': ultimaVisita,
       'proximaCita': proximaCita,
       'alertas': alertas,
@@ -187,7 +180,6 @@ class CargaFamiliar {
       isActive: map['isActive'] ?? true,
       ultimaActividad: map['ultimaActividad'] != null ? _parseDateTime(map['ultimaActividad']) : null,
       codigoBarras: map['codigoBarras'],
-      sap: map['sap'],
       ultimaVisita: map['ultimaVisita']?.toString(),
       proximaCita: map['proximaCita']?.toString(),
       alertas: parseAlertas(map['alertas']),
@@ -227,7 +219,6 @@ class CargaFamiliar {
     bool? isActive,
     DateTime? ultimaActividad,
     String? codigoBarras,
-    String? sap,
     String? ultimaVisita,
     String? proximaCita,
     List<String>? alertas,
@@ -247,7 +238,6 @@ class CargaFamiliar {
       isActive: isActive ?? this.isActive,
       ultimaActividad: ultimaActividad ?? this.ultimaActividad,
       codigoBarras: codigoBarras ?? this.codigoBarras,
-      sap: sap ?? this.sap,
       ultimaVisita: ultimaVisita ?? this.ultimaVisita,
       proximaCita: proximaCita ?? this.proximaCita,
       alertas: alertas ?? this.alertas,
@@ -259,7 +249,7 @@ class CargaFamiliar {
 
   @override
   String toString() {
-    return 'CargaFamiliar{id: $id, nombreCompleto: $nombreCompleto, rut: $rutFormateado, parentesco: $parentesco, sap: $sap}';
+    return 'CargaFamiliar{id: $id, nombreCompleto: $nombreCompleto, rut: $rutFormateado, parentesco: $parentesco, asociadoId: $asociadoId}';
   }
 
   @override
