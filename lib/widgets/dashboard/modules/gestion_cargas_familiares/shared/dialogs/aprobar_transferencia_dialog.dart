@@ -175,7 +175,7 @@ class AprobarTransferenciaDialog {
                 : () {
                     _showRechazarDialog(context, solicitud, controller, motivoRechazoController);
                   },
-            icon: const Icon(Icons.close, size: 18),
+            icon: const Icon(Icons.close, size: 22),
             label: const Text('Rechazar'),
             style: TextButton.styleFrom(
               foregroundColor: Colors.red,
@@ -354,6 +354,7 @@ class AprobarTransferenciaDialog {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
             ),
             child: const Text('Rechazar'),
           ),

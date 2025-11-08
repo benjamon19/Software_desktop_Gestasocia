@@ -5,10 +5,12 @@ import 'dart:async';
 import '../models/carga_familiar.dart';
 import '../models/asociado.dart';
 import '../models/transferencia_solicitud.dart';
+import '../controllers/historial_cargas_controller.dart';
 import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/edit_carga_dialog.dart';
 import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/transfer_carga_dialog.dart';
 import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/barcode_search_dialog.dart';
 import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/generar_codigo_barras_carga_dialog.dart';
+import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/historial_carga_dialog.dart';
 
 class CargasFamiliaresController extends GetxController {
   // ==================== ESTADO ====================
@@ -224,8 +226,10 @@ class CargasFamiliaresController extends GetxController {
 
   void clearSearchField() {
     try {
+      if (!Get.isRegistered<CargasFamiliaresController>()) return;
+      
       final dynamic searchField = searchFieldKey.currentState;
-      if (searchField != null) {
+      if (searchField != null && searchField is State && searchField.mounted) {
         if (searchField.runtimeType.toString().contains('_CargaFamiliarSearchFieldState')) {
           (searchField as dynamic).clearField();
         }
@@ -452,8 +456,6 @@ class CargasFamiliaresController extends GetxController {
   void clearSearch() {
     selectedCarga.value = null;
     searchText.value = '';
-    clearSearchField();
-    resetFilter();
   }
 
   // ==================== SOLICITUDES DE TRANSFERENCIA ====================
@@ -671,7 +673,7 @@ class CargasFamiliaresController extends GetxController {
   // ==================== MÉTODOS DE INTERFAZ ====================
   Future<void> qrCodeSearch() async {
     final context = Get.context;
-    if (context != null) {
+    if (context != null && context.mounted) {
       BarcodeSearchDialog.show(context);
     } else {
       _showErrorSnackbar("Error", "No se pudo abrir el escáner de código de barras");
@@ -692,8 +694,7 @@ class CargasFamiliaresController extends GetxController {
 
   void backToList() {
     selectedCarga.value = null;
-    resetFilter();
-    clearSearchField();
+    searchText.value = '';
   }
 
   // ==================== ACCIONES CRUD ====================
@@ -720,6 +721,9 @@ class CargasFamiliaresController extends GetxController {
         return false;
       }
 
+      // Guardar carga anterior para historial
+      final cargaAnterior = _allCargasFamiliares.firstWhere((c) => c.id == cargaActualizada.id);
+
       final cargaConActividad = cargaActualizada.actualizarActividad();
 
       await FirebaseFirestore.instance
@@ -741,6 +745,9 @@ class CargasFamiliaresController extends GetxController {
 
       _showSuccessSnackbar("Éxito!", "Carga familiar actualizada correctamente");
 
+      // Registrar en historial
+      _registrarEdicion(cargaAnterior, cargaConActividad);
+
       return true;
     } catch (e) {
       _showErrorSnackbar("Error", "No se pudo actualizar la carga familiar");
@@ -760,6 +767,7 @@ class CargasFamiliaresController extends GetxController {
       isLoading.value = true;
 
       final cargaId = selectedCarga.value!.id!;
+      final cargaEliminada = selectedCarga.value!;
 
       await FirebaseFirestore.instance
           .collection('cargas_familiares')
@@ -775,6 +783,10 @@ class CargasFamiliaresController extends GetxController {
       searchText.value = '';
 
       _showSuccessSnackbar('Eliminado', 'Carga familiar eliminada correctamente');
+      
+      // Registrar en historial
+      _registrarEliminacion(cargaEliminada);
+
     } catch (e) {
       _showErrorSnackbar('Error', 'No se pudo eliminar la carga familiar');
     } finally {
@@ -821,12 +833,21 @@ class CargasFamiliaresController extends GetxController {
   }
 
   void viewHistory() {
-    if (selectedCarga.value == null) {
+    if (selectedCarga.value?.id == null) {
       _showErrorSnackbar('Error', 'No hay carga seleccionada');
       return;
     }
 
-    _showInfoSnackbar('Información', 'Funcionalidad en desarrollo');
+    final context = Get.context;
+    if (context != null) {
+      HistorialCargaDialog.show(
+        context,
+        cargaFamiliarId: selectedCarga.value!.id!,
+        nombreCarga: selectedCarga.value!.nombreCompleto,
+      );
+    } else {
+      _showErrorSnackbar('Error', 'No se pudo abrir el historial');
+    }
   }
 
   void updateMedicalInfo() {
@@ -836,6 +857,35 @@ class CargasFamiliaresController extends GetxController {
     }
 
     _showInfoSnackbar('Información', 'Funcionalidad en desarrollo');
+  }
+
+  // ==================== HISTORIAL ====================
+  
+  void _registrarEdicion(CargaFamiliar cargaAnterior, CargaFamiliar cargaNueva) {
+    try {
+      final historialController = Get.put(HistorialCargasController());
+      historialController.registrarEdicion(
+        cargaFamiliarId: cargaNueva.id!,
+        asociadoId: cargaNueva.asociadoId,
+        cargaAnterior: cargaAnterior,
+        cargaNueva: cargaNueva,
+      );
+    } catch (e) {
+      // Error silencioso
+    }
+  }
+
+  void _registrarEliminacion(CargaFamiliar carga) {
+    try {
+      final historialController = Get.put(HistorialCargasController());
+      historialController.registrarEliminacion(
+        cargaFamiliarId: carga.id!,
+        asociadoId: carga.asociadoId,
+        carga: carga,
+      );
+    } catch (e) {
+      // Error silencioso
+    }
   }
 
   // ==================== HELPERS ====================

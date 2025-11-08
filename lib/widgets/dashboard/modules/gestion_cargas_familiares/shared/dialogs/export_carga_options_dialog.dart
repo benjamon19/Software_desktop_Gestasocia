@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../../utils/app_theme.dart';
-import '../../../../../../controllers/asociados_controller.dart';
-import '../../../../../../services/export_service.dart';
+import '../../../../../../controllers/cargas_familiares_controller.dart';
+import '../../../../../../services/export_carga_service.dart';
+import '../../../../../../models/asociado.dart';
 
-class ExportOptionsDialog {
+class ExportCargaOptionsDialog {
   static void show(BuildContext context) {
-    // Obtenemos el controller aquí
-    final AsociadosController asociadosController = Get.find<AsociadosController>();
+    final CargasFamiliaresController cargasController = Get.find<CargasFamiliaresController>();
 
     showModalBottomSheet(
       context: context,
@@ -37,39 +38,40 @@ class ExportOptionsDialog {
               title: const Text('Exportar a PDF'),
               subtitle: const Text('Informe completo en formato PDF'),
               onTap: () async {
-                // 1. Cerrar el modal
                 Navigator.pop(modalContext);
 
-                // 2. Validar selección
-                if (!asociadosController.hasSelectedAsociado) {
-                  _showErrorSnackbar('Debes seleccionar un asociado para exportar');
+                if (!cargasController.hasSelectedCarga) {
+                  _showErrorSnackbar('Debes seleccionar una carga familiar para exportar');
                   return;
                 }
                 
-                final asociado = asociadosController.currentAsociado!;
+                final carga = cargasController.currentCarga!;
                 
-                // 3. Pedir al usuario dónde guardar
+                // Necesitamos obtener el asociado titular de esta carga
+                final asociado = await _obtenerAsociadoTitular(carga.asociadoId);
+                
+                if (asociado == null) {
+                  _showErrorSnackbar('No se pudo obtener la información del asociado titular');
+                  return;
+                }
+                
                 String? filePath = await FilePicker.platform.saveFile(
                   dialogTitle: 'Guardar PDF como...',
-                  fileName: 'asociado_${asociado.rut}.pdf',
+                  fileName: 'carga_${carga.rutFormateado.replaceAll('.', '').replaceAll('-', '')}.pdf',
                   allowedExtensions: ['pdf'],
                   type: FileType.custom,
                 );
 
-                // 4. Si el usuario seleccionó una ruta, exportar
                 if (filePath != null) {
                   try {
-                    final cargas = asociadosController.cargasFamiliares
-                        .where((c) => c.asociadoId == asociado.id)
-                        .toList();
-                    
-                    final success = await ExportService.exportToPDF(asociado, cargas, filePath);
+                    final success = await ExportCargasService.exportToPDF(
+                      asociado, carga, filePath
+                    );
 
                     if (success) {
                       _showSuccessSnackbar('PDF guardado en: $filePath');
                     } else {
-                      // El error específico se imprimirá desde el ExportService
-                      throw Exception('Error desconocido al guardar PDF');
+                      throw Exception('Error al guardar PDF');
                     }
                   } catch (e) {
                     _showErrorSnackbar('Error al exportar PDF: $e');
@@ -84,38 +86,40 @@ class ExportOptionsDialog {
               title: const Text('Exportar a Excel'),
               subtitle: const Text('Datos en formato de hoja de cálculo'),
               onTap: () async {
-                // 1. Cerrar el modal
                 Navigator.pop(modalContext);
 
-                // 2. Validar selección
-                if (!asociadosController.hasSelectedAsociado) {
-                  _showErrorSnackbar('Debes seleccionar un asociado para exportar');
+                if (!cargasController.hasSelectedCarga) {
+                  _showErrorSnackbar('Debes seleccionar una carga familiar para exportar');
                   return;
                 }
 
-                final asociado = asociadosController.currentAsociado!;
+                final carga = cargasController.currentCarga!;
+                
+                // Necesitamos obtener el asociado titular de esta carga
+                final asociado = await _obtenerAsociadoTitular(carga.asociadoId);
+                
+                if (asociado == null) {
+                  _showErrorSnackbar('No se pudo obtener la información del asociado titular');
+                  return;
+                }
 
-                // 3. Pedir al usuario dónde guardar
                 String? filePath = await FilePicker.platform.saveFile(
                   dialogTitle: 'Guardar Excel como...',
-                  fileName: 'asociado_${asociado.rut}.xlsx',
+                  fileName: 'carga_${carga.rutFormateado.replaceAll('.', '').replaceAll('-', '')}.xlsx',
                   allowedExtensions: ['xlsx'],
                   type: FileType.custom,
                 );
 
-                // 4. Si el usuario seleccionó una ruta, exportar
                 if (filePath != null) {
                   try {
-                    final cargas = asociadosController.cargasFamiliares
-                        .where((c) => c.asociadoId == asociado.id)
-                        .toList();
-
-                    final success = await ExportService.exportToExcel(asociado, cargas, filePath);
+                    final success = await ExportCargasService.exportToExcel(
+                      asociado, carga, filePath
+                    );
                     
                     if (success) {
                       _showSuccessSnackbar('Excel guardado en: $filePath');
                     } else {
-                      throw Exception('Error desconocido al guardar Excel');
+                      throw Exception('Error al guardar Excel');
                     }
                   } catch (e) {
                     _showErrorSnackbar('Error al exportar Excel: $e');
@@ -129,14 +133,29 @@ class ExportOptionsDialog {
     );
   }
 
-  // --- Helpers para Snackbars ---
+  // Nuevo método para obtener el asociado titular
+  static Future<Asociado?> _obtenerAsociadoTitular(String asociadoId) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('asociados')
+          .doc(asociadoId)
+          .get();
+      
+      if (doc.exists) {
+        return Asociado.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 
   static void _showSuccessSnackbar(String message) {
     Get.snackbar(
       'Éxito',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF059669).withValues(alpha: 204), // 0.8 opacidad
+      backgroundColor: const Color(0xFF059669).withValues(alpha: 204),
       colorText: Colors.white,
       duration: const Duration(seconds: 4),
     );
@@ -147,7 +166,7 @@ class ExportOptionsDialog {
       'Error',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.withValues(alpha: 204), // 0.8 opacidad
+      backgroundColor: Colors.red.withValues(alpha: 204),
       colorText: Colors.white,
       duration: const Duration(seconds: 4),
     );

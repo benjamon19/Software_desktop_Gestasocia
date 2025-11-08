@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../shared/widgets/section_title.dart';
 import '../../../shared/widgets/action_button.dart';
-import '../../../shared/dialogs/export_options_dialog.dart';
+import '../../../shared/dialogs/export_carga_options_dialog.dart';
 import '../../../shared/dialogs/backup_options_dialog.dart';
 
 class AdvancedOptionsActions extends StatelessWidget {
@@ -37,7 +37,7 @@ class AdvancedOptionsActions extends StatelessWidget {
   }
 
   void _showExportOptions(BuildContext context) {
-    ExportOptionsDialog.show(context);
+    ExportCargaOptionsDialog.show(context);
   }
 
   void _showBackupOptions(BuildContext context) {

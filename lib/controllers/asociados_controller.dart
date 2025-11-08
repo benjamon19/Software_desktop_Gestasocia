@@ -111,14 +111,19 @@ class AsociadosController extends GetxController {
   
   void clearSearchField() {
     try {
+      // Verificar que el controller sigue registrado
+      if (!Get.isRegistered<AsociadosController>()) return;
+      
       final dynamic searchField = searchFieldKey.currentState;
-      if (searchField != null) {
+      
+      // Verificar que el widget aún está montado
+      if (searchField != null && searchField is State && searchField.mounted) {
         if (searchField.runtimeType.toString().contains('_RutSearchFieldState')) {
           (searchField as dynamic).clearField();
         }
       }
     } catch (e) {
-      // Error silencioso
+      // Error silencioso - no hacer nada si el widget ya no existe
     }
   }
 
