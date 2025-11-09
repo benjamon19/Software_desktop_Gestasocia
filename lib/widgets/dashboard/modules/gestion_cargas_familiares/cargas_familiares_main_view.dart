@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../controllers/cargas_familiares_controller.dart' as cargas_controller;
-import 'sections/metrics_section/metrics_section.dart';
 import 'sections/pending_actions_section/pending_actions_section.dart';
 import 'sections/search_section/search_section.dart';
 import 'sections/carga_detail_section/carga_detail_section.dart';
@@ -26,22 +25,8 @@ class CargasFamiliaresMainView extends StatelessWidget {
             return const LoadingIndicator(message: 'Cargando cargas familiares...');
           }
 
-          // Si no está cargando, mostrar el contenido normal
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!controller.hasSelectedCarga)
-                Column(
-                  children: [
-                    const MetricsSection(),
-                    const SizedBox(height: 30),
-                  ],
-                ),
-              
-              Expanded(
-                child: _buildMainContent(context, controller),
-              ),
-            ],
+          return Expanded(
+            child: _buildMainContent(context, controller),
           );
         }),
       ),
@@ -110,7 +95,6 @@ class CargasFamiliaresMainView extends StatelessWidget {
             children: [
               SearchSection(controller: controller),
               const SizedBox(height: 20),
-
               Expanded(
                 child: CargasListSection(
                   cargas: controller.filteredCargas.toList(),
@@ -121,10 +105,8 @@ class CargasFamiliaresMainView extends StatelessWidget {
             ],
           ),
         ),
-
         const SizedBox(width: 20),
-
-        Expanded(
+        const Expanded(
           flex: 1,
           child: PendingActionsSection(),
         ),

@@ -64,7 +64,6 @@ class TransferCargaDialog {
 
       isLoading.value = true;
 
-      // Crear solicitud de transferencia (en lugar de transferir directamente)
       final success = await cargasController.createTransferenciaSolicitud(
         carga: carga,
         nuevoAsociadoId: selectedAsociado.value!.id!,
@@ -186,6 +185,39 @@ class TransferCargaDialog {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // 🟡 Aviso movido aquí
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.amber.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.amber.shade700,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Los cambios se reflejarán después de un tiempo',
+                          style: TextStyle(
+                            color: AppTheme.getTextPrimary(context),
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ],
@@ -349,37 +381,6 @@ class TransferCargaDialog {
                       ),
                     );
                   }),
-                ),
-
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.amber.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        color: Colors.amber.shade700,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Los cambios se reflejarán después de un tiempo',
-                          style: TextStyle(
-                            color: AppTheme.getTextPrimary(context),
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
 
                 const SizedBox(height: 12),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
@@ -14,6 +15,14 @@ class SearchSection extends StatefulWidget {
 
 class _SearchSectionState extends State<SearchSection> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,23 +39,13 @@ class _SearchSectionState extends State<SearchSection> {
   }
 
   Widget _buildSectionHeader(BuildContext context) {
-    return Row(
-      children: [
-        Icon(
-          Icons.medical_information, // Ícono de historial clínico
-          color: AppTheme.primaryColor,
-          size: 20,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'Buscar Historial Clínico',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.getTextPrimary(context),
-          ),
-        ),
-      ],
+    return Text(
+      'Buscador',
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppTheme.getTextPrimary(context),
+      ),
     );
   }
 
@@ -58,63 +57,98 @@ class _SearchSectionState extends State<SearchSection> {
           children: [
             // Campo de búsqueda
             Expanded(
-              child: TextFormField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Buscar por nombre del paciente o RUT',
-                  prefixIcon: Icon(
-                    Icons.search, 
-                    color: AppTheme.getTextSecondary(context),
-                    size: 20,
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            widget.controller.clearSearch();
-                            setState(() {});
-                          },
+              child: Focus(
+                onKeyEvent: (node, event) {
+                  // Manejar tecla ESC para limpiar el campo
+                  if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+                    if (_searchController.text.isNotEmpty) {
+                      _searchController.clear();
+                      widget.controller.clearSearch();
+                      setState(() {});
+                      return KeyEventResult.handled;
+                    }
+                  }
+                  return KeyEventResult.ignored;
+                },
+                child: TextFormField(
+                  controller: _searchController,
+                  focusNode: _focusNode,
+                  decoration: InputDecoration(
+                    labelText: 'SAP o RUT del Asociado o Carga',
+                    hintText: '12345 (SAP) o 12345678-9 (RUT)',
+                    prefixIcon: Icon(
+                      Icons.medical_information,
+                      color: AppTheme.primaryColor,
+                      size: 20,
+                    ),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Botón para limpiar campo
+                        if (_searchController.text.trim().isNotEmpty)
+                          IconButton(
+                            onPressed: () {
+                              _searchController.clear();
+                              widget.controller.clearSearch();
+                              setState(() {});
+                            },
+                            icon: Icon(
+                              Icons.clear,
+                              color: AppTheme.getTextSecondary(context),
+                              size: 18,
+                            ),
+                            tooltip: 'Limpiar (ESC)',
+                          ),
+                        // Botón de búsqueda
+                        IconButton(
+                          onPressed: _searchController.text.trim().isEmpty 
+                              ? null 
+                              : () => _focusNode.unfocus(),
                           icon: Icon(
-                            Icons.clear,
-                            color: AppTheme.getTextSecondary(context),
+                            Icons.search,
+                            color: _searchController.text.trim().isEmpty 
+                                ? AppTheme.getTextSecondary(context)
+                                : AppTheme.primaryColor,
                             size: 20,
                           ),
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: AppTheme.getInputBackground(context),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(
-                      color: AppTheme.primaryColor,
-                      width: 2,
+                          tooltip: 'Buscar',
+                        ),
+                      ],
+                    ),
+                    filled: true,
+                    fillColor: AppTheme.getInputBackground(context),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(
+                        color: AppTheme.primaryColor,
+                        width: 2,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+                    ),
+                    labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
+                    hintStyle: TextStyle(
+                      color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7),
+                      fontSize: 14,
                     ),
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-                  ),
-                  hintStyle: TextStyle(
-                    color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7),
+                  style: TextStyle(
+                    color: AppTheme.getTextPrimary(context),
                     fontSize: 14,
                   ),
+                  textInputAction: TextInputAction.search,
+                  onFieldSubmitted: (_) => _focusNode.unfocus(),
+                  onChanged: (value) {
+                    setState(() {});
+                    widget.controller.searchHistorial(value);
+                  },
                 ),
-                style: TextStyle(
-                  color: AppTheme.getTextPrimary(context),
-                  fontSize: 14,
-                ),
-                onChanged: (value) {
-                  setState(() {});
-                  widget.controller.searchHistorial(value);
-                },
               ),
             ),
           ],
@@ -281,11 +315,5 @@ class _SearchSectionState extends State<SearchSection> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 }

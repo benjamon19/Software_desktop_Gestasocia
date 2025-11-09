@@ -268,7 +268,7 @@ class GenerarCodigoBarrasDialog {
               children: [
                 const Icon(
                   Icons.qr_code_2,
-                  color: Color(0xFF8B5CF6),
+                  color: AppTheme.primaryColor,
                   size: 28,
                 ),
                 const SizedBox(width: 12),

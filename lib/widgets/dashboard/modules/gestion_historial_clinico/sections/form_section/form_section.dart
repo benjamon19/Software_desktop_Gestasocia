@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
+import '../../shared/dialog/select_asociado_dialog.dart';
 
 class FormSection extends StatefulWidget {
   final HistorialClinicoController controller;
@@ -15,11 +16,10 @@ class FormSection extends StatefulWidget {
 class _FormSectionState extends State<FormSection> {
   final _formKey = GlobalKey<FormState>();
   
+  // Paciente seleccionado
+  Map<String, dynamic>? _selectedPaciente;
+  
   // Controladores de texto
-  final _nombreController = TextEditingController();
-  final _rutController = TextEditingController();
-  final _edadController = TextEditingController();
-  final _telefonoController = TextEditingController();
   final _motivoController = TextEditingController();
   final _diagnosticoController = TextEditingController();
   final _tratamientoController = TextEditingController();
@@ -31,28 +31,36 @@ class _FormSectionState extends State<FormSection> {
 
   @override
   void dispose() {
-    _nombreController.dispose();
-    _rutController.dispose();
-    _edadController.dispose();
-    _telefonoController.dispose();
     _motivoController.dispose();
     _diagnosticoController.dispose();
     _tratamientoController.dispose();
     _observacionesController.dispose();
     super.dispose();
   }
+  
+  Future<void> _selectPaciente() async {
+    final paciente = await SelectPacienteDialog.show(context);
+    if (paciente != null) {
+      setState(() {
+        _selectedPaciente = paciente;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isSmallScreen = screenWidth < 600;
+    
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark 
                 ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
+                : Colors.grey.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -60,212 +68,389 @@ class _FormSectionState extends State<FormSection> {
       ),
       child: Column(
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
+          // Header compacto y profesional
+          Padding(
+            padding: EdgeInsets.all(isSmallScreen ? 14 : 16),
             child: Row(
               children: [
                 Icon(
-                  Icons.medical_information,
+                  Icons.medical_information_outlined,
                   color: AppTheme.primaryColor,
-                  size: 24,
+                  size: isSmallScreen ? 18 : 20,
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  'Nuevo Historial Clínico',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryColor,
+                SizedBox(width: isSmallScreen ? 10 : 12),
+                Expanded(
+                  child: Text(
+                    'Nuevo Historial Clínico',
+                    style: TextStyle(
+                      fontSize: isSmallScreen ? 15 : 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Requerido *',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.primaryColor,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
           
+          // Línea divisoria sutil
+          Container(
+            height: 1,
+            margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
+            color: AppTheme.getTextSecondary(context).withValues(alpha: 0.1),
+          ),
+          
           // Formulario
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(isSmallScreen ? 14 : 16),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildSectionTitle('Datos del Paciente'),
-                    const SizedBox(height: 16),
-                    
-                    _buildTextField(
-                      controller: _nombreController,
-                      label: 'Nombre Completo',
-                      icon: Icons.person_outline,
-                      hint: 'Juan Pérez González',
+                    // Sección: Datos del Paciente con aviso
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSectionHeader(
+                            context,
+                            'Datos del asociado o carga',
+                            Icons.person_outline,
+                            isSmallScreen,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Los campos con * son obligatorios',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppTheme.getTextSecondary(context),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    
                     const SizedBox(height: 12),
                     
-                    _buildTextField(
-                      controller: _rutController,
-                      label: 'RUT',
-                      icon: Icons.badge_outlined,
-                      hint: '12345678-9',
+                    // Botón para seleccionar paciente
+                    InkWell(
+                      onTap: _selectPaciente,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: _selectedPaciente == null
+                              ? AppTheme.getInputBackground(context)
+                              : AppTheme.primaryColor.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _selectedPaciente == null
+                                ? AppTheme.getBorderLight(context)
+                                : AppTheme.primaryColor,
+                            width: _selectedPaciente == null ? 1 : 2,
+                          ),
+                        ),
+                        child: _selectedPaciente == null
+                            ? Row(
+                                children: [
+                                  Icon(
+                                    Icons.person_search,
+                                    color: AppTheme.primaryColor,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Seleccionar asociado o carga *',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.getTextPrimary(context),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Haz clic para buscar un asociado o carga familiar',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.getTextSecondary(context),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right,
+                                    color: AppTheme.getTextSecondary(context),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      _selectedPaciente!['tipo'] == 'asociado'
+                                          ? Icons.person
+                                          : Icons.family_restroom,
+                                      color: AppTheme.primaryColor,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: Text(
+                                                _selectedPaciente!['nombre'],
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppTheme.getTextPrimary(context),
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: _selectedPaciente!['tipo'] == 'asociado'
+                                                    ? const Color(0xFF3B82F6).withValues(alpha: 0.1)
+                                                    : const Color(0xFF10B981).withValues(alpha: 0.1),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                _selectedPaciente!['tipo'] == 'asociado' ? 'Asociado' : 'Carga',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: _selectedPaciente!['tipo'] == 'asociado'
+                                                      ? const Color(0xFF3B82F6)
+                                                      : const Color(0xFF10B981),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '${_selectedPaciente!['rut']} • ${_selectedPaciente!['edad']} años',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: AppTheme.getTextSecondary(context),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedPaciente = null;
+                                      });
+                                    },
+                                    icon: Icon(
+                                      Icons.close,
+                                      color: AppTheme.getTextSecondary(context),
+                                      size: 20,
+                                    ),
+                                    tooltip: 'Quitar selección',
+                                  ),
+                                ],
+                              ),
+                      ),
                     ),
                     
+                    const SizedBox(height: 20),
+                    
+                    // Sección: Información de la Consulta
+                    _buildSectionHeader(
+                      context,
+                      'Información de la Consulta',
+                      Icons.medical_services_outlined,
+                      isSmallScreen,
+                    ),
                     const SizedBox(height: 12),
                     
                     Row(
                       children: [
                         Expanded(
-                          child: _buildTextField(
-                            controller: _edadController,
-                            label: 'Edad',
-                            icon: Icons.cake_outlined,
-                            hint: '32',
-                            keyboardType: TextInputType.number,
+                          child: _buildDropdown(
+                            context: context,
+                            label: 'Tipo de Consulta',
+                            value: _tipoConsulta,
+                            items: [
+                              {'value': 'consulta', 'label': 'Consulta'},
+                              {'value': 'control', 'label': 'Control'},
+                              {'value': 'urgencia', 'label': 'Urgencia'},
+                              {'value': 'tratamiento', 'label': 'Tratamiento'},
+                            ],
+                            icon: Icons.medical_services_outlined,
+                            onChanged: (value) => setState(() => _tipoConsulta = value!),
+                            isSmallScreen: isSmallScreen,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
-                          child: _buildTextField(
-                            controller: _telefonoController,
-                            label: 'Teléfono',
-                            icon: Icons.phone_outlined,
-                            hint: '912345678',
-                            keyboardType: TextInputType.phone,
+                          child: _buildDropdown(
+                            context: context,
+                            label: 'Odontólogo',
+                            value: _odontologo,
+                            items: [
+                              {'value': 'dr.lopez', 'label': 'Dr. López'},
+                              {'value': 'dr.martinez', 'label': 'Dr. Martínez'},
+                            ],
+                            icon: Icons.person_outline,
+                            onChanged: (value) => setState(() => _odontologo = value!),
+                            isSmallScreen: isSmallScreen,
                           ),
                         ),
                       ],
                     ),
                     
-                    const SizedBox(height: 24),
-                    _buildSectionTitle('Información de la Consulta'),
-                    const SizedBox(height: 16),
-                    
-                    _buildDropdown(
-                      label: 'Tipo de Consulta',
-                      value: _tipoConsulta,
-                      items: [
-                        {'value': 'consulta', 'label': 'Consulta'},
-                        {'value': 'control', 'label': 'Control'},
-                        {'value': 'urgencia', 'label': 'Urgencia'},
-                        {'value': 'tratamiento', 'label': 'Tratamiento'},
-                      ],
-                      icon: Icons.medical_services_outlined,
-                      onChanged: (value) {
-                        setState(() => _tipoConsulta = value!);
-                      },
-                    ),
-                    
-                    const SizedBox(height: 12),
-                    
-                    _buildDropdown(
-                      label: 'Odontólogo',
-                      value: _odontologo,
-                      items: [
-                        {'value': 'dr.lopez', 'label': 'Dr. López'},
-                        {'value': 'dr.martinez', 'label': 'Dr. Martínez'},
-                      ],
-                      icon: Icons.person_outline,
-                      onChanged: (value) {
-                        setState(() => _odontologo = value!);
-                      },
-                    ),
-                    
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     
                     _buildTextField(
+                      context: context,
                       controller: _motivoController,
-                      label: 'Motivo Principal',
-                      icon: Icons.help_outline,
-                      hint: 'Ej: Dolor en muela',
+                      label: 'Motivo de Consulta',
+                      icon: Icons.description_outlined,
+                      hint: 'Ej: Dolor en muela del juicio',
                       maxLines: 2,
+                      isSmallScreen: isSmallScreen,
                     ),
                     
+                    const SizedBox(height: 20),
+                    
+                    // Sección: Diagnóstico y Tratamiento
+                    _buildSectionHeader(
+                      context,
+                      'Diagnóstico y Tratamiento',
+                      Icons.healing_outlined,
+                      isSmallScreen,
+                    ),
                     const SizedBox(height: 12),
                     
                     _buildTextField(
+                      context: context,
                       controller: _diagnosticoController,
                       label: 'Diagnóstico',
-                      icon: Icons.medical_information_outlined,
-                      hint: 'Ej: Caries profunda',
+                      icon: Icons.local_hospital_outlined,
+                      hint: 'Ej: Caries profunda en molar inferior',
                       maxLines: 2,
+                      isSmallScreen: isSmallScreen,
                     ),
                     
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     
                     _buildTextField(
+                      context: context,
                       controller: _tratamientoController,
                       label: 'Tratamiento Recomendado',
-                      icon: Icons.healing_outlined,
-                      hint: 'Ej: Endodoncia',
+                      icon: Icons.medication_outlined,
+                      hint: 'Ej: Endodoncia + corona',
                       maxLines: 2,
+                      isSmallScreen: isSmallScreen,
                     ),
                     
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     
                     _buildTextField(
+                      context: context,
                       controller: _observacionesController,
-                      label: 'Observaciones',
+                      label: 'Observaciones Adicionales',
                       icon: Icons.notes_outlined,
-                      hint: 'Observaciones adicionales...',
+                      hint: 'Notas importantes sobre el caso...',
                       maxLines: 3,
+                      isSmallScreen: isSmallScreen,
                     ),
                     
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     
                     _buildDropdown(
-                      label: 'Estado',
+                      context: context,
+                      label: 'Estado del Registro',
                       value: _estado,
                       items: [
                         {'value': 'completado', 'label': 'Completado'},
                         {'value': 'pendiente', 'label': 'Pendiente'},
                       ],
                       icon: Icons.flag_outlined,
-                      onChanged: (value) {
-                        setState(() => _estado = value!);
-                      },
+                      onChanged: (value) => setState(() => _estado = value!),
+                      isSmallScreen: isSmallScreen,
                     ),
                     
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     
-                    // Botones
+                    // Botones de acción
                     Row(
                       children: [
                         Expanded(
-                          child: OutlinedButton(
+                          child: TextButton.icon(
                             onPressed: _clearForm,
-                            style: OutlinedButton.styleFrom(
+                            icon: const Icon(Icons.clear, size: 18),
+                            label: Text(isSmallScreen ? 'Limpiar' : 'Limpiar Formulario'),
+                            style: TextButton.styleFrom(
                               foregroundColor: AppTheme.getTextSecondary(context),
-                              side: BorderSide(color: AppTheme.getBorderLight(context)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: EdgeInsets.symmetric(
+                                vertical: isSmallScreen ? 12 : 14,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: const Text('Limpiar'),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           flex: 2,
-                          child: ElevatedButton(
+                          child: ElevatedButton.icon(
                             onPressed: _saveHistorial,
+                            icon: const Icon(Icons.save, size: 18),
+                            label: Text(isSmallScreen ? 'Guardar' : 'Guardar Historial'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryColor,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: EdgeInsets.symmetric(
+                                vertical: isSmallScreen ? 12 : 14,
+                              ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
+                              elevation: 0,
                             ),
-                            child: const Text('Guardar Historial'),
                           ),
                         ),
                       ],
@@ -280,22 +465,31 @@ class _FormSectionState extends State<FormSection> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+    bool isSmallScreen,
+  ) {
     return Row(
       children: [
         Container(
-          width: 3,
-          height: 16,
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Icon(
+            icon,
+            size: isSmallScreen ? 14 : 16,
             color: AppTheme.primaryColor,
-            borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
         Text(
           title,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: isSmallScreen ? 13 : 14,
             fontWeight: FontWeight.w600,
             color: AppTheme.getTextPrimary(context),
           ),
@@ -305,58 +499,86 @@ class _FormSectionState extends State<FormSection> {
   }
 
   Widget _buildTextField({
+    required BuildContext context,
     required TextEditingController controller,
     required String label,
     required IconData icon,
     required String hint,
     int maxLines = 1,
     TextInputType keyboardType = TextInputType.text,
+    bool isRequired = false,
+    required bool isSmallScreen,
   }) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      style: TextStyle(
+        color: AppTheme.getTextPrimary(context),
+        fontSize: isSmallScreen ? 13 : 14,
+      ),
       decoration: InputDecoration(
-        labelText: label,
+        labelText: isRequired ? '$label *' : label,
         hintText: hint,
-        prefixIcon: Icon(icon, size: 20, color: AppTheme.getTextSecondary(context)),
+        prefixIcon: Icon(
+          icon,
+          size: isSmallScreen ? 18 : 20,
+          color: AppTheme.primaryColor,
+        ),
         filled: true,
         fillColor: AppTheme.getInputBackground(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
         ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppTheme.primaryColor, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.red, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+        ),
         labelStyle: TextStyle(
           color: AppTheme.getTextSecondary(context),
-          fontSize: 13,
+          fontSize: isSmallScreen ? 12 : 13,
         ),
         hintStyle: TextStyle(
-          color: AppTheme.getTextSecondary(context).withValues(alpha: 0.6),
-          fontSize: 13,
+          color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5),
+          fontSize: isSmallScreen ? 12 : 13,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: isSmallScreen ? 10 : 12,
+        ),
       ),
-      style: TextStyle(
-        color: AppTheme.getTextPrimary(context),
-        fontSize: 14,
-      ),
+      validator: isRequired
+          ? (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Este campo es requerido';
+              }
+              return null;
+            }
+          : null,
     );
   }
 
   Widget _buildDropdown({
+    required BuildContext context,
     required String label,
     required String value,
     required List<Map<String, String>> items,
     required IconData icon,
     required Function(String?) onChanged,
+    required bool isSmallScreen,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -368,18 +590,29 @@ class _FormSectionState extends State<FormSection> {
         initialValue: value,
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, size: 20, color: AppTheme.getTextSecondary(context)),
+          prefixIcon: Icon(
+            icon,
+            size: isSmallScreen ? 18 : 20,
+            color: AppTheme.primaryColor,
+          ),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: isSmallScreen ? 10 : 12,
+          ),
           labelStyle: TextStyle(
             color: AppTheme.getTextSecondary(context),
-            fontSize: 13,
+            fontSize: isSmallScreen ? 12 : 13,
           ),
         ),
         dropdownColor: AppTheme.getSurfaceColor(context),
         style: TextStyle(
           color: AppTheme.getTextPrimary(context),
-          fontSize: 14,
+          fontSize: isSmallScreen ? 13 : 14,
+        ),
+        icon: Icon(
+          Icons.keyboard_arrow_down,
+          color: AppTheme.getTextSecondary(context),
         ),
         items: items.map((item) {
           return DropdownMenuItem<String>(
@@ -393,15 +626,13 @@ class _FormSectionState extends State<FormSection> {
   }
 
   void _clearForm() {
-    _nombreController.clear();
-    _rutController.clear();
-    _edadController.clear();
-    _telefonoController.clear();
     _motivoController.clear();
     _diagnosticoController.clear();
     _tratamientoController.clear();
     _observacionesController.clear();
+    
     setState(() {
+      _selectedPaciente = null;
       _tipoConsulta = 'consulta';
       _odontologo = 'dr.lopez';
       _estado = 'pendiente';
@@ -410,24 +641,30 @@ class _FormSectionState extends State<FormSection> {
 
   void _saveHistorial() async {
     if (_formKey.currentState!.validate()) {
-      // Validar que los campos requeridos no estén vacíos
-      if (_nombreController.text.isEmpty || 
-          _rutController.text.isEmpty || 
-          _edadController.text.isEmpty) {
+      // Validar que se haya seleccionado un paciente
+      if (_selectedPaciente == null) {
         Get.snackbar(
           'Error',
-          'Por favor completa los campos obligatorios',
+          'Debes seleccionar un paciente',
           snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withValues(alpha: 0.1),
+          colorText: Colors.red,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          icon: const Icon(Icons.error_outline, color: Colors.red),
         );
         return;
       }
 
       // Crear el mapa de datos del historial
       final historialData = {
-        'pacienteNombre': _nombreController.text.trim(),
-        'pacienteRut': _rutController.text.trim(),
-        'pacienteEdad': int.tryParse(_edadController.text) ?? 0,
-        'pacienteTelefono': _telefonoController.text.trim(),
+        'pacienteId': _selectedPaciente!['id'],
+        'pacienteTipo': _selectedPaciente!['tipo'], // 'asociado' o 'carga'
+        'pacienteNombre': _selectedPaciente!['nombre'],
+        'pacienteRut': _selectedPaciente!['rut'],
+        'pacienteEdad': _selectedPaciente!['edad'],
+        'pacienteTelefono': _selectedPaciente!['telefono'] ?? '',
         'tipoConsulta': _tipoConsulta,
         'odontologo': _odontologo == 'dr.lopez' ? 'Dr. López' : 'Dr. Martínez',
         'motivoPrincipal': _motivoController.text.trim(),
@@ -435,7 +672,7 @@ class _FormSectionState extends State<FormSection> {
         'tratamientoRecomendado': _tratamientoController.text.trim(),
         'observacionesOdontologo': _observacionesController.text.trim(),
         'estado': _estado == 'completado' ? 'Completado' : 'Pendiente',
-        'fecha': DateTime.now(), // Timestamp de Firebase
+        'fecha': DateTime.now(),
         'hora': '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
         
         // Campos adicionales opcionales
@@ -452,14 +689,40 @@ class _FormSectionState extends State<FormSection> {
         'alimentacion': '',
         'sintomasReportados': [],
         'proximaCita': null,
-        'asociadoTitular': _nombreController.text.trim(),
+        'asociadoTitular': _selectedPaciente!['nombre'],
       };
 
-      // Guardar a través del controlador
-      await widget.controller.addNewHistorial(historialData);
-      
-      // Limpiar el formulario después de guardar exitosamente
-      _clearForm();
+      try {
+        // Guardar a través del controlador
+        await widget.controller.addNewHistorial(historialData);
+        
+        // Limpiar el formulario después de guardar exitosamente
+        _clearForm();
+        
+        Get.snackbar(
+          'Éxito',
+          'Historial clínico guardado correctamente',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFF10B981).withValues(alpha: 0.1),
+          colorText: const Color(0xFF10B981),
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          icon: const Icon(Icons.check_circle, color: Color(0xFF10B981)),
+        );
+      } catch (e) {
+        Get.snackbar(
+          'Error',
+          'No se pudo guardar el historial: $e',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withValues(alpha: 0.1),
+          colorText: Colors.red,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          icon: const Icon(Icons.error_outline, color: Colors.red),
+        );
+      }
     }
   }
 }

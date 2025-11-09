@@ -26,15 +26,19 @@ class HistorialListSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isVerySmall = screenWidth < 400;
+    
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Theme.of(context).brightness == Brightness.dark 
                 ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
+                : Colors.grey.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -43,46 +47,56 @@ class HistorialListSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header con contador y badges
+          // Header compacto
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(isVerySmall ? 12 : (isSmallScreen ? 14 : 16)),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${historiales.length} historial${historiales.length != 1 ? 'es' : ''} clínico${historiales.length != 1 ? 's' : ''}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.getTextPrimary(context),
+                Icon(
+                  Icons.medical_information_outlined, 
+                  color: AppTheme.primaryColor, 
+                  size: isVerySmall ? 16 : (isSmallScreen ? 18 : 20)
+                ),
+                SizedBox(width: isVerySmall ? 8 : 12),
+                Expanded(
+                  child: Text(
+                    isVerySmall ? 'Historiales' : 'Historiales Clínicos',
+                    style: TextStyle(
+                      fontSize: isVerySmall ? 14 : (isSmallScreen ? 15 : 16),
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
                   ),
                 ),
-                // Estadísticas rápidas
-                Row(
-                  children: [
-                    _buildStatBadge(
-                      context,
-                      'Completados',
-                      historiales.where((h) => h['estado'] == 'Completado').length,
-                      const Color(0xFF10B981),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isVerySmall ? 6 : 8,
+                    vertical: isVerySmall ? 2 : 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: historiales.isNotEmpty 
+                        ? AppTheme.primaryColor
+                        : AppTheme.getTextSecondary(context).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    historiales.length.toString(),
+                    style: TextStyle(
+                      fontSize: isVerySmall ? 10 : (isSmallScreen ? 11 : 12),
+                      fontWeight: FontWeight.w600,
+                      color: historiales.isNotEmpty ? Colors.white : AppTheme.getTextSecondary(context),
                     ),
-                    const SizedBox(width: 8),
-                    _buildStatBadge(
-                      context,
-                      'Pendientes',
-                      historiales.where((h) => h['estado'] == 'Pendiente').length,
-                      const Color(0xFFF59E0B),
-                    ),
-                  ],
+                  ),
                 ),
               ],
             ),
           ),
           
-          // Divider
-          Divider(
+          // Línea divisoria sutil
+          Container(
             height: 1,
-            color: AppTheme.getBorderLight(context),
+            margin: EdgeInsets.symmetric(horizontal: isVerySmall ? 12 : 16),
+            color: AppTheme.getTextSecondary(context).withValues(alpha: 0.1),
           ),
           
           // Lista de historiales
@@ -90,9 +104,9 @@ class HistorialListSection extends StatelessWidget {
             child: historiales.isEmpty
                 ? _buildEmptyState(context)
                 : ListView.separated(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 12 : 16)),
                     itemCount: historiales.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 6 : 8),
                     itemBuilder: (context, index) {
                       return HistorialCard(
                         historial: historiales[index],
@@ -106,65 +120,27 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  Widget _buildStatBadge(BuildContext context, String label, int count, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildEmptyState(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isVerySmall = screenWidth < 400;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.search_off,
-            size: 64,
+            Icons.folder_open_outlined,
+            size: isVerySmall ? 40 : 48,
             color: AppTheme.getTextSecondary(context).withValues(alpha: 0.3),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isVerySmall ? 8 : 12),
           Text(
-            'No se encontraron historiales',
+            isVerySmall ? 'Sin historiales' : 'No se encontraron historiales',
             style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.getTextPrimary(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Intenta con otros filtros de búsqueda',
-            style: TextStyle(
-              fontSize: 14,
+              fontSize: isVerySmall ? 12 : 14,
               color: AppTheme.getTextSecondary(context),
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),

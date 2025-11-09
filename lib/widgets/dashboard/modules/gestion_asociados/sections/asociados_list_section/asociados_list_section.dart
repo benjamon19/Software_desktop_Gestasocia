@@ -22,28 +22,49 @@ class AsociadosListSection extends StatelessWidget {
     final bool isSmallScreen = screenWidth < 600;
     final bool isVerySmall = screenWidth < 400;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildListHeader(context, isSmallScreen, isVerySmall),
-        SizedBox(height: isVerySmall ? 12 : (isSmallScreen ? 16 : 20)),
-        Expanded(
-          child: _buildListContent(context, isSmallScreen, isVerySmall),
-        ),
-      ],
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.getSurfaceColor(context),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context, isSmallScreen, isVerySmall),
+          Expanded(
+            child: _buildList(context, isSmallScreen, isVerySmall),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildListHeader(BuildContext context, bool isSmallScreen, bool isVerySmall) {
+  Widget _buildHeader(BuildContext context, bool isSmallScreen, bool isVerySmall) {
     return Container(
       padding: EdgeInsets.all(isVerySmall ? 12 : (isSmallScreen ? 16 : 20)),
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.people, color: AppTheme.primaryColor, size: isVerySmall ? 18 : (isSmallScreen ? 20 : 24)),
+          Icon(
+            Icons.people,
+            color: AppTheme.primaryColor,
+            size: isVerySmall ? 18 : (isSmallScreen ? 20 : 24),
+          ),
           SizedBox(width: isVerySmall ? 8 : 12),
           Expanded(
             child: Text(
@@ -68,7 +89,11 @@ class AsociadosListSection extends StatelessWidget {
   Widget _buildRefreshButton(bool isSmallScreen) {
     return IconButton(
       onPressed: () => controller.loadAsociados(),
-      icon: Icon(Icons.refresh, color: AppTheme.primaryColor, size: isSmallScreen ? 18 : 20),
+      icon: Icon(
+        Icons.refresh,
+        color: AppTheme.primaryColor,
+        size: isSmallScreen ? 18 : 20,
+      ),
       tooltip: 'Recargar lista',
       padding: EdgeInsets.all(isSmallScreen ? 6 : 8),
     );
@@ -77,8 +102,8 @@ class AsociadosListSection extends StatelessWidget {
   Widget _buildCounterBadge(bool isSmallScreen, bool isVerySmall) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isVerySmall ? 6 : (isSmallScreen ? 8 : 12), 
-        vertical: isVerySmall ? 3 : (isSmallScreen ? 4 : 6)
+        horizontal: isVerySmall ? 6 : (isSmallScreen ? 8 : 12),
+        vertical: isVerySmall ? 3 : (isSmallScreen ? 4 : 6),
       ),
       decoration: BoxDecoration(
         color: AppTheme.primaryColor.withValues(alpha: 0.1),
@@ -87,7 +112,7 @@ class AsociadosListSection extends StatelessWidget {
       child: Obx(() {
         final total = controller.asociados.length;
         final totalGeneral = controller.totalAllAsociados;
-        
+
         String texto;
         if (isVerySmall) {
           texto = total.toString();
@@ -100,7 +125,7 @@ class AsociadosListSection extends StatelessWidget {
               ? '$total asociados'
               : '$total de $totalGeneral asociados';
         }
-        
+
         return Text(
           texto,
           style: TextStyle(
@@ -113,69 +138,46 @@ class AsociadosListSection extends StatelessWidget {
     );
   }
 
-  Widget _buildListContent(BuildContext context, bool isSmallScreen, bool isVerySmall) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark 
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Obx(() {
-        final listaFiltrada = asociados;
-        
-        if (listaFiltrada.isEmpty) {
-          return _buildEmptyState(context, isSmallScreen, isVerySmall);
-        }
+  Widget _buildList(BuildContext context, bool isSmallScreen, bool isVerySmall) {
+    return Obx(() {
+      final listaFiltrada = asociados;
 
-        return ListView.separated(
-          key: ValueKey(listaFiltrada.length),
-          padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 12 : 16)),
-          itemCount: listaFiltrada.length,
-          separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 4 : 6),
-          itemBuilder: (context, index) {
-            if (index >= listaFiltrada.length) return const SizedBox.shrink();
-            final asociado = listaFiltrada[index];
-            return _buildAsociadoListItem(context, asociado, isSmallScreen, isVerySmall);
-          },
-        );
-      }),
-    );
+      if (listaFiltrada.isEmpty) {
+        return _buildEmptyState(context, isVerySmall);
+      }
+
+      return ListView.separated(
+        key: ValueKey(listaFiltrada.length),
+        padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 12 : 16)),
+        itemCount: listaFiltrada.length,
+        separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 4 : 6),
+        itemBuilder: (context, index) {
+          if (index >= listaFiltrada.length) return const SizedBox.shrink();
+          final asociado = listaFiltrada[index];
+          return _buildAsociadoListItem(context, asociado, isSmallScreen, isVerySmall);
+        },
+      );
+    });
   }
 
-  Widget _buildEmptyState(BuildContext context, bool isSmallScreen, bool isVerySmall) {
+  Widget _buildEmptyState(BuildContext context, bool isVerySmall) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.person_search,
-            size: isVerySmall ? 48 : (isSmallScreen ? 56 : 64),
+            Icons.people_outline,
+            size: isVerySmall ? 40 : 48,
             color: AppTheme.getTextSecondary(context).withValues(alpha: 0.3),
           ),
-          SizedBox(height: isVerySmall ? 12 : 16),
+          SizedBox(height: isVerySmall ? 8 : 12),
           Text(
-            'No se encontraron asociados',
+            isVerySmall ? 'Sin asociados' : 'No se encontraron asociados',
             style: TextStyle(
-              fontSize: isVerySmall ? 14 : (isSmallScreen ? 15 : 16),
-              fontWeight: FontWeight.w500,
+              fontSize: isVerySmall ? 12 : 14,
               color: AppTheme.getTextSecondary(context),
             ),
-          ),
-          SizedBox(height: isVerySmall ? 4 : 8),
-          Text(
-            'Intenta buscar con otros términos',
-            style: TextStyle(
-              fontSize: isVerySmall ? 11 : (isSmallScreen ? 12 : 13),
-              color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7),
-            ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
@@ -183,10 +185,10 @@ class AsociadosListSection extends StatelessWidget {
   }
 
   Widget _buildAsociadoListItem(
-    BuildContext context, 
-    Asociado asociado, 
-    bool isSmallScreen, 
-    bool isVerySmall
+    BuildContext context,
+    Asociado asociado,
+    bool isSmallScreen,
+    bool isVerySmall,
   ) {
     final hovered = false.obs;
 

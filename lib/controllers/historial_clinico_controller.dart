@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import '../services/firebase_service.dart';
 
 class HistorialClinicoController extends GetxController {
-  // Estados de vista (como los otros módulos)
+  // Estados de vista
   static const int listaView = 0;
   static const int detalleView = 1;
 
@@ -10,9 +10,9 @@ class HistorialClinicoController extends GetxController {
   RxBool isLoading = false.obs;
   RxInt currentView = listaView.obs;
   RxString searchQuery = ''.obs;
-  RxString selectedFilter = 'todos'.obs; // todos, consulta, control, urgencia, tratamiento
-  RxString selectedStatus = 'todos'.obs; // todos, completado, pendiente
-  RxString selectedOdontologo = 'todos'.obs; // todos, dr.lopez, dr.martinez, etc.
+  RxString selectedFilter = 'todos'.obs;
+  RxString selectedStatus = 'todos'.obs;
+  RxString selectedOdontologo = 'todos'.obs;
   
   // Datos
   Rxn<Map<String, dynamic>> selectedHistorial = Rxn<Map<String, dynamic>>();
@@ -31,23 +31,20 @@ class HistorialClinicoController extends GetxController {
     try {
       isLoading.value = true;
       
-      // Obtener la colección de historiales clínicos desde Firebase
       final snapshot = await FirebaseService.getCollection('historiales_clinicos');
       
-      // Convertir los documentos a una lista de mapas
       List<Map<String, dynamic>> loadedHistoriales = [];
       
       for (var doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
-        data['id'] = doc.id; // Agregar el ID del documento
+        data['id'] = doc.id;
         
-        // Convertir Timestamp a String si es necesario
+        // Convertir Timestamp a String
         if (data['fecha'] != null && data['fecha'] is! String) {
           final fecha = data['fecha'].toDate();
           data['fecha'] = '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
         }
         
-        // Asegurar que tiene hora
         if (data['hora'] == null) {
           data['hora'] = '00:00';
         }
@@ -76,7 +73,6 @@ class HistorialClinicoController extends GetxController {
         'No se pudieron cargar los historiales clínicos',
         snackPosition: SnackPosition.BOTTOM,
       );
-      // Si hay error, mantener lista vacía
       historialList.value = [];
       filteredHistorial.value = [];
     } finally {
@@ -120,7 +116,7 @@ class HistorialClinicoController extends GetxController {
     _applyFilters();
   }
 
-  // ========== BÚSQUEDA ==========
+  // ========== BÚSQUEDA Y FILTROS ==========
 
   void searchHistorial(String query) {
     searchQuery.value = query;
@@ -186,38 +182,19 @@ class HistorialClinicoController extends GetxController {
     try {
       isLoading.value = true;
       
-      // Agregar timestamp de creación
       historialData['fechaCreacion'] = DateTime.now();
       
-      // Guardar en Firebase
       await FirebaseService.createDocument(
         collection: 'historiales_clinicos',
         data: historialData,
       );
       
-      Get.snackbar(
-        'Éxito',
-        'Historial clínico creado correctamente',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      
-      // Recargar la lista
       await loadHistorialesFromFirebase();
     } catch (e) {
-      Get.log('❌ Error guardando historial: $e');
-      Get.snackbar(
-        'Error',
-        'No se pudo guardar el historial clínico',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      Get.log('Error guardando historial: $e');
+      rethrow;
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  void editHistorial() {
-    if (selectedHistorial.value != null) {
-      Get.snackbar('Editar', 'Función para editar: ${selectedHistorial.value!['pacienteNombre']}');
     }
   }
 
@@ -226,7 +203,6 @@ class HistorialClinicoController extends GetxController {
       try {
         final id = selectedHistorial.value!['id'];
         
-        // Eliminar de Firebase
         await FirebaseService.getDocument(
           collection: 'historiales_clinicos',
           docId: id,
@@ -236,7 +212,6 @@ class HistorialClinicoController extends GetxController {
         
         Get.snackbar('Éxito', 'Historial eliminado correctamente');
         
-        // Volver a la lista y recargar
         backToList();
         await loadHistorialesFromFirebase();
       } catch (e) {
@@ -245,45 +220,12 @@ class HistorialClinicoController extends GetxController {
     }
   }
 
-  void duplicateHistorial() {
-    if (selectedHistorial.value != null) {
-      Get.snackbar('Duplicar', 'Función para duplicar registro como plantilla');
-    }
-  }
-
-  void exportHistorial() {
-    if (selectedHistorial.value != null) {
-      Get.snackbar('Exportar', 'Generar PDF del historial: ${selectedHistorial.value!['pacienteNombre']}');
-    }
-  }
-
-  void printHistorial() {
-    if (selectedHistorial.value != null) {
-      Get.snackbar('Imprimir', 'Imprimir historial clínico');
-    }
-  }
-
-  void viewPatientHistory() {
-    if (selectedHistorial.value != null) {
-      Get.snackbar('Historial Completo', 'Ver todos los registros del paciente');
-    }
-  }
-
   // ========== GETTERS ==========
 
   bool get hasSelectedHistorial => selectedHistorial.value != null;
   bool get isListView => currentView.value == listaView;
   bool get isDetailView => currentView.value == detalleView;
-  bool get hasSearchQuery => searchQuery.value.isNotEmpty;
   
-  String get currentTitle {
-    if (isDetailView && hasSelectedHistorial) {
-      return 'Historial de ${selectedHistorial.value!['pacienteNombre']}';
-    }
-    return 'Historial Clínico Odontológico';
-  }
-
   int get totalRegistros => historialList.length;
-  int get registrosCompletados => historialList.where((h) => h['estado'] == 'Completado').length;
   int get filteredCount => filteredHistorial.length;
 }

@@ -339,31 +339,26 @@ class CargasListSection extends StatelessWidget {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bool isVerySmall = screenWidth < 400;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.family_restroom_outlined,
-            size: 64,
-            color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5),
+            size: isVerySmall ? 40 : 48,
+            color: AppTheme.getTextSecondary(context).withValues(alpha: 0.3),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: isVerySmall ? 8 : 12),
           Text(
-            'No hay cargas familiares',
+            isVerySmall ? 'Sin cargas' : 'No se encontraron cargas familiares',
             style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.getTextPrimary(context),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Las cargas aparecerán aquí',
-            style: TextStyle(
-              fontSize: 14,
+              fontSize: isVerySmall ? 12 : 14,
               color: AppTheme.getTextSecondary(context),
             ),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
