@@ -41,6 +41,7 @@ class _FormSectionState extends State<FormSection> {
   Future<void> _selectPaciente() async {
     final paciente = await SelectPacienteDialog.show(context);
     if (paciente != null) {
+      if (!mounted) return;
       setState(() {
         _selectedPaciente = paciente;
       });
@@ -133,20 +134,6 @@ class _FormSectionState extends State<FormSection> {
                             'Datos del asociado o carga',
                             Icons.person_outline,
                             isSmallScreen,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Los campos con * son obligatorios',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AppTheme.getTextSecondary(context),
-                            ),
                           ),
                         ),
                       ],
@@ -277,6 +264,7 @@ class _FormSectionState extends State<FormSection> {
                                   ),
                                   IconButton(
                                     onPressed: () {
+                                      if (!mounted) return;
                                       setState(() {
                                         _selectedPaciente = null;
                                       });
@@ -318,7 +306,10 @@ class _FormSectionState extends State<FormSection> {
                               {'value': 'tratamiento', 'label': 'Tratamiento'},
                             ],
                             icon: Icons.medical_services_outlined,
-                            onChanged: (value) => setState(() => _tipoConsulta = value!),
+                            onChanged: (value) {
+                              if (!mounted) return;
+                              setState(() => _tipoConsulta = value!);
+                            },
                             isSmallScreen: isSmallScreen,
                           ),
                         ),
@@ -333,7 +324,10 @@ class _FormSectionState extends State<FormSection> {
                               {'value': 'dr.martinez', 'label': 'Dr. Martínez'},
                             ],
                             icon: Icons.person_outline,
-                            onChanged: (value) => setState(() => _odontologo = value!),
+                            onChanged: (value) {
+                              if (!mounted) return;
+                              setState(() => _odontologo = value!);
+                            },
                             isSmallScreen: isSmallScreen,
                           ),
                         ),
@@ -408,7 +402,10 @@ class _FormSectionState extends State<FormSection> {
                         {'value': 'pendiente', 'label': 'Pendiente'},
                       ],
                       icon: Icons.flag_outlined,
-                      onChanged: (value) => setState(() => _estado = value!),
+                      onChanged: (value) {
+                        if (!mounted) return;
+                        setState(() => _estado = value!);
+                      },
                       isSmallScreen: isSmallScreen,
                     ),
                     
@@ -420,7 +417,6 @@ class _FormSectionState extends State<FormSection> {
                         Expanded(
                           child: TextButton.icon(
                             onPressed: _clearForm,
-                            icon: const Icon(Icons.clear, size: 18),
                             label: Text(isSmallScreen ? 'Limpiar' : 'Limpiar Formulario'),
                             style: TextButton.styleFrom(
                               foregroundColor: AppTheme.getTextSecondary(context),
@@ -438,7 +434,6 @@ class _FormSectionState extends State<FormSection> {
                           flex: 2,
                           child: ElevatedButton.icon(
                             onPressed: _saveHistorial,
-                            icon: const Icon(Icons.save, size: 18),
                             label: Text(isSmallScreen ? 'Guardar' : 'Guardar Historial'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryColor,
@@ -626,6 +621,8 @@ class _FormSectionState extends State<FormSection> {
   }
 
   void _clearForm() {
+    if (!mounted) return;
+    
     _motivoController.clear();
     _diagnosticoController.clear();
     _tratamientoController.clear();
@@ -640,8 +637,9 @@ class _FormSectionState extends State<FormSection> {
   }
 
   void _saveHistorial() async {
+    if (!mounted) return;
+
     if (_formKey.currentState!.validate()) {
-      // Validar que se haya seleccionado un paciente
       if (_selectedPaciente == null) {
         Get.snackbar(
           'Error',
@@ -657,10 +655,11 @@ class _FormSectionState extends State<FormSection> {
         return;
       }
 
-      // Crear el mapa de datos del historial
+      if (!mounted) return;
+
       final historialData = {
         'pacienteId': _selectedPaciente!['id'],
-        'pacienteTipo': _selectedPaciente!['tipo'], // 'asociado' o 'carga'
+        'pacienteTipo': _selectedPaciente!['tipo'],
         'pacienteNombre': _selectedPaciente!['nombre'],
         'pacienteRut': _selectedPaciente!['rut'],
         'pacienteEdad': _selectedPaciente!['edad'],
@@ -675,7 +674,7 @@ class _FormSectionState extends State<FormSection> {
         'fecha': DateTime.now(),
         'hora': '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
         
-        // Campos adicionales opcionales
+        // Campos adicionales (aunque no se usan, se mantienen por compatibilidad)
         'condicionesMedicas': [],
         'medicamentosActuales': [],
         'alergias': [],
@@ -693,10 +692,9 @@ class _FormSectionState extends State<FormSection> {
       };
 
       try {
-        // Guardar a través del controlador
         await widget.controller.addNewHistorial(historialData);
+        if (!mounted) return;
         
-        // Limpiar el formulario después de guardar exitosamente
         _clearForm();
         
         Get.snackbar(
@@ -711,6 +709,7 @@ class _FormSectionState extends State<FormSection> {
           icon: const Icon(Icons.check_circle, color: Color(0xFF10B981)),
         );
       } catch (e) {
+        if (!mounted) return;
         Get.snackbar(
           'Error',
           'No se pudo guardar el historial: $e',

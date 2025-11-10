@@ -132,6 +132,14 @@ class CargasFamiliaresController extends GetxController {
       // Error silencioso
     }
   }
+  /// Obtener una carga familiar por su ID
+  CargaFamiliar? getCargaById(String id) {
+  try {
+    return cargasFamiliares.firstWhereOrNull((carga) => carga.id == id);
+  } catch (e) {
+    return null;
+  }
+}
 
   Future<void> refreshCargas() async {
     await loadCargas();
