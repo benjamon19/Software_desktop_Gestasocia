@@ -17,19 +17,18 @@ class CargasFamiliaresMainView extends StatelessWidget {
         Get.put(cargas_controller.CargasFamiliaresController());
 
     return Scaffold(
-      body: Container(
-        padding: const EdgeInsets.all(20),
-        child: Obx(() {
-          // Si está cargando, mostrar SOLO el loading centrado
-          if (controller.isLoading.value) {
-            return const LoadingIndicator(message: 'Cargando cargas familiares...');
-          }
+      body: Obx(() {
+        // Si está cargando, mostrar SOLO el loading centrado
+        if (controller.isLoading.value) {
+          return const LoadingIndicator(message: 'Cargando cargas familiares...');
+        }
 
-          return Expanded(
-            child: _buildMainContent(context, controller),
-          );
-        }),
-      ),
+        // Si no está cargando, mostrar el contenido principal con padding
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: _buildMainContent(context, controller),
+        );
+      }),
       floatingActionButton: Obx(() => _buildFloatingActionButton(controller)),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
@@ -54,14 +53,13 @@ class CargasFamiliaresMainView extends StatelessWidget {
     if (controller.hasSelectedCarga) {
       return _buildDetailView(controller);
     }
-
     return _buildDashboardView(context, controller);
   }
 
   Widget _buildDetailView(cargas_controller.CargasFamiliaresController controller) {
     final carga = controller.selectedCarga.value!;
     final cargaMap = _cargaToMap(carga);
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

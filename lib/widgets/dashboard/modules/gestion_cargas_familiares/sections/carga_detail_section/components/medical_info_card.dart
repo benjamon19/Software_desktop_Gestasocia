@@ -4,7 +4,7 @@ import '../../../../../../../models/carga_familiar.dart';
 import '../../../shared/widgets/section_title.dart';
 
 class MedicalInfoCard extends StatelessWidget {
-  final CargaFamiliar carga; // ⭐ CAMBIAR de Map a CargaFamiliar
+  final CargaFamiliar carga;
 
   const MedicalInfoCard({super.key, required this.carga});
 

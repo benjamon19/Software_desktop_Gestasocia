@@ -13,14 +13,14 @@ class PendingActionsSection extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
     final bool isSmallScreen = screenWidth < 600;
     final bool isVerySmall = screenWidth < 400;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).brightness == Brightness.dark 
+            color: Theme.of(context).brightness == Brightness.dark
                 ? Colors.black.withValues(alpha: 0.3)
                 : Colors.grey.withValues(alpha: 0.08),
             blurRadius: 10,
@@ -36,9 +36,9 @@ class PendingActionsSection extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.pending_actions_outlined, 
-                  color: AppTheme.primaryColor, 
-                  size: isVerySmall ? 16 : (isSmallScreen ? 18 : 20)
+                  Icons.pending_actions_outlined,
+                  color: AppTheme.primaryColor,
+                  size: isVerySmall ? 16 : (isSmallScreen ? 18 : 20),
                 ),
                 SizedBox(width: isVerySmall ? 8 : 12),
                 Expanded(
@@ -59,7 +59,7 @@ class PendingActionsSection extends StatelessWidget {
                       vertical: isVerySmall ? 2 : 4,
                     ),
                     decoration: BoxDecoration(
-                      color: count > 0 
+                      color: count > 0
                           ? AppTheme.primaryColor
                           : AppTheme.getTextSecondary(context).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -69,7 +69,9 @@ class PendingActionsSection extends StatelessWidget {
                       style: TextStyle(
                         fontSize: isVerySmall ? 10 : (isSmallScreen ? 11 : 12),
                         fontWeight: FontWeight.w600,
-                        color: count > 0 ? Colors.white : AppTheme.getTextSecondary(context),
+                        color: count > 0
+                            ? Colors.white
+                            : AppTheme.getTextSecondary(context),
                       ),
                     ),
                   );
@@ -77,19 +79,19 @@ class PendingActionsSection extends StatelessWidget {
               ],
             ),
           ),
-          
+
           // Línea divisoria sutil
           Container(
             height: 1,
             margin: EdgeInsets.symmetric(horizontal: isVerySmall ? 12 : 16),
             color: AppTheme.getTextSecondary(context).withValues(alpha: 0.1),
           ),
-          
+
           // Lista de solicitudes de transferencia
-          Expanded(
-            child: Obx(() {
-              if (controller.solicitudesTransferencia.isEmpty) {
-                return Center(
+          Obx(() {
+            if (controller.solicitudesTransferencia.isEmpty) {
+              return Expanded(
+                child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -100,7 +102,9 @@ class PendingActionsSection extends StatelessWidget {
                       ),
                       SizedBox(height: isVerySmall ? 8 : 12),
                       Text(
-                        isVerySmall ? 'Sin pendientes' : 'No hay transferencias pendientes',
+                        isVerySmall
+                            ? 'Sin pendientes'
+                            : 'No hay transferencias pendientes',
                         style: TextStyle(
                           fontSize: isVerySmall ? 12 : 14,
                           color: AppTheme.getTextSecondary(context),
@@ -109,13 +113,16 @@ class PendingActionsSection extends StatelessWidget {
                       ),
                     ],
                   ),
-                );
-              }
+                ),
+              );
+            }
 
-              return ListView.separated(
+            return Expanded(
+              child: ListView.separated(
                 padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 12 : 16)),
                 itemCount: controller.solicitudesTransferencia.length,
-                separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 6 : 8),
+                separatorBuilder: (context, index) =>
+                    SizedBox(height: isVerySmall ? 6 : 8),
                 itemBuilder: (context, index) {
                   final solicitud = controller.solicitudesTransferencia[index];
                   return _buildTransferenciaItem(
@@ -126,9 +133,9 @@ class PendingActionsSection extends StatelessWidget {
                     isVerySmall: isVerySmall,
                   );
                 },
-              );
-            }),
-          ),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -191,7 +198,8 @@ class PendingActionsSection extends StatelessWidget {
                         Text(
                           solicitud.cargaNombre,
                           style: TextStyle(
-                            fontSize: isVerySmall ? 12 : (isSmallScreen ? 13 : 14),
+                            fontSize:
+                                isVerySmall ? 12 : (isSmallScreen ? 13 : 14),
                             fontWeight: FontWeight.w600,
                             color: AppTheme.getTextPrimary(context),
                           ),
@@ -217,10 +225,10 @@ class PendingActionsSection extends StatelessWidget {
                   ),
                 ],
               ),
-              
+
               if (!isVerySmall) ...[
                 SizedBox(height: isSmallScreen ? 8 : 10),
-                
+
                 // Origen y Destino
                 Row(
                   children: [
