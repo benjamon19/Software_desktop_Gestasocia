@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../../../../../utils/app_theme.dart';
+import 'package:gestasocia/utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
 import '../../shared/dialog/select_asociado_dialog.dart';
 
@@ -22,19 +23,30 @@ class _FormSectionState extends State<FormSection> {
   // Controladores de texto
   final _motivoController = TextEditingController();
   final _diagnosticoController = TextEditingController();
-  final _tratamientoController = TextEditingController();
+  final _tratamientoRecomendadoController = TextEditingController();
+  final _tratamientoRealizadoController = TextEditingController();
+  final _dienteTratadoController = TextEditingController();
   final _observacionesController = TextEditingController();
+  final _alergiasController = TextEditingController();
+  final _medicamentosController = TextEditingController();
+  final _costoController = TextEditingController();
   
   String _tipoConsulta = 'consulta';
   String _odontologo = 'dr.lopez';
   String _estado = 'pendiente';
+  DateTime? _proximaCita;
 
   @override
   void dispose() {
     _motivoController.dispose();
     _diagnosticoController.dispose();
-    _tratamientoController.dispose();
+    _tratamientoRecomendadoController.dispose();
+    _tratamientoRealizadoController.dispose();
+    _dienteTratadoController.dispose();
     _observacionesController.dispose();
+    _alergiasController.dispose();
+    _medicamentosController.dispose();
+    _costoController.dispose();
     super.dispose();
   }
   
@@ -47,6 +59,35 @@ class _FormSectionState extends State<FormSection> {
       });
     }
   }
+
+  Future<void> _selectProximaCita() async {
+      final DateTime? picked = await showDatePicker(
+        context: context,
+        initialDate: _proximaCita ?? DateTime.now().add(const Duration(days: 7)),
+        firstDate: DateTime.now(),
+        lastDate: DateTime.now().add(const Duration(days: 365)),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: Theme.of(context).colorScheme.copyWith(
+                primary: AppTheme.primaryColor,
+                onPrimary: Colors.white,
+                surface: AppTheme.getSurfaceColor(context),
+                onSurface: AppTheme.getTextPrimary(context),
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+      
+      if (picked != null) {
+        if (!mounted) return;
+        setState(() {
+          _proximaCita = picked;
+        });
+      }
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +166,7 @@ class _FormSectionState extends State<FormSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Sección: Datos del Paciente con aviso
+                    // Sección: Datos del Paciente
                     Row(
                       children: [
                         Expanded(
@@ -371,9 +412,9 @@ class _FormSectionState extends State<FormSection> {
                     
                     _buildTextField(
                       context: context,
-                      controller: _tratamientoController,
+                      controller: _tratamientoRecomendadoController,
                       label: 'Tratamiento Recomendado',
-                      icon: Icons.medication_outlined,
+                      icon: Icons.assignment_outlined,
                       hint: 'Ej: Endodoncia + corona',
                       maxLines: 2,
                       isSmallScreen: isSmallScreen,
@@ -383,11 +424,156 @@ class _FormSectionState extends State<FormSection> {
                     
                     _buildTextField(
                       context: context,
-                      controller: _observacionesController,
-                      label: 'Observaciones Adicionales',
-                      icon: Icons.notes_outlined,
-                      hint: 'Notas importantes sobre el caso...',
-                      maxLines: 3,
+                      controller: _tratamientoRealizadoController,
+                      label: 'Tratamiento Realizado',
+                      icon: Icons.medication_outlined,
+                      hint: 'Ej: Limpieza dental profunda',
+                      maxLines: 2,
+                      isSmallScreen: isSmallScreen,
+                    ),
+                    
+                    const SizedBox(height: 10),
+                    
+                    _buildTextField(
+                      context: context,
+                      controller: _dienteTratadoController,
+                      label: 'Diente(s) Tratado(s)',
+                      icon: Icons.medical_services,
+                      hint: 'Ej: 16, 17 o Molar superior derecho',
+                      maxLines: 1,
+                      isSmallScreen: isSmallScreen,
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Sección: Información Médica
+                    _buildSectionHeader(
+                      context,
+                      'Información Médica Importante',
+                      Icons.health_and_safety_outlined,
+                      isSmallScreen,
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    _buildTextField(
+                      context: context,
+                      controller: _alergiasController,
+                      label: 'Alergias',
+                      icon: Icons.warning_outlined,
+                      hint: 'Ej: Penicilina, látex, anestesia',
+                      maxLines: 2,
+                      isSmallScreen: isSmallScreen,
+                    ),
+                    
+                    const SizedBox(height: 10),
+                    
+                    _buildTextField(
+                      context: context,
+                      controller: _medicamentosController,
+                      label: 'Medicamentos Actuales',
+                      icon: Icons.medication_liquid_outlined,
+                      hint: 'Ej: Ibuprofeno 400mg cada 8 horas',
+                      maxLines: 2,
+                      isSmallScreen: isSmallScreen,
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Sección: Seguimiento y Costos
+                    _buildSectionHeader(
+                      context,
+                      'Seguimiento y Costos',
+                      Icons.event_outlined,
+                      isSmallScreen,
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    // Próxima cita
+                    InkWell(
+                      onTap: _selectProximaCita,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.getInputBackground(context),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _proximaCita != null
+                                ? AppTheme.primaryColor
+                                : AppTheme.getBorderLight(context),
+                            width: _proximaCita != null ? 1.5 : 1,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              color: AppTheme.primaryColor,
+                              size: isSmallScreen ? 18 : 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Próxima Cita',
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 12 : 13,
+                                      color: AppTheme.getTextSecondary(context),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _proximaCita != null
+                                        ? '${_proximaCita!.day.toString().padLeft(2, '0')}/${_proximaCita!.month.toString().padLeft(2, '0')}/${_proximaCita!.year}'
+                                        : 'Seleccionar fecha (opcional)',
+                                    style: TextStyle(
+                                      fontSize: isSmallScreen ? 13 : 14,
+                                      fontWeight: _proximaCita != null ? FontWeight.w600 : FontWeight.normal,
+                                      color: _proximaCita != null
+                                          ? AppTheme.getTextPrimary(context)
+                                          : AppTheme.getTextSecondary(context).withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_proximaCita != null)
+                              IconButton(
+                                onPressed: () {
+                                  if (!mounted) return;
+                                  setState(() {
+                                    _proximaCita = null;
+                                  });
+                                },
+                                icon: Icon(
+                                  Icons.close,
+                                  color: AppTheme.getTextSecondary(context),
+                                  size: 18,
+                                ),
+                                tooltip: 'Quitar fecha',
+                              )
+                            else
+                              Icon(
+                                Icons.chevron_right,
+                                color: AppTheme.getTextSecondary(context),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 10),
+                    
+                    _buildTextField(
+                      context: context,
+                      controller: _costoController,
+                      label: 'Costo del Tratamiento',
+                      icon: Icons.attach_money,
+                      hint: 'Ej: 50000',
+                      maxLines: 1,
+                      keyboardType: TextInputType.number,
                       isSmallScreen: isSmallScreen,
                     ),
                     
@@ -400,12 +586,34 @@ class _FormSectionState extends State<FormSection> {
                       items: [
                         {'value': 'completado', 'label': 'Completado'},
                         {'value': 'pendiente', 'label': 'Pendiente'},
+                        {'value': 'requiere_seguimiento', 'label': 'Requiere Seguimiento'},
                       ],
                       icon: Icons.flag_outlined,
                       onChanged: (value) {
                         if (!mounted) return;
                         setState(() => _estado = value!);
                       },
+                      isSmallScreen: isSmallScreen,
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Sección: Observaciones
+                    _buildSectionHeader(
+                      context,
+                      'Observaciones Adicionales',
+                      Icons.notes_outlined,
+                      isSmallScreen,
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    _buildTextField(
+                      context: context,
+                      controller: _observacionesController,
+                      label: 'Notas del Odontólogo',
+                      icon: Icons.notes_outlined,
+                      hint: 'Notas importantes sobre el caso...',
+                      maxLines: 3,
                       isSmallScreen: isSmallScreen,
                     ),
                     
@@ -508,6 +716,9 @@ class _FormSectionState extends State<FormSection> {
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      inputFormatters: keyboardType == TextInputType.number
+          ? [FilteringTextInputFormatter.digitsOnly]
+          : null,
       style: TextStyle(
         color: AppTheme.getTextPrimary(context),
         fontSize: isSmallScreen ? 13 : 14,
@@ -625,14 +836,20 @@ class _FormSectionState extends State<FormSection> {
     
     _motivoController.clear();
     _diagnosticoController.clear();
-    _tratamientoController.clear();
+    _tratamientoRecomendadoController.clear();
+    _tratamientoRealizadoController.clear();
+    _dienteTratadoController.clear();
     _observacionesController.clear();
+    _alergiasController.clear();
+    _medicamentosController.clear();
+    _costoController.clear();
     
     setState(() {
       _selectedPaciente = null;
       _tipoConsulta = 'consulta';
       _odontologo = 'dr.lopez';
       _estado = 'pendiente';
+      _proximaCita = null;
     });
   }
 
@@ -657,27 +874,50 @@ class _FormSectionState extends State<FormSection> {
 
       if (!mounted) return;
 
+      // Parsear costo si existe
+      double? costo;
+      if (_costoController.text.trim().isNotEmpty) {
+        costo = double.tryParse(_costoController.text.trim());
+      }
+
       final historialData = {
+        // Información del paciente
         'pacienteId': _selectedPaciente!['id'],
         'pacienteTipo': _selectedPaciente!['tipo'],
         'pacienteNombre': _selectedPaciente!['nombre'],
         'pacienteRut': _selectedPaciente!['rut'],
         'pacienteEdad': _selectedPaciente!['edad'],
         'pacienteTelefono': _selectedPaciente!['telefono'] ?? '',
+        
+        // Información de la consulta
         'tipoConsulta': _tipoConsulta,
         'odontologo': _odontologo == 'dr.lopez' ? 'Dr. López' : 'Dr. Martínez',
-        'motivoPrincipal': _motivoController.text.trim(),
-        'diagnostico': _diagnosticoController.text.trim(),
-        'tratamientoRecomendado': _tratamientoController.text.trim(),
-        'observacionesOdontologo': _observacionesController.text.trim(),
-        'estado': _estado == 'completado' ? 'Completado' : 'Pendiente',
         'fecha': DateTime.now(),
         'hora': '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+        'motivoPrincipal': _motivoController.text.trim(),
         
-        // Campos adicionales (aunque no se usan, se mantienen por compatibilidad)
+        // Diagnóstico y tratamiento
+        'diagnostico': _diagnosticoController.text.trim().isEmpty ? null : _diagnosticoController.text.trim(),
+        'tratamientoRecomendado': _tratamientoRecomendadoController.text.trim().isEmpty ? null : _tratamientoRecomendadoController.text.trim(),
+        'tratamientoRealizado': _tratamientoRealizadoController.text.trim().isEmpty ? null : _tratamientoRealizadoController.text.trim(),
+        'dienteTratado': _dienteTratadoController.text.trim().isEmpty ? null : _dienteTratadoController.text.trim(),
+        'observacionesOdontologo': _observacionesController.text.trim().isEmpty ? null : _observacionesController.text.trim(),
+        
+        // Información médica
+        'alergias': _alergiasController.text.trim().isEmpty ? null : _alergiasController.text.trim(),
+        'medicamentosActuales': _medicamentosController.text.trim().isEmpty ? null : _medicamentosController.text.trim(),
+        
+        // Seguimiento
+        'proximaCita': _proximaCita,
+        'estado': _estado == 'completado' ? 'Completado' : (_estado == 'pendiente' ? 'Pendiente' : 'Requiere Seguimiento'),
+        'costoTratamiento': costo,
+        
+        // Metadata
+        'fechaCreacion': DateTime.now(),
+        'fechaActualizacion': null,
+        
+        // Campos adicionales heredados (mantener compatibilidad)
         'condicionesMedicas': [],
-        'medicamentosActuales': [],
-        'alergias': [],
         'embarazo': false,
         'ultimaVisita': '',
         'tratamientosPrevios': [],
@@ -687,7 +927,6 @@ class _FormSectionState extends State<FormSection> {
         'habitos': [],
         'alimentacion': '',
         'sintomasReportados': [],
-        'proximaCita': null,
         'asociadoTitular': _selectedPaciente!['nombre'],
       };
 

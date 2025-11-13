@@ -57,7 +57,7 @@ class _CargaFamiliarSearchFieldState extends State<CargaFamiliarSearchField> {
         focusNode: _focusNode,
         enabled: !widget.isLoading,
         decoration: InputDecoration(
-          labelText: 'SAP, RUT o Código de Barras',
+          labelText: 'SAP del Asociado o RUT de la carga',
           hintText: '12345 (SAP) o 12345678-9 (RUT)',
           prefixIcon: Icon(
             Icons.family_restroom,

@@ -97,13 +97,16 @@ class _SearchSectionState extends State<SearchSection> {
                               color: AppTheme.getTextSecondary(context),
                               size: 18,
                             ),
-                            tooltip: 'Limpiar (ESC)',
+                            tooltip: 'Limpiar',
                           ),
                         // Botón de búsqueda
                         IconButton(
                           onPressed: _searchController.text.trim().isEmpty 
                               ? null 
-                              : () => _focusNode.unfocus(),
+                              : () {
+                                  _focusNode.unfocus();
+                                  widget.controller.searchHistorialExacto(_searchController.text.trim());
+                                },
                           icon: Icon(
                             Icons.search,
                             color: _searchController.text.trim().isEmpty 
@@ -142,8 +145,19 @@ class _SearchSectionState extends State<SearchSection> {
                     color: AppTheme.getTextPrimary(context),
                     fontSize: 14,
                   ),
+                  keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.search,
-                  onFieldSubmitted: (_) => _focusNode.unfocus(),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9kK\-]')),
+                    LengthLimitingTextInputFormatter(12),
+                    _DelayedRutFormatter(),
+                  ],
+                  onFieldSubmitted: (value) {
+                    if (value.trim().isNotEmpty) {
+                      _focusNode.unfocus();
+                      widget.controller.searchHistorialExacto(value.trim());
+                    }
+                  },
                   onChanged: (value) {
                     setState(() {});
                     widget.controller.searchHistorial(value);
@@ -315,5 +329,35 @@ class _SearchSectionState extends State<SearchSection> {
         ),
       ),
     );
+  }
+}
+
+// Formatter que SOLO formatea cuando ya escribiste 8-9 dígitos
+class _DelayedRutFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String text = newValue.text.replaceAll('-', '');
+    
+    // Si tiene menos de 8 caracteres, NO formatear
+    if (text.length < 8) {
+      return newValue;
+    }
+    
+    // Si tiene 8 o 9 caracteres (RUT completo), formatear con guión
+    if (text.length >= 8 && text.length <= 9) {
+      String body = text.substring(0, text.length - 1);
+      String dv = text.substring(text.length - 1);
+      String formatted = '$body-$dv';
+      
+      return TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
+    }
+    
+    return newValue;
   }
 }

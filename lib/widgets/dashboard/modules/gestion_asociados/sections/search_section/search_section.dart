@@ -29,7 +29,6 @@ class SearchSection extends StatelessWidget {
   Widget _buildSectionHeader(BuildContext context) {
     return Row(
       children: [
-        const SizedBox(width: 8),
         Text(
           'Buscador',
           style: TextStyle(

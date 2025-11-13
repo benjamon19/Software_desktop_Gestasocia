@@ -9,10 +9,8 @@ import 'widgets/desktop_wrapper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
   await AppInitializer.initialize();
   Get.put(UsuarioController());
-  
   runApp(const MyApp());
 }
 

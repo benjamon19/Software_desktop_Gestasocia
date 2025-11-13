@@ -1,27 +1,245 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../../../../models/asociado.dart';
+import '../../../../../../../models/carga_familiar.dart';
+import '../../../../../../../utils/app_theme.dart';
 
-class AgeDistributionChart extends StatelessWidget {
+class AgeDistributionChart extends StatefulWidget {
   const AgeDistributionChart({super.key});
 
-  // Datos para clínica dental
-  final List<PointData> _ageData = const [
-    PointData(label: "0-17", value: 15, color: Color(0xFF60A5FA)),
-    PointData(label: "18-35", value: 35, color: Color(0xFF34D399)),
-    PointData(label: "36-55", value: 32, color: Color(0xFFFBBF24)),
-    PointData(label: "56+", value: 18, color: Color(0xFFF87171)),
-  ];
+  @override
+  State<AgeDistributionChart> createState() => _AgeDistributionChartState();
+}
+
+class _AgeDistributionChartState extends State<AgeDistributionChart> {
+  // 🔹 Cache estática para mantener los datos una sola vez por sesión
+  static Map<String, Map<String, int>>? _cachedDistribution;
+
+  late Future<Map<String, Map<String, int>>> _futureDistribution;
+
+  @override
+  void initState() {
+    super.initState();
+    // Si ya están en caché, no vuelve a cargar de Firestore
+    if (_cachedDistribution != null) {
+      _futureDistribution = Future.value(_cachedDistribution);
+    } else {
+      _futureDistribution = _getAgeDistribution().then((data) {
+        _cachedDistribution = data;
+        return data;
+      });
+    }
+  }
+
+  Future<Map<String, Map<String, int>>> _getAgeDistribution() async {
+    final firestore = FirebaseFirestore.instance;
+
+    final asociadosSnap = await firestore.collection('asociados').get();
+    final cargasSnap = await firestore.collection('cargas_familiares').get();
+
+    final List<Asociado> asociados =
+        asociadosSnap.docs.map((doc) => Asociado.fromMap(doc.data(), doc.id)).toList();
+
+    final List<CargaFamiliar> cargas =
+        cargasSnap.docs.map((doc) => CargaFamiliar.fromMap(doc.data(), doc.id)).toList();
+
+    final Map<String, Map<String, int>> distribution = {
+      '0-17': {'asociado': 0, 'carga': 0},
+      '18-35': {'asociado': 0, 'carga': 0},
+      '36-55': {'asociado': 0, 'carga': 0},
+      '56+': {'asociado': 0, 'carga': 0},
+    };
+
+    for (var a in asociados) {
+      final edad = a.edad;
+      if (edad < 18) {
+        distribution['0-17']!['asociado'] = distribution['0-17']!['asociado']! + 1;
+      } else if (edad <= 35) {
+        distribution['18-35']!['asociado'] = distribution['18-35']!['asociado']! + 1;
+      } else if (edad <= 55) {
+        distribution['36-55']!['asociado'] = distribution['36-55']!['asociado']! + 1;
+      } else {
+        distribution['56+']!['asociado'] = distribution['56+']!['asociado']! + 1;
+      }
+    }
+
+    for (var c in cargas) {
+      final edad = c.edad;
+      if (edad < 18) {
+        distribution['0-17']!['carga'] = distribution['0-17']!['carga']! + 1;
+      } else if (edad <= 35) {
+        distribution['18-35']!['carga'] = distribution['18-35']!['carga']! + 1;
+      } else if (edad <= 55) {
+        distribution['36-55']!['carga'] = distribution['36-55']!['carga']! + 1;
+      } else {
+        distribution['56+']!['carga'] = distribution['56+']!['carga']! + 1;
+      }
+    }
+
+    return distribution;
+  }
+
+  void _retry() {
+    setState(() {
+      _cachedDistribution = null; // 🔹 Limpia la caché solo si reintentas
+      _futureDistribution = _getAgeDistribution().then((data) {
+        _cachedDistribution = data;
+        return data;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final bool isSmallScreen = screenWidth < 600;
-    
-    return CustomPaint(
-      painter: CompactScatterPainter(
-        data: _ageData,
-        isSmallScreen: isSmallScreen,
-      ),
-      child: const SizedBox.expand(),
+    final double chartHeight = isSmallScreen ? 220 : 320;
+
+    return FutureBuilder<Map<String, Map<String, int>>>(
+      future: _futureDistribution,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const _ChartLoadingIndicator();
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Error cargando datos',
+                  style: TextStyle(color: AppTheme.getTextPrimary(context)),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(onPressed: _retry, child: const Text('Reintentar')),
+              ],
+            ),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(
+              child: Text('No hay datos disponibles',
+                  style: TextStyle(color: AppTheme.getTextSecondary(context))));
+        }
+
+        final data = snapshot.data!;
+        final int total = data.values.fold(0, (acc, d) => acc + d['asociado']! + d['carga']!);
+        final int totalAsociados = data.values.fold(0, (acc, d) => acc + d['asociado']!);
+        final int totalCargas = data.values.fold(0, (acc, d) => acc + d['carga']!);
+
+        final List<PointData> points = [];
+        for (var rango in ['0-17', '18-35', '36-55', '56+']) {
+          final valores = data[rango]!;
+          final asociadoPct = _percent(valores['asociado']!, total);
+          final cargaPct = _percent(valores['carga']!, total);
+
+          points.add(PointData(
+            label: "$rango (A)",
+            value: asociadoPct,
+            color: const Color(0xFF3B82F6),
+          ));
+          points.add(PointData(
+            label: "$rango (C)",
+            value: cargaPct,
+            color: const Color(0xFF10B981),
+          ));
+        }
+
+        return SizedBox(
+          height: chartHeight,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: CompactScatterPainter(
+                    data: points,
+                    isSmallScreen: isSmallScreen,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 8,
+                right: 12,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color:
+                        AppTheme.getSurfaceColor(context).withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _LegendItem(
+                        color: const Color(0xFF3B82F6),
+                        label: 'Asociados: $totalAsociados',
+                      ),
+                      const SizedBox(height: 6),
+                      _LegendItem(
+                        color: const Color(0xFF10B981),
+                        label: 'Cargas: $totalCargas',
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Total: $total',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.getTextSecondary(context)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  double _percent(int value, int total) {
+    if (total == 0) return 0;
+    return (value / total) * 100;
+  }
+}
+
+// 🔹 (El resto del código idéntico)
+class _LegendItem extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _LegendItem({required this.color, required this.label});
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text(label, style: TextStyle(fontSize: 12, color: AppTheme.getTextPrimary(context), fontWeight: FontWeight.w600)),
+      ],
+    );
+  }
+}
+
+class _ChartLoadingIndicator extends StatelessWidget {
+  const _ChartLoadingIndicator();
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const CircularProgressIndicator(),
+        const SizedBox(height: 12),
+        Text('Cargando...', style: TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 14)),
+      ]),
     );
   }
 }
@@ -29,150 +247,88 @@ class AgeDistributionChart extends StatelessWidget {
 class CompactScatterPainter extends CustomPainter {
   final List<PointData> data;
   final bool isSmallScreen;
-
-  CompactScatterPainter({
-    required this.data,
-    required this.isSmallScreen,
-  });
+  CompactScatterPainter({required this.data, required this.isSmallScreen});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
-    
-    // Configuración responsiva
     final double pointRadius = isSmallScreen ? 6 : 8;
     final double marginLeft = 25;
-    final double marginBottom = 25;
+    final double marginBottom = 30;
     final double marginTop = 15;
     final double marginRight = 10;
-    
     final double chartWidth = size.width - marginLeft - marginRight;
     final double chartHeight = size.height - marginTop - marginBottom;
-    final double maxValue = 40.0;
-    
-    // Dibujar grid
+    const double maxValue = 100.0;
+
     _drawGrid(canvas, size, marginLeft, marginBottom, chartWidth, chartHeight);
-    
-    // Dibujar ejes
     _drawAxes(canvas, size, marginLeft, marginBottom, chartWidth, chartHeight);
-    
-    // Dibujar puntos scatter
+
     for (int i = 0; i < data.length; i++) {
       final point = data[i];
-      
-      // Posición base
       final double baseX = marginLeft + (chartWidth / (data.length - 1)) * i;
       final double baseY = size.height - marginBottom - (point.value / maxValue) * chartHeight;
-      
-      // Múltiples puntos para efecto scatter
-      final List<Offset> positions = [
-        Offset(baseX, baseY), // Principal
-        Offset(baseX - 8, baseY + 6),
-        Offset(baseX + 5, baseY - 4),
-        Offset(baseX - 3, baseY - 8),
-        Offset(baseX + 8, baseY + 3),
-      ];
-      
-      final List<double> sizes = [pointRadius, pointRadius * 0.6, pointRadius * 0.5, pointRadius * 0.4, pointRadius * 0.7];
-      final List<double> alphas = [1.0, 0.8, 0.6, 0.5, 0.7];
-      
-      for (int j = 0; j < positions.length; j++) {
-        paint.color = point.color.withValues(alpha: alphas[j]);
-        canvas.drawCircle(positions[j], sizes[j], paint);
-      }
+      paint.color = point.color;
+      canvas.drawCircle(Offset(baseX, baseY), pointRadius, paint);
     }
-    
-    // Etiquetas
+
     _drawLabels(canvas, size, marginLeft, marginBottom, chartWidth, chartHeight, maxValue);
   }
 
-  void _drawGrid(Canvas canvas, Size size, double marginLeft, double marginBottom, 
-                double chartWidth, double chartHeight) {
+  void _drawGrid(Canvas canvas, Size size, double marginLeft, double marginBottom,
+      double chartWidth, double chartHeight) {
     final paint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.2)
+      ..color = Colors.grey.withValues(alpha: 0.18)
       ..strokeWidth = 1;
-    
-    // Líneas horizontales
     for (int i = 1; i <= 3; i++) {
       final double y = size.height - marginBottom - (chartHeight / 4) * i;
-      canvas.drawLine(
-        Offset(marginLeft, y),
-        Offset(marginLeft + chartWidth, y),
-        paint,
-      );
+      canvas.drawLine(Offset(marginLeft, y), Offset(marginLeft + chartWidth, y), paint);
     }
   }
 
   void _drawAxes(Canvas canvas, Size size, double marginLeft, double marginBottom,
-                double chartWidth, double chartHeight) {
+      double chartWidth, double chartHeight) {
     final paint = Paint()
-      ..color = Colors.grey.withValues(alpha: 0.3)
+      ..color = Colors.grey.withValues(alpha: 0.28)
       ..strokeWidth = 1;
-    
-    // Eje Y
-    canvas.drawLine(
-      Offset(marginLeft, size.height - marginBottom),
-      Offset(marginLeft, size.height - marginBottom - chartHeight),
-      paint,
-    );
-    
-    // Línea base
-    canvas.drawLine(
-      Offset(marginLeft, size.height - marginBottom),
-      Offset(marginLeft + chartWidth, size.height - marginBottom),
-      paint,
-    );
+    canvas.drawLine(Offset(marginLeft, size.height - marginBottom),
+        Offset(marginLeft, size.height - marginBottom - chartHeight), paint);
+    canvas.drawLine(Offset(marginLeft, size.height - marginBottom),
+        Offset(marginLeft + chartWidth, size.height - marginBottom), paint);
   }
 
   void _drawLabels(Canvas canvas, Size size, double marginLeft, double marginBottom,
-                  double chartWidth, double chartHeight, double maxValue) {
+      double chartWidth, double chartHeight, double maxValue) {
     final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    
-    // Etiquetas Y
     for (int i = 0; i <= 4; i += 2) {
       final double value = (maxValue / 4) * i;
       final double y = size.height - marginBottom - (chartHeight / 4) * i;
-      
-      textPainter.text = TextSpan(
-        text: '${value.toInt()}%',
-        style: const TextStyle(
-          fontSize: 10,
-          color: Colors.grey,
-        ),
-      );
+      textPainter.text = TextSpan(text: '${value.toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey));
       textPainter.layout();
-      textPainter.paint(canvas, Offset(marginLeft - 22, y - 5));
+      textPainter.paint(canvas, Offset(marginLeft - 22, y - 6));
     }
-    
-    // Etiquetas X
+
     for (int i = 0; i < data.length; i++) {
       final double x = marginLeft + (chartWidth / (data.length - 1)) * i;
-      
-      textPainter.text = TextSpan(
-        text: data[i].label,
-        style: const TextStyle(
-          fontSize: 9,
-          color: Colors.grey,
-          fontWeight: FontWeight.w500,
-        ),
-      );
+      textPainter.text = TextSpan(text: data[i].label, style: TextStyle(fontSize: 9, color: data[i].color, fontWeight: FontWeight.w600));
       textPainter.layout();
       textPainter.paint(canvas, Offset(x - textPainter.width / 2, size.height - marginBottom + 8));
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CompactScatterPainter oldDelegate) {
+    if (oldDelegate.data.length != data.length) return true;
+    for (int i = 0; i < data.length; i++) {
+      if (oldDelegate.data[i].value != data[i].value || oldDelegate.data[i].color != data[i].color) return true;
+    }
+    return false;
+  }
 }
 
 class PointData {
   final String label;
   final double value;
   final Color color;
-
-  const PointData({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  const PointData({required this.label, required this.value, required this.color});
 }

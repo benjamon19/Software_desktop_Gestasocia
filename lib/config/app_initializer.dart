@@ -7,6 +7,7 @@ import 'firebase_config.dart';
 import 'window_config.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/historial_clinico_controller.dart'; 
 
 class AppInitializer {
   
@@ -46,7 +47,7 @@ class AppInitializer {
       
       // Configurar con barra oculta para usar la personalizada
       WindowOptions windowOptions = const WindowOptions(
-        titleBarStyle: TitleBarStyle.hidden, // ⭐ Ocultar la barra nativa
+        titleBarStyle: TitleBarStyle.hidden, 
         skipTaskbar: false,
         backgroundColor: Colors.transparent,
       );
@@ -126,6 +127,8 @@ class AppInitializer {
     try {
       Get.put(ThemeController(), permanent: true);
       Get.put(AuthController(), permanent: true);
+      Get.put(HistorialClinicoController(), permanent: true);
+      
       if (kDebugMode) {
         print('Controladores inicializados');
       }

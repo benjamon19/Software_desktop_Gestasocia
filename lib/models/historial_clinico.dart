@@ -2,23 +2,24 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HistorialClinico {
   String? id;
-
-  // Referencia al paciente (asociado o carga familiar)
-  String pacienteId; // ID del documento en 'asociados' o 'cargas_familiares'
-  String pacienteTipo; // 'asociado' o 'carga'
-
-  // Información de la consulta
-  String tipoConsulta; // 'consulta', 'control', 'urgencia', 'tratamiento'
+  String pacienteId;
+  String pacienteTipo;
+  String tipoConsulta;
   String odontologo;
   DateTime fecha;
-  String hora; // Formato HH:mm
+  String hora;
   String motivoPrincipal;
   String? diagnostico;
-  String? tratamientoRecomendado;
+  String? tratamientoRealizado;
+  String? dienteTratado;
   String? observacionesOdontologo;
-  String estado; // 'completado', 'pendiente'
-
-  // Metadata
+  String? alergias;
+  String? medicamentosActuales;
+  DateTime? proximaCita;
+  String estado;
+  double? costoTratamiento;
+  String? imagenUrl; // Imagen en la nube (persistente)
+  String? imagenLocalPath; // Imagen local temporal (solo en memoria)
   DateTime fechaCreacion;
   DateTime? fechaActualizacion;
 
@@ -32,60 +33,64 @@ class HistorialClinico {
     required this.hora,
     required this.motivoPrincipal,
     this.diagnostico,
-    this.tratamientoRecomendado,
+    this.tratamientoRealizado,
+    this.dienteTratado,
     this.observacionesOdontologo,
+    this.alergias,
+    this.medicamentosActuales,
+    this.proximaCita,
     required this.estado,
+    this.costoTratamiento,
+    this.imagenUrl,
+    this.imagenLocalPath,
     required this.fechaCreacion,
     this.fechaActualizacion,
   });
 
-  // Getters útiles
   String get fechaFormateada {
-    return '${fecha.day.toString().padLeft(2, '0')}/'
-           '${fecha.month.toString().padLeft(2, '0')}/'
-           '${fecha.year}';
+    return '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
+  }
+
+  String get proximaCitaFormateada {
+    if (proximaCita == null) return 'No programada';
+    return '${proximaCita!.day.toString().padLeft(2, '0')}/${proximaCita!.month.toString().padLeft(2, '0')}/${proximaCita!.year}';
   }
 
   String get tipoConsultaFormateado {
     switch (tipoConsulta.toLowerCase()) {
-      case 'consulta':
-        return 'Consulta';
-      case 'control':
-        return 'Control';
-      case 'urgencia':
-        return 'Urgencia';
-      case 'tratamiento':
-        return 'Tratamiento';
-      default:
-        return tipoConsulta;
+      case 'consulta': return 'Consulta';
+      case 'control': return 'Control';
+      case 'urgencia': return 'Urgencia';
+      case 'tratamiento': return 'Tratamiento';
+      default: return tipoConsulta;
     }
   }
 
   String get estadoFormateado {
     switch (estado.toLowerCase()) {
-      case 'completado':
-        return 'Completado';
-      case 'pendiente':
-        return 'Pendiente';
-      default:
-        return estado;
+      case 'completado': return 'Completado';
+      case 'pendiente': return 'Pendiente';
+      case 'requiere_seguimiento': return 'Requiere Seguimiento';
+      default: return estado;
     }
   }
 
-  // Validaciones
+  bool get tieneAlergias => alergias != null && alergias!.isNotEmpty;
+  bool get tomaMedicamentos => medicamentosActuales != null && medicamentosActuales!.isNotEmpty;
+  bool get tieneImagen => (imagenUrl != null && imagenUrl!.isNotEmpty) || (imagenLocalPath != null && imagenLocalPath!.isNotEmpty);
+
   static bool validarTipoConsulta(String tipo) {
     return ['consulta', 'control', 'urgencia', 'tratamiento'].contains(tipo.toLowerCase());
   }
 
   static bool validarEstado(String estado) {
-    return ['completado', 'pendiente'].contains(estado.toLowerCase());
+    return ['completado', 'pendiente', 'requiere_seguimiento'].contains(estado.toLowerCase());
   }
 
   static bool validarPacienteTipo(String tipo) {
     return ['asociado', 'carga'].contains(tipo.toLowerCase());
   }
 
-  // Conversión a Map para Firestore
   Map<String, dynamic> toMap() {
     return {
       'pacienteId': pacienteId,
@@ -96,15 +101,20 @@ class HistorialClinico {
       'hora': hora,
       'motivoPrincipal': motivoPrincipal,
       'diagnostico': diagnostico,
-      'tratamientoRecomendado': tratamientoRecomendado,
+      'tratamientoRealizado': tratamientoRealizado,
+      'dienteTratado': dienteTratado,
       'observacionesOdontologo': observacionesOdontologo,
+      'alergias': alergias,
+      'medicamentosActuales': medicamentosActuales,
+      'proximaCita': proximaCita,
       'estado': estado,
+      'costoTratamiento': costoTratamiento,
+      'imagenUrl': imagenUrl,
       'fechaCreacion': fechaCreacion,
       'fechaActualizacion': fechaActualizacion,
     };
   }
 
-  // Crear desde Map de Firestore
   factory HistorialClinico.fromMap(Map<String, dynamic> map, String id) {
     return HistorialClinico(
       id: id,
@@ -116,9 +126,16 @@ class HistorialClinico {
       hora: map['hora'] ?? '00:00',
       motivoPrincipal: map['motivoPrincipal'] ?? '',
       diagnostico: map['diagnostico'],
-      tratamientoRecomendado: map['tratamientoRecomendado'],
+      tratamientoRealizado: map['tratamientoRealizado'],
+      dienteTratado: map['dienteTratado'],
       observacionesOdontologo: map['observacionesOdontologo'],
+      alergias: map['alergias'],
+      medicamentosActuales: map['medicamentosActuales'],
+      proximaCita: map['proximaCita'] != null ? _parseDateTime(map['proximaCita']) : null,
       estado: map['estado'] ?? 'pendiente',
+      costoTratamiento: map['costoTratamiento']?.toDouble(),
+      imagenUrl: map['imagenUrl'],
+      imagenLocalPath: null, // Nunca se guarda en Firestore
       fechaCreacion: _parseDateTime(map['fechaCreacion']),
       fechaActualizacion: map['fechaActualizacion'] != null ? _parseDateTime(map['fechaActualizacion']) : null,
     );
@@ -126,20 +143,12 @@ class HistorialClinico {
 
   static DateTime _parseDateTime(dynamic fecha) {
     if (fecha == null) return DateTime.now();
-    
-    if (fecha is DateTime) {
-      return fecha;
-    } else if (fecha is String) {
-      try {
-        return DateTime.parse(fecha);
-      } catch (e) {
-        return DateTime.now();
-      }
-    } else if (fecha is Timestamp) {
-      return fecha.toDate();
-    } else {
-      return DateTime.now();
+    if (fecha is DateTime) return fecha;
+    if (fecha is String) {
+      try { return DateTime.parse(fecha); } catch (e) { return DateTime.now(); }
     }
+    if (fecha is Timestamp) return fecha.toDate();
+    return DateTime.now();
   }
 
   HistorialClinico copyWith({
@@ -152,9 +161,16 @@ class HistorialClinico {
     String? hora,
     String? motivoPrincipal,
     String? diagnostico,
-    String? tratamientoRecomendado,
+    String? tratamientoRealizado,
+    String? dienteTratado,
     String? observacionesOdontologo,
+    String? alergias,
+    String? medicamentosActuales,
+    DateTime? proximaCita,
     String? estado,
+    double? costoTratamiento,
+    String? imagenUrl,
+    String? imagenLocalPath,
     DateTime? fechaCreacion,
     DateTime? fechaActualizacion,
   }) {
@@ -168,9 +184,16 @@ class HistorialClinico {
       hora: hora ?? this.hora,
       motivoPrincipal: motivoPrincipal ?? this.motivoPrincipal,
       diagnostico: diagnostico ?? this.diagnostico,
-      tratamientoRecomendado: tratamientoRecomendado ?? this.tratamientoRecomendado,
+      tratamientoRealizado: tratamientoRealizado ?? this.tratamientoRealizado,
+      dienteTratado: dienteTratado ?? this.dienteTratado,
       observacionesOdontologo: observacionesOdontologo ?? this.observacionesOdontologo,
+      alergias: alergias ?? this.alergias,
+      medicamentosActuales: medicamentosActuales ?? this.medicamentosActuales,
+      proximaCita: proximaCita ?? this.proximaCita,
       estado: estado ?? this.estado,
+      costoTratamiento: costoTratamiento ?? this.costoTratamiento,
+      imagenUrl: imagenUrl ?? this.imagenUrl,
+      imagenLocalPath: imagenLocalPath ?? this.imagenLocalPath,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
       fechaActualizacion: fechaActualizacion ?? this.fechaActualizacion,
     );
