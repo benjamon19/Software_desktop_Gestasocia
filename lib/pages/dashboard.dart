@@ -9,6 +9,7 @@ import '../widgets/dashboard/dashboard_content.dart';
 import '../widgets/dashboard/modules/gestion_asociados/asociados_main_view.dart';
 import '../widgets/dashboard/modules/gestion_cargas_familiares/cargas_familiares_main_view.dart';
 import '../widgets/dashboard/modules/gestion_historial_clinico/historial_clinico_main_view.dart';
+import '../widgets/dashboard/modules/gestion_reserva_de_horas/reserva_de_horas_main_view.dart';
 import '../widgets/dashboard/configuracion/configuracion_view.dart';
 import '../widgets/dashboard/perfil/perfil_view.dart';
 import '../utils/dashboard_data.dart';
@@ -22,9 +23,9 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final AuthController authController = Get.find<AuthController>();
-  final ThemeController themeController = Get.find<ThemeController>();
-  final DashboardPageController dashboardController = Get.find<DashboardPageController>();
+  late final AuthController authController = Get.find<AuthController>();
+  late final ThemeController themeController = Get.find<ThemeController>();
+  late final DashboardPageController dashboardController = Get.find<DashboardPageController>();
   
   bool isDrawerOpen = true;
   bool isSidebarCollapsed = false;
@@ -36,28 +37,16 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   String _getCurrentPageTitle() {
-    switch (dashboardController.selectedIndex.value) {
-      case 0:
-        return DashboardData.menuItems[0]['title'];
-      case 1:
-        return DashboardData.menuItems[1]['title'];
-      case 2:
-        return DashboardData.menuItems[2]['title'];
-      case 3:
-        return DashboardData.menuItems[3]['title'];
-      case 4:
-        return DashboardData.menuItems[4]['title'];
-      case 5:
-        return 'Configuración';
-      case 6:
-        return 'Mi Perfil';
-      default:
-        return DashboardData.menuItems[0]['title'];
+    final index = dashboardController.selectedIndex.value;
+    if (index == 5) return 'Configuración';
+    if (index == 6) return 'Mi Perfil';
+    if (index >= 0 && index < DashboardData.menuItems.length) {
+      return DashboardData.menuItems[index]['title'] as String;
     }
+    return 'Dashboard';
   }
 
   void _handleNavigateToSection(int index) {
-    debugPrint('Dashboard recibió navegación a index: $index');
     dashboardController.changeModule(index);
   }
 
@@ -92,11 +81,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 )),
                 
                 Expanded(
-                  child: Obx(() => AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOutCubic,
-                    child: _buildPageContent(),
-                  )),
+                  child: Obx(() => _buildPageContent()),
                 ),
               ],
             ),
@@ -117,11 +102,7 @@ class _DashboardPageState extends State<DashboardPage> {
       case 3:
         return const HistorialClinicoMainView();
       case 4:
-        return _buildPlaceholderView(
-          title: 'Reserva de Horas',
-          icon: Icons.schedule_outlined,
-          description: 'Sistema de reservas médicas\n(Próximamente)',
-        );
+        return const ReservaDeHorasMainView();
       case 5:
         return const ConfiguracionView();
       case 6:
@@ -129,68 +110,5 @@ class _DashboardPageState extends State<DashboardPage> {
       default:
         return const DashboardContent();
     }
-  }
-
-  Widget _buildPlaceholderView({
-    required String title,
-    required IconData icon,
-    required String description,
-  }) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 80,
-                color: AppTheme.primaryColor,
-              ),
-            ),
-            const SizedBox(height: 30),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.getTextPrimary(context),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              description,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppTheme.getTextSecondary(context),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () => dashboardController.changeModule(0),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Volver al Dashboard',
-                style: TextStyle(fontSize: 16),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
