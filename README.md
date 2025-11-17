@@ -47,8 +47,7 @@ Permite:
 
 - CRUD completo de cargas.  
 - Transferencia de cargas entre asociados.  
-- Exportación de datos e historial.  
-- Adjuntar documentos (radiografías) usando Storage.  
+- Exportación de datos e historial.   
 
 **Vista carga**  
 ![Vista carga](assets/screenshots/vista-carga.png)
@@ -61,6 +60,7 @@ Permite:
 
 - CRUD completo de registros clínicos.  
 - Exportación de datos e historial.  
+- Adjuntar documentos (radiografías) usando Storage. 
 
 **Vista historial**  
 ![Vista historial](assets/screenshots/vista-historial.png)
