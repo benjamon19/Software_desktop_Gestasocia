@@ -80,6 +80,7 @@ Permite:
 
 Aplicación modular basada en 3 capas:
 
+```bash
 lib/
 │
 ├─ bindings/
@@ -118,7 +119,7 @@ lib/
 │ └─ main_view.dart
 │
 └─ utils/
-
+```
 ---
 
 ## Tecnologías usadas
