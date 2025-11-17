@@ -8,6 +8,7 @@ import '../../widgets/interactive_link.dart';
 import '../../widgets/shared_widgets.dart';
 import '../../widgets/theme_toggle_button.dart';
 import '../dialog/codigo_unico_dialog.dart';
+import '../utils/app_routes.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -324,8 +325,7 @@ class _RegisterPageState extends State<RegisterPage> {
           context,
           codigoUnico,
           onClose: () {
-            // Volver a la página de login
-            Get.back();
+            Get.offAllNamed(AppRoutes.login);
           },
         );
       }

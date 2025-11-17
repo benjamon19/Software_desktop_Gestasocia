@@ -1,3 +1,4 @@
+// profile_section.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../../utils/app_theme.dart';
@@ -5,9 +6,10 @@ import '../../../../../../controllers/asociados_controller.dart';
 import 'components/profile_header.dart';
 import 'components/personal_info_card.dart';
 import 'components/family_charges_card.dart';
+import 'components/clinical_history_card.dart';
 
 class ProfileSection extends StatefulWidget {
-  final Map<String, dynamic> asociado; // Mantenemos por compatibilidad
+  final Map<String, dynamic> asociado;
   final VoidCallback onEdit;
   final VoidCallback? onBack;
 
@@ -59,7 +61,7 @@ class _ProfileSectionState extends State<ProfileSection> {
               return const SizedBox();
             }
             return ProfileHeader(
-              asociado: _asociadoToMap(currentAsociado), // Convertir para compatibilidad
+              asociado: _asociadoToMap(currentAsociado),
               onEdit: widget.onEdit,
             );
           }),
@@ -77,14 +79,23 @@ class _ProfileSectionState extends State<ProfileSection> {
                     return const SizedBox();
                   }
                   
+                  final pacienteId = currentAsociado.id;
+                  if (pacienteId == null) return const SizedBox();
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Información personal - REACTIVA
+                      // Información personal
                       PersonalInfoCard(asociado: _asociadoToMap(currentAsociado)),
                       
-                      // Cargas familiares - REACTIVA
+                      // Cargas familiares
                       FamilyChargesCard(asociado: currentAsociado),
+
+                      // === NUEVO: Historial clínico del asociado ===
+                      ClinicalHistoryCard(
+                        pacienteId: pacienteId,
+                        pacienteTipo: 'asociado',
+                      ),
                     ],
                   );
                 }),
@@ -96,7 +107,6 @@ class _ProfileSectionState extends State<ProfileSection> {
     );
   }
 
-  // Convertir Asociado a Map para compatibilidad con componentes existentes
   Map<String, dynamic> _asociadoToMap(dynamic asociado) {
     return {
       'rut': asociado.rut,
@@ -110,7 +120,7 @@ class _ProfileSectionState extends State<ProfileSection> {
       'fechaIngreso': asociado.fechaIngresoFormateada,
       'estado': asociado.estado,
       'plan': asociado.plan,
-      'cargasFamiliares': [], // Por ahora vacío hasta implementar cargas
+      'cargasFamiliares': [],
     };
   }
 }

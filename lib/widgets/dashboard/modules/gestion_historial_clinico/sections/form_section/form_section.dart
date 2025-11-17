@@ -30,11 +30,16 @@ class _FormSectionState extends State<FormSection> {
   final _alergiasController = TextEditingController();
   final _medicamentosController = TextEditingController();
   final _costoController = TextEditingController();
-  
+  final _odontologoController = TextEditingController();
+
   String _tipoConsulta = 'consulta';
-  String _odontologo = 'ejemplo1'; // ← Cambiado a ejemplo1
   String _estado = 'pendiente';
   DateTime? _proximaCita;
+
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -47,6 +52,7 @@ class _FormSectionState extends State<FormSection> {
     _alergiasController.dispose();
     _medicamentosController.dispose();
     _costoController.dispose();
+    _odontologoController.dispose(); // ← Dispose del nuevo controlador
     super.dispose();
   }
   
@@ -61,33 +67,33 @@ class _FormSectionState extends State<FormSection> {
   }
 
   Future<void> _selectProximaCita() async {
-      final DateTime? picked = await showDatePicker(
-        context: context,
-        initialDate: _proximaCita ?? DateTime.now().add(const Duration(days: 7)),
-        firstDate: DateTime.now(),
-        lastDate: DateTime.now().add(const Duration(days: 365)),
-        builder: (context, child) {
-          return Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: Theme.of(context).colorScheme.copyWith(
-                primary: AppTheme.primaryColor,
-                onPrimary: Colors.white,
-                surface: AppTheme.getSurfaceColor(context),
-                onSurface: AppTheme.getTextPrimary(context),
-              ),
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _proximaCita ?? DateTime.now().add(const Duration(days: 7)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              surface: AppTheme.getSurfaceColor(context),
+              onSurface: AppTheme.getTextPrimary(context),
             ),
-            child: child!,
-          );
-        },
-      );
-      
-      if (picked != null) {
-        if (!mounted) return;
-        setState(() {
-          _proximaCita = picked;
-        });
-      }
+          ),
+          child: child!,
+        );
+      },
+    );
+    
+    if (picked != null) {
+      if (!mounted) return;
+      setState(() {
+        _proximaCita = picked;
+      });
     }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -356,19 +362,13 @@ class _FormSectionState extends State<FormSection> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: _buildDropdown(
+                          child: _buildTextField(
                             context: context,
+                            controller: _odontologoController,
                             label: 'Odontólogo',
-                            value: _odontologo,
-                            items: [
-                              {'value': 'ejemplo1', 'label': 'Ejemplo 1'}, // ← Cambiado
-                              {'value': 'ejemplo2', 'label': 'Ejemplo 2'}, // ← Cambiado
-                            ],
                             icon: Icons.person_outline,
-                            onChanged: (value) {
-                              if (!mounted) return;
-                              setState(() => _odontologo = value!);
-                            },
+                            hint: 'Ej: Dr. Juan Pérez',
+                            maxLines: 1,
                             isSmallScreen: isSmallScreen,
                           ),
                         ),
@@ -843,11 +843,11 @@ class _FormSectionState extends State<FormSection> {
     _alergiasController.clear();
     _medicamentosController.clear();
     _costoController.clear();
+    _odontologoController.clear();
     
     setState(() {
       _selectedPaciente = null;
       _tipoConsulta = 'consulta';
-      _odontologo = 'ejemplo1'; // ← Reiniciar a ejemplo1
       _estado = 'pendiente';
       _proximaCita = null;
     });
@@ -874,14 +874,12 @@ class _FormSectionState extends State<FormSection> {
 
       if (!mounted) return;
 
-      // Parsear costo si existe
       double? costo;
       if (_costoController.text.trim().isNotEmpty) {
         costo = double.tryParse(_costoController.text.trim());
       }
 
       final historialData = {
-        // Información del paciente
         'pacienteId': _selectedPaciente!['id'],
         'pacienteTipo': _selectedPaciente!['tipo'],
         'pacienteNombre': _selectedPaciente!['nombre'],
@@ -889,34 +887,28 @@ class _FormSectionState extends State<FormSection> {
         'pacienteEdad': _selectedPaciente!['edad'],
         'pacienteTelefono': _selectedPaciente!['telefono'] ?? '',
         
-        // Información de la consulta
         'tipoConsulta': _tipoConsulta,
-        'odontologo': _odontologo, // ← Guarda "ejemplo1" o "ejemplo2" directamente
+        'odontologo': _odontologoController.text.trim().isEmpty ? null : _odontologoController.text.trim(),
         'fecha': DateTime.now(),
         'hora': '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
         'motivoPrincipal': _motivoController.text.trim(),
         
-        // Diagnóstico y tratamiento
         'diagnostico': _diagnosticoController.text.trim().isEmpty ? null : _diagnosticoController.text.trim(),
         'tratamientoRecomendado': _tratamientoRecomendadoController.text.trim().isEmpty ? null : _tratamientoRecomendadoController.text.trim(),
         'tratamientoRealizado': _tratamientoRealizadoController.text.trim().isEmpty ? null : _tratamientoRealizadoController.text.trim(),
         'dienteTratado': _dienteTratadoController.text.trim().isEmpty ? null : _dienteTratadoController.text.trim(),
         'observacionesOdontologo': _observacionesController.text.trim().isEmpty ? null : _observacionesController.text.trim(),
         
-        // Información médica
         'alergias': _alergiasController.text.trim().isEmpty ? null : _alergiasController.text.trim(),
         'medicamentosActuales': _medicamentosController.text.trim().isEmpty ? null : _medicamentosController.text.trim(),
         
-        // Seguimiento
         'proximaCita': _proximaCita,
         'estado': _estado == 'completado' ? 'Completado' : (_estado == 'pendiente' ? 'Pendiente' : 'Requiere Seguimiento'),
         'costoTratamiento': costo,
         
-        // Metadata
         'fechaCreacion': DateTime.now(),
         'fechaActualizacion': null,
         
-        // Campos adicionales heredados (mantener compatibilidad)
         'condicionesMedicas': [],
         'embarazo': false,
         'ultimaVisita': '',

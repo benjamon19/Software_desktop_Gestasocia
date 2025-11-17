@@ -90,6 +90,12 @@ class HistorialClinicoMainView extends StatelessWidget {
                   onStatusChanged: controller.setStatus,
                   selectedFilter: controller.selectedFilter.value,
                   selectedStatus: controller.selectedStatus.value,
+                  onBeforeSelect: () {
+                    // ← LIMPIA FILTROS Y BÚSQUEDA AL SELECCIONAR
+                    controller.clearSearch();
+                    controller.setFilter('todos');
+                    controller.setStatus('todos');
+                  },
                 ),
               ),
             ],

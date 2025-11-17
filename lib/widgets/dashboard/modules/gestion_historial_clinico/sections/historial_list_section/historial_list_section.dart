@@ -10,7 +10,7 @@ class HistorialListSection extends StatelessWidget {
   final Function(String) onStatusChanged;
   final String selectedFilter;
   final String selectedStatus;
-
+  final VoidCallback? onBeforeSelect;
   const HistorialListSection({
     super.key,
     required this.historiales,
@@ -19,6 +19,7 @@ class HistorialListSection extends StatelessWidget {
     required this.onStatusChanged,
     required this.selectedFilter,
     required this.selectedStatus,
+    this.onBeforeSelect,
   });
 
   @override
@@ -172,7 +173,10 @@ class HistorialListSection extends StatelessWidget {
     return ObxValue<RxBool>(
       (hover) => InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => onHistorialSelected(historial),
+        onTap: () {
+          onBeforeSelect?.call(); // ← Limpia antes de seleccionar
+          onHistorialSelected(historial);
+        },
         onHover: (value) => hover.value = value,
         child: Container(
           padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 10 : 12)),

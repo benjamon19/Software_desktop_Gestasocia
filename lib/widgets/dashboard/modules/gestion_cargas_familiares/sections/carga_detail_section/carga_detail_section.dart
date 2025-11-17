@@ -1,9 +1,11 @@
+// carga_detail_section.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/cargas_familiares_controller.dart';
 import 'components/carga_header.dart';
 import 'components/personal_info_card.dart';
+import 'components/clinical_history_card.dart';
 
 class CargaDetailSection extends StatefulWidget {
   final Map<String, dynamic> carga;
@@ -70,7 +72,7 @@ class _CargaDetailSectionState extends State<CargaDetailSection> {
                 controller: _scrollController,
                 child: Obx(() {
                   final currentCarga = controller.selectedCarga.value;
-                  if (currentCarga == null) {
+                  if (currentCarga == null || currentCarga.id == null) {
                     return const SizedBox();
                   }
                   
@@ -78,6 +80,12 @@ class _CargaDetailSectionState extends State<CargaDetailSection> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       PersonalInfoCard(carga: _cargaToMap(currentCarga)),
+
+                      // === NUEVO: Historial clínico de la CARGA FAMILIAR ===
+                      ClinicalHistoryCard(
+                        pacienteId: currentCarga.id!,
+                        pacienteTipo: 'carga',
+                      ),
                     ],
                   );
                 }),
