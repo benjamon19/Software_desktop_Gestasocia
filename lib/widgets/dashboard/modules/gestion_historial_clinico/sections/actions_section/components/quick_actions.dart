@@ -62,7 +62,7 @@ class QuickActions extends StatelessWidget {
           },
         ),
 
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
         // --- ACCIONES RÁPIDAS ---
         const SectionTitle(title: 'Acciones Rápidas'),

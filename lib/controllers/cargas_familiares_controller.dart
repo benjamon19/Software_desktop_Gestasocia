@@ -419,8 +419,8 @@ class CargasFamiliaresController extends GetxController {
       searchText.value = '';
       
       _showSuccessSnackbar(
-        "Encontradas ${cargasDelAsociado.length} cargas", 
-        "Cargas familiares de: $nombreAsociado"
+        "Encontrado", 
+        "Carga familiar de: $nombreAsociado"
       );
       return;
     }

@@ -8,10 +8,8 @@ class HistorialListSection extends StatelessWidget {
   final Function(Map<String, dynamic>) onHistorialSelected;
   final Function(String) onFilterChanged;
   final Function(String) onStatusChanged;
-  final Function(String) onOdontologoChanged;
   final String selectedFilter;
   final String selectedStatus;
-  final String selectedOdontologo;
 
   const HistorialListSection({
     super.key,
@@ -19,10 +17,8 @@ class HistorialListSection extends StatelessWidget {
     required this.onHistorialSelected,
     required this.onFilterChanged,
     required this.onStatusChanged,
-    required this.onOdontologoChanged,
     required this.selectedFilter,
     required this.selectedStatus,
-    required this.selectedOdontologo,
   });
 
   @override
@@ -57,7 +53,6 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  // Header con título, botón de refresco y contador
   Widget _buildHeader(BuildContext context, bool isSmallScreen, bool isVerySmall) {
     return Container(
       padding: EdgeInsets.all(isVerySmall ? 12 : (isSmallScreen ? 16 : 20)),
@@ -96,7 +91,6 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  // Botón para recargar la lista de historiales
   Widget _buildRefreshButton(BuildContext context, bool isSmallScreen) {
     return IconButton(
       onPressed: () {
@@ -113,7 +107,6 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  // Badge que muestra el contador de historiales
   Widget _buildCounterBadge(BuildContext context, bool isSmallScreen, bool isVerySmall) {
     return Container(
       padding: EdgeInsets.symmetric(
@@ -130,14 +123,11 @@ class HistorialListSection extends StatelessWidget {
         final totalGeneral = controller.totalRegistros;
         final hayFiltros = controller.searchQuery.value.isNotEmpty ||
                            controller.selectedFilter.value != 'todos' ||
-                           controller.selectedStatus.value != 'todos' ||
-                           controller.selectedOdontologo.value != 'todos';
+                           controller.selectedStatus.value != 'todos';
 
         String texto;
         if (isVerySmall) {
           texto = total.toString();
-        } else if (isSmallScreen) {
-          texto = hayFiltros ? '$total/$totalGeneral' : '$total';
         } else {
           texto = hayFiltros ? '$total/$totalGeneral' : '$total';
         }
@@ -154,7 +144,6 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  // Lista de historiales o estado vacío
   Widget _buildList(BuildContext context, bool isSmallScreen, bool isVerySmall) {
     if (historiales.isEmpty) {
       return _buildEmptyState(context, isVerySmall);
@@ -166,21 +155,19 @@ class HistorialListSection extends StatelessWidget {
       itemCount: historiales.length,
       separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 4 : 6),
       itemBuilder: (context, index) {
-        if (index >= historiales.length) return const SizedBox.shrink();
         final historial = historiales[index];
         return _buildHistorialCard(context, historial, isSmallScreen, isVerySmall);
       },
     );
   }
 
-  // Card individual de historial CON hover y onTap
   Widget _buildHistorialCard(
     BuildContext context,
     Map<String, dynamic> historial,
     bool isSmallScreen,
     bool isVerySmall,
   ) {
-    final hovered = false.obs; // Estado de hover
+    final hovered = false.obs;
 
     return ObxValue<RxBool>(
       (hover) => InkWell(
@@ -218,7 +205,6 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  // Avatar circular con ícono de tipo de consulta e indicador de estado
   Widget _buildAvatar(
     BuildContext context,
     Map<String, dynamic> historial,
@@ -248,7 +234,6 @@ class HistorialListSection extends StatelessWidget {
             color: Colors.grey.shade600,
           ),
         ),
-        // Indicador de estado en la esquina inferior derecha
         Positioned(
           bottom: 0,
           right: 0,
@@ -269,7 +254,6 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  // Información del historial: nombre del paciente, tipo y datos adicionales
   Widget _buildHistorialInfo(
     BuildContext context,
     Map<String, dynamic> historial,
@@ -279,7 +263,6 @@ class HistorialListSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nombre del paciente con badges de tipo de paciente y tipo de consulta
         Row(
           children: [
             Expanded(
@@ -293,7 +276,6 @@ class HistorialListSection extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // Badge del tipo de paciente (Asociado o Carga)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
@@ -313,8 +295,7 @@ class HistorialListSection extends StatelessWidget {
         ),
         
         if (!isVerySmall) const SizedBox(height: 2),
-        
-        // RUT, tipo de consulta, fecha y odontólogo
+
         if (isVerySmall)
           Text(
             historial['pacienteRut'] ?? '',
@@ -412,13 +393,11 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  // Estado vacío
   Widget _buildEmptyState(BuildContext context, bool isVerySmall) {
     final controller = Get.find<HistorialClinicoController>();
     final hayBusqueda = controller.searchQuery.value.isNotEmpty;
     final hayFiltros = controller.selectedFilter.value != 'todos' ||
-                       controller.selectedStatus.value != 'todos' ||
-                       controller.selectedOdontologo.value != 'todos';
+                       controller.selectedStatus.value != 'todos';
     
     return Center(
       child: Column(
@@ -447,7 +426,6 @@ class HistorialListSection extends StatelessWidget {
     );
   }
 
-  // Helpers (mismos que tenías)
   IconData _getTipoConsultaIcon(String? tipo) {
     if (tipo == null) return Icons.medical_information_outlined;
     switch (tipo.toLowerCase()) {

@@ -30,6 +30,7 @@ class SelectPacienteDialog {
           'edad': asociado.edad,
           'telefono': asociado.telefono,
           'data': asociado,
+          'asociadoId': asociado.id, // Para ordenamiento
         });
       }
       
@@ -48,6 +49,7 @@ class SelectPacienteDialog {
           'parentesco': carga.parentesco,
           'titularNombre': titularNombre,
           'data': carga,
+          'asociadoId': carga.asociadoId, // Para ordenamiento
         });
       }
       
@@ -69,6 +71,7 @@ class SelectPacienteDialog {
             'edad': asociado.edad,
             'telefono': asociado.telefono,
             'data': asociado,
+            'asociadoId': asociado.id,
           });
         }
       }
@@ -87,6 +90,7 @@ class SelectPacienteDialog {
             'parentesco': carga.parentesco,
             'titularNombre': titularNombre,
             'data': carga,
+            'asociadoId': carga.asociadoId,
           });
         }
       }
@@ -100,27 +104,67 @@ class SelectPacienteDialog {
       final queryLower = query.toLowerCase().trim();
       final querySinFormato = query.replaceAll(RegExp(r'[^0-9kK]'), '');
       
-      filteredPacientes.value = allPacientes.where((paciente) {
+      // Lista temporal para agrupar resultados
+      List<Map<String, dynamic>> resultados = [];
+      Set<String> asociadosEncontrados = {};
+      
+      // Filtrar pacientes
+      for (var paciente in allPacientes) {
+        bool matches = false;
+        
         // Buscar por nombre
         if (paciente['nombre'].toString().toLowerCase().contains(queryLower)) {
-          return true;
+          matches = true;
         }
         
         // Buscar por RUT
-        final rutSinFormato = paciente['rut'].toString().replaceAll(RegExp(r'[^0-9kK]'), '').toLowerCase();
-        if (rutSinFormato.contains(querySinFormato)) {
-          return true;
-        }
-        
-        // Buscar por SAP (solo asociados)
-        if (paciente['tipo'] == 'asociado' && paciente['sap'] != null) {
-          if (paciente['sap'].toString().toLowerCase().contains(queryLower)) {
-            return true;
+        if (!matches) {
+          final rutSinFormato = paciente['rut'].toString().replaceAll(RegExp(r'[^0-9kK]'), '').toLowerCase();
+          if (rutSinFormato.contains(querySinFormato)) {
+            matches = true;
           }
         }
         
-        return false;
-      }).toList();
+        // Buscar por SAP (solo asociados)
+        if (!matches && paciente['tipo'] == 'asociado' && paciente['sap'] != null) {
+          if (paciente['sap'].toString().toLowerCase().contains(queryLower)) {
+            matches = true;
+            // Marcar que este asociado fue encontrado por SAP
+            asociadosEncontrados.add(paciente['id']);
+          }
+        }
+        
+        if (matches) {
+          resultados.add(paciente);
+        }
+      }
+      
+      // Si se encontraron asociados por SAP, agregar sus cargas familiares
+      if (asociadosEncontrados.isNotEmpty) {
+        for (var paciente in allPacientes) {
+          if (paciente['tipo'] == 'carga' && 
+              asociadosEncontrados.contains(paciente['asociadoId']) &&
+              !resultados.contains(paciente)) {
+            resultados.add(paciente);
+          }
+        }
+      }
+      
+      // Ordenar: primero asociados, luego cargas, agrupados por asociadoId
+      resultados.sort((a, b) {
+        // Comparar por asociadoId primero
+        int asociadoCompare = a['asociadoId'].compareTo(b['asociadoId']);
+        if (asociadoCompare != 0) return asociadoCompare;
+        
+        // Dentro del mismo asociado, primero el asociado, luego las cargas
+        if (a['tipo'] == 'asociado' && b['tipo'] == 'carga') return -1;
+        if (a['tipo'] == 'carga' && b['tipo'] == 'asociado') return 1;
+        
+        // Si ambos son cargas, ordenar por nombre
+        return a['nombre'].toString().compareTo(b['nombre'].toString());
+      });
+      
+      filteredPacientes.value = resultados;
     }
 
     Future<Map<String, dynamic>?> selectPacienteAction() async {
@@ -129,8 +173,11 @@ class SelectPacienteDialog {
           'Error',
           'Debes seleccionar un paciente',
           snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red.withValues(alpha: 0.1),
-          colorText: Colors.red,
+          backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
+          colorText: Get.theme.colorScheme.onError,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          duration: const Duration(seconds: 4),
         );
         return null;
       }
@@ -267,8 +314,8 @@ class SelectPacienteDialog {
                   },
                   style: TextStyle(color: AppTheme.getTextPrimary(context)),
                   decoration: InputDecoration(
-                    labelText: 'Buscar asociado o carga familiar',
-                    hintText: 'Buscar por RUT o SAP...',
+                    labelText: 'Buscar paciente',
+                    hintText: 'Buscar por nombre, RUT o SAP...',
                     prefixIcon: const Icon(Icons.search, color: AppTheme.primaryColor),
                     suffixIcon: Obx(() => searchQuery.value.isNotEmpty
                         ? IconButton(
@@ -326,7 +373,7 @@ class SelectPacienteDialog {
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
-                                  'Intenta buscar por RUT o SAP',
+                                  'Intenta buscar por nombre, RUT o SAP',
                                   style: TextStyle(
                                     color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7),
                                     fontSize: 12,

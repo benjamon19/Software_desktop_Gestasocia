@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../../../controllers/historial_clinico_controller.dart';
 
-// Importaciones para la vista de lista
+// Vista de lista
 import 'sections/search_section/search_section.dart';
 import 'sections/historial_list_section/historial_list_section.dart';
 import 'sections/form_section/form_section.dart';
 import 'shared/widgets/loading_indicator.dart';
 
-// Importaciones para la vista de detalle
+// Vista de detalle
 import 'sections/detail_section/components/historial_header.dart';
 import 'sections/detail_section/components/clinical_data_card.dart';
 import 'sections/detail_section/components/image_upload_card.dart';
@@ -34,9 +35,7 @@ class HistorialClinicoMainView extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildMainContent(controller),
-              ),
+              Expanded(child: _buildMainContent(controller)),
             ],
           );
         }),
@@ -49,16 +48,16 @@ class HistorialClinicoMainView extends StatelessWidget {
   Widget _buildFloatingActionButton(HistorialClinicoController controller) {
     if (controller.isListView) {
       return const SizedBox.shrink();
-    } else {
-      return FloatingActionButton(
-        mini: true,
-        onPressed: controller.showListView,
-        backgroundColor: Colors.grey[600],
-        foregroundColor: Colors.white,
-        tooltip: 'Volver a la lista',
-        child: const Icon(Icons.arrow_back, size: 20),
-      );
     }
+
+    return FloatingActionButton(
+      mini: true,
+      onPressed: controller.showListView,
+      backgroundColor: Colors.grey[600],
+      foregroundColor: Colors.white,
+      tooltip: 'Volver a la lista',
+      child: const Icon(Icons.arrow_back, size: 20),
+    );
   }
 
   Widget _buildMainContent(HistorialClinicoController controller) {
@@ -66,19 +65,15 @@ class HistorialClinicoMainView extends StatelessWidget {
       return _buildDetailView(controller);
     }
 
-    // Vista de lista: lista + formulario
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Columna de la lista + buscador
         Expanded(
           flex: 1,
           child: Column(
             children: [
               SearchSection(controller: controller),
               const SizedBox(height: 20),
-
-              // Lista de historiales
               Expanded(
                 child: HistorialListSection(
                   historiales: controller.filteredHistorial,
@@ -86,16 +81,15 @@ class HistorialClinicoMainView extends StatelessWidget {
                     final historialCompleto = controller.allHistoriales.firstWhereOrNull(
                       (h) => h.id == historialMap['id'],
                     );
+
                     if (historialCompleto != null) {
                       controller.showDetailView(historialCompleto);
                     }
                   },
                   onFilterChanged: controller.setFilter,
                   onStatusChanged: controller.setStatus,
-                  onOdontologoChanged: controller.setOdontologo,
                   selectedFilter: controller.selectedFilter.value,
                   selectedStatus: controller.selectedStatus.value,
-                  selectedOdontologo: controller.selectedOdontologo.value,
                 ),
               ),
             ],
@@ -104,7 +98,6 @@ class HistorialClinicoMainView extends StatelessWidget {
 
         const SizedBox(width: 20),
 
-        // Formulario al lado derecho
         Expanded(
           flex: 1,
           child: FormSection(controller: controller),
@@ -114,37 +107,29 @@ class HistorialClinicoMainView extends StatelessWidget {
   }
 
   Widget _buildDetailView(HistorialClinicoController controller) {
-    // ✅ Corrección: controller.selectedHistorial.value podría ser null, pero en vista de detalle no debería
-    // Usamos `!` con seguridad porque solo se llama si hay un historial seleccionado
-final String historialId = controller.selectedHistorial.value?.id ?? 'temp_id';
+    final String historialId = controller.selectedHistorial.value?.id ?? 'temp_id';
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Columna principal con scroll
         Expanded(
           flex: 2,
           child: LayoutBuilder(
             builder: (context, constraints) {
               return SingleChildScrollView(
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header
-                      HistorialHeader(historial: controller.toDisplayMap(controller.selectedHistorial.value!)),
-                      
+                      HistorialHeader(
+                        historial: controller.toDisplayMap(controller.selectedHistorial.value!),
+                      ),
                       const SizedBox(height: 20),
-                      
-                      // Datos Clínicos
-                      ClinicalDataCard(historial: controller.toDisplayMap(controller.selectedHistorial.value!)),
-                      
+                      ClinicalDataCard(
+                        historial: controller.toDisplayMap(controller.selectedHistorial.value!),
+                      ),
                       const SizedBox(height: 20),
-                      
-                      // Imagen / Radiografía → ✅ PASAMOS SOLO EL ID
                       ImageUploadCard(historialId: historialId),
                     ],
                   ),
@@ -153,10 +138,9 @@ final String historialId = controller.selectedHistorial.value?.id ?? 'temp_id';
             },
           ),
         ),
-        
+
         const SizedBox(width: 20),
-        
-        // Panel de acciones (sin scroll, fijo)
+
         Expanded(
           flex: 1,
           child: ActionsSection(

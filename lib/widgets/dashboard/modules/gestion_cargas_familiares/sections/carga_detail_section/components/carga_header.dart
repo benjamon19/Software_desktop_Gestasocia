@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../../../controllers/cargas_familiares_controller.dart';
 import '../../../../../../../controllers/asociados_controller.dart';
+import '../../../../../../../models/asociado.dart';
 
 class CargaHeader extends StatelessWidget {
   final Map<String, dynamic> carga;
@@ -64,9 +65,7 @@ class CargaHeader extends StatelessWidget {
           
           Obx(() {
             final currentCarga = controller.selectedCarga.value;
-            if (currentCarga == null) {
-              return const SizedBox();
-            }
+            if (currentCarga == null) return const SizedBox();
             
             return isVerySmall 
               ? _buildCompactLayout(currentCarga, isVerySmall)
@@ -81,12 +80,8 @@ class CargaHeader extends StatelessWidget {
     return Row(
       children: [
         _buildAvatar(isSmallScreen, false),
-        
         SizedBox(width: isSmallScreen ? 12 : 16),
-        
-        Expanded(
-          child: _buildBasicInfo(currentCarga, isSmallScreen, false),
-        ),
+        Expanded(child: _buildBasicInfo(currentCarga, isSmallScreen, false)),
       ],
     );
   }
@@ -95,12 +90,8 @@ class CargaHeader extends StatelessWidget {
     return Row(
       children: [
         _buildAvatar(false, isVerySmall),
-        
         const SizedBox(width: 12),
-        
-        Expanded(
-          child: _buildBasicInfo(currentCarga, false, isVerySmall),
-        ),
+        Expanded(child: _buildBasicInfo(currentCarga, false, isVerySmall)),
       ],
     );
   }
@@ -137,6 +128,8 @@ class CargaHeader extends StatelessWidget {
   }
 
   Widget _buildBasicInfo(dynamic currentCarga, bool isSmallScreen, bool isVerySmall) {
+    final String sap = _getAsociadoSAP(currentCarga.asociadoId);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -154,23 +147,47 @@ class CargaHeader extends StatelessWidget {
         
         SizedBox(height: isVerySmall ? 3 : 4),
         
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isVerySmall ? 6 : 8,
-            vertical: isVerySmall ? 2 : 3,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            'RUT: ${_formatearRut(currentCarga.rut)}',
-            style: TextStyle(
-              fontSize: isVerySmall ? 10 : 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.95),
+        // RUT + SAP
+        Row(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isVerySmall ? 6 : 8,
+                vertical: isVerySmall ? 2 : 3,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'RUT: ${_formatearRut(currentCarga.rut)}',
+                style: TextStyle(
+                  fontSize: isVerySmall ? 10 : 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+              ),
             ),
-          ),
+            SizedBox(width: 6),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isVerySmall ? 6 : 8,
+                vertical: isVerySmall ? 2 : 3,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'SAP: $sap',
+                style: TextStyle(
+                  fontSize: isVerySmall ? 10 : 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+              ),
+            ),
+          ],
         ),
         
         SizedBox(height: isVerySmall ? 6 : 8),
@@ -184,30 +201,18 @@ class CargaHeader extends StatelessWidget {
             _buildAgeBadge(currentCarga.edad, isVerySmall),
           ],
         ),
-        
-        SizedBox(height: isVerySmall ? 6 : 8),
-        
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isVerySmall ? 6 : 8,
-            vertical: isVerySmall ? 2 : 3,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            'Carga de: ${_getAsociadoNombre(currentCarga.asociadoId)}',
-            style: TextStyle(
-              fontSize: isVerySmall ? 9 : 10,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.9),
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
       ],
     );
+  }
+
+  String _getAsociadoSAP(String? asociadoId) {
+    if (asociadoId == null || asociadoId.isEmpty) return 'Desconocido';
+    try {
+      final AsociadosController asociadosController = Get.find<AsociadosController>();
+      final Asociado? asociado = asociadosController.getAsociadoById(asociadoId);
+      if (asociado != null && asociado.sap != null) return asociado.sap!;
+    } catch (_) {}
+    return 'Desconocido';
   }
 
   Widget _buildStatusBadge(String status, bool isVerySmall) {
@@ -316,18 +321,6 @@ class CargaHeader extends StatelessWidget {
     );
     
     return '$cuerpo-$dv';
-  }
-
-  String _getAsociadoNombre(String? asociadoId) {
-    if (asociadoId == null || asociadoId.isEmpty) return 'Sin titular';
-    try {
-      final AsociadosController asociadosController = Get.find<AsociadosController>();
-      final asociado = asociadosController.getAsociadoById(asociadoId);
-      if (asociado != null) return asociado.nombreCompleto;
-    } catch (e) {
-      // Error silencioso
-    }
-    return 'Titular desconocido';
   }
 
   Color _getStatusColor(String status) {

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math';
 import '../utils/app_theme.dart';
 
-// Widget reutilizable para el panel izquierdo
 class LeftPanel extends StatelessWidget {
   final String title;
   final String subtitle;
@@ -93,7 +93,6 @@ class LeftPanel extends StatelessWidget {
   }
 }
 
-// Data class para features
 class FeatureItem {
   final IconData icon;
   final String text;
@@ -101,7 +100,6 @@ class FeatureItem {
   const FeatureItem({required this.icon, required this.text});
 }
 
-// Widget para decoración de input reutilizable (usando AppTheme)
 class AppTextField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
@@ -110,6 +108,8 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final TextInputType keyboardType;
   final bool obscureText;
+  final void Function(String)? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AppTextField({
     super.key,
@@ -120,6 +120,8 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.keyboardType = TextInputType.text,
     this.obscureText = false,
+    this.onChanged,
+    this.inputFormatters,
   });
 
   @override
@@ -128,6 +130,8 @@ class AppTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      onChanged: onChanged,
+      inputFormatters: inputFormatters,
       style: TextStyle(
         color: AppTheme.getTextPrimary(context),
       ),
@@ -161,7 +165,6 @@ class AppTextField extends StatelessWidget {
   }
 }
 
-// Widget para headers de sección (usando AppTheme)
 class SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -195,7 +198,6 @@ class SectionHeader extends StatelessWidget {
   }
 }
 
-// Background painter reutilizable
 class BackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

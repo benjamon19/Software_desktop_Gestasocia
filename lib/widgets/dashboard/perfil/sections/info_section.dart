@@ -55,6 +55,7 @@ class _PerfilInfoSectionState extends State<PerfilInfoSection> {
               fields: [
                 _FieldData('Nombre Completo', currentUser.nombreCompleto, Icons.badge_outlined),
                 _FieldData('RUT', _formatRut(currentUser.rut), Icons.fingerprint_outlined),
+                _FieldData('Cargo', _formatRol(currentUser.rol), Icons.work_outline),
               ],
               isSmallScreen: isSmallScreen,
               isVeryShortScreen: isVeryShortScreen,
@@ -161,7 +162,7 @@ class _PerfilInfoSectionState extends State<PerfilInfoSection> {
                   SizedBox(height: fieldSpacing),
               ],
             );
-          })
+          }),
         ],
       ),
     );
@@ -257,9 +258,17 @@ class _PerfilInfoSectionState extends State<PerfilInfoSection> {
     
     return '${date.day} de ${months[date.month - 1]} de ${date.year}';
   }
+
+  // Formatear el rol para mostrarlo legible
+  String _formatRol(String rol) {
+    if (rol.isEmpty) return 'Sin cargo';
+    if (rol == 'odontologo') return 'Odontólogo';
+    if (rol == 'administrativo') return 'Administrativo';
+    return rol.substring(0, 1).toUpperCase() + rol.substring(1);
+  }
 }
 
-// Clase auxiliar para datos de campo
+// Clase auxiliar para datos de campo - FUERA de la clase State
 class _FieldData {
   final String label;
   final String value;

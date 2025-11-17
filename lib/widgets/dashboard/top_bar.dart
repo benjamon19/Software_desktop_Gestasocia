@@ -24,6 +24,14 @@ class TopBar extends StatelessWidget {
     this.onNavigateToSection,
   });
 
+  // Helper para formatear el rol
+  String _formatRol(String rol) {
+    if (rol.isEmpty) return 'Sin cargo';
+    if (rol == 'odontologo') return 'Odontólogo';
+    if (rol == 'administrativo') return 'Administrativo';
+    return rol.substring(0, 1).toUpperCase() + rol.substring(1);
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -166,27 +174,30 @@ class TopBar extends StatelessWidget {
             // En pantallas pequeñas, ocultar el texto del usuario
             if (!isSmallScreen) ...[
               SizedBox(width: isVeryShortScreen ? 8 : 10),
-              Obx(() => Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    authController.userDisplayName,
-                    style: TextStyle(
-                      color: AppTheme.getTextPrimary(context),
-                      fontWeight: FontWeight.w600,
-                      fontSize: isVeryShortScreen ? 12 : 14,
+              Obx(() {
+                final rol = authController.currentUser.value?.rol ?? '';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      authController.userDisplayName,
+                      style: TextStyle(
+                        color: AppTheme.getTextPrimary(context),
+                        fontWeight: FontWeight.w600,
+                        fontSize: isVeryShortScreen ? 12 : 14,
+                      ),
                     ),
-                  ),
-                  Text(
-                    authController.userEmail,
-                    style: TextStyle(
-                      color: AppTheme.getTextSecondary(context),
-                      fontSize: isVeryShortScreen ? 10 : 12,
+                    Text(
+                      _formatRol(rol),
+                      style: TextStyle(
+                        color: AppTheme.getTextSecondary(context),
+                        fontSize: isVeryShortScreen ? 10 : 12,
+                      ),
                     ),
-                  ),
-                ],
-              )),
+                  ],
+                );
+              }),
               SizedBox(width: isVeryShortScreen ? 6 : 8),
             ],
             

@@ -3,9 +3,11 @@ import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../services/auth_helper.dart';
 import '../../utils/app_theme.dart';
+import '../../utils/terms_and_conditions_dialog.dart';
 import '../../widgets/interactive_link.dart';
 import '../../widgets/shared_widgets.dart';
 import '../../widgets/theme_toggle_button.dart';
+import '../dialog/codigo_unico_dialog.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -22,7 +24,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final telefonoController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
-  
+
+  String selectedRol = 'Odontólogo';
+
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
   bool acceptTerms = false;
@@ -41,6 +45,34 @@ class _RegisterPageState extends State<RegisterPage> {
     super.dispose();
   }
 
+  void _formatRut(String text) {
+    String clean = text.replaceAll(RegExp(r'[^0-9kK]'), '').toLowerCase();
+
+    if (clean.isEmpty) {
+      rutController.value = const TextEditingValue(text: '');
+      return;
+    }
+
+    if (clean.length > 9) {
+      clean = clean.substring(0, 9);
+    }
+
+    String formatted;
+
+    if (clean.length <= 7) {
+      formatted = clean;
+    } else if (clean.length == 8) {
+      formatted = '${clean.substring(0, 7)}-${clean.substring(7)}';
+    } else {
+      formatted = '${clean.substring(0, 8)}-${clean.substring(8)}';
+    }
+
+    rutController.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,7 +82,6 @@ class _RegisterPageState extends State<RegisterPage> {
             color: AppTheme.backgroundColor,
             child: Row(
               children: [
-                // Panel izquierdo (siempre oscuro)
                 LeftPanel(
                   title: 'GestAsocia',
                   subtitle: 'Sistema de Gestión de Asociados',
@@ -60,7 +91,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     FeatureItem(icon: Icons.verified_user, text: 'Verificación automática'),
                   ],
                 ),
-                // Panel derecho (adaptativo)
                 Expanded(
                   flex: 4,
                   child: Container(
@@ -74,12 +104,11 @@ class _RegisterPageState extends State<RegisterPage> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               const SizedBox(height: 32),
-                              // Header
                               Text('Crear Cuenta', style: AppTheme.getHeadingMedium(context)),
                               const SizedBox(height: 8),
                               Text('Completa los datos para registrarte', style: AppTheme.getBodyMedium(context)),
                               const SizedBox(height: 32),
-                              // Información Personal
+
                               const SectionHeader(icon: Icons.person, title: 'Información Personal'),
                               const SizedBox(height: 16),
                               Row(
@@ -106,14 +135,35 @@ class _RegisterPageState extends State<RegisterPage> {
                                 ],
                               ),
                               const SizedBox(height: 20),
+
                               AppTextField(
                                 controller: rutController,
                                 label: 'RUT',
                                 hint: '12345678-9',
                                 icon: Icons.badge_outlined,
+                                onChanged: _formatRut,
+                                keyboardType: TextInputType.text,
+                              ),
+                              const SizedBox(height: 20),
+
+                              DropdownButtonFormField<String>(
+                                initialValue: selectedRol,
+                                decoration: InputDecoration(
+                                  labelText: 'Rol',
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(value: 'Odontólogo', child: Text('Odontólogo')),
+                                  DropdownMenuItem(value: 'Administrativo', child: Text('Administrativo')),
+                                ],
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() => selectedRol = value);
+                                  }
+                                },
                               ),
                               const SizedBox(height: 32),
-                              // Comunicación
+
                               const SectionHeader(icon: Icons.contact_mail, title: 'Comunicación'),
                               const SizedBox(height: 16),
                               AppTextField(
@@ -132,7 +182,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 keyboardType: TextInputType.phone,
                               ),
                               const SizedBox(height: 32),
-                              // Seguridad
+
                               const SectionHeader(icon: Icons.security, title: 'Seguridad'),
                               const SizedBox(height: 16),
                               AppTextField(
@@ -144,7 +194,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 suffixIcon: IconButton(
                                   onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
                                   icon: Icon(
-                                    isPasswordVisible ? Icons.visibility_off : Icons.visibility, 
+                                    isPasswordVisible ? Icons.visibility_off : Icons.visibility,
                                     size: 20,
                                     color: AppTheme.getTextSecondary(context),
                                   ),
@@ -160,31 +210,31 @@ class _RegisterPageState extends State<RegisterPage> {
                                 suffixIcon: IconButton(
                                   onPressed: () => setState(() => isConfirmPasswordVisible = !isConfirmPasswordVisible),
                                   icon: Icon(
-                                    isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility, 
+                                    isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
                                     size: 20,
                                     color: AppTheme.getTextSecondary(context),
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              // Accept terms
+
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Checkbox(
                                     value: acceptTerms,
                                     onChanged: (value) => setState(() => acceptTerms = value ?? false),
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                   ),
-                                  Expanded(
-                                    child: Text(
-                                      'Acepto los términos y condiciones de uso',
-                                      style: AppTheme.getBodyMedium(context),
-                                    ),
+                                  const SizedBox(width: 4),
+                                  InteractiveLink(
+                                    text: 'Acepto los términos y condiciones de uso',
+                                    onTap: () => TermsAndConditionsDialog.show(context),
                                   ),
                                 ],
                               ),
+
                               const SizedBox(height: 32),
-                              // Register button
                               Obx(() => ElevatedButton(
                                 onPressed: authController.isLoading.value || !acceptTerms ? null : _handleRegister,
                                 style: ElevatedButton.styleFrom(
@@ -194,30 +244,27 @@ class _RegisterPageState extends State<RegisterPage> {
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                                 child: authController.isLoading.value
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                      ),
-                                    )
-                                  : const Text('Registrarse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Text('Registrarse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                               )),
                               const SizedBox(height: 32),
-                              // Divider
                               Row(
                                 children: [
                                   Expanded(child: Divider(color: AppTheme.getBorderLight(context))),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 16), 
-                                    child: Text('o', style: AppTheme.getBodyMedium(context)),
-                                  ),
+                                  const SizedBox(width: 16),
+                                  Text('o', style: AppTheme.getBodyMedium(context)),
+                                  const SizedBox(width: 16),
                                   Expanded(child: Divider(color: AppTheme.getBorderLight(context))),
                                 ],
                               ),
                               const SizedBox(height: 32),
-                              // Login text
                               Center(
                                 child: InteractiveLink(
                                   text: '¿Ya tienes una cuenta? Inicia Sesión',
@@ -234,7 +281,6 @@ class _RegisterPageState extends State<RegisterPage> {
               ],
             ),
           ),
-          // Botón de cambio de tema
           const ThemeToggleButton(),
         ],
       ),
@@ -242,7 +288,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _handleRegister() async {
-    // Validar campos usando el helper
     String? error = AuthHelper.validateRegisterFields(
       nombre: nombreController.text.trim(),
       apellido: apellidoController.text.trim(),
@@ -258,19 +303,32 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    // Realizar registro
-    bool success = await authController.register(
+    String rolValue = selectedRol == 'Odontólogo' ? 'odontologo' : 'administrativo';
+
+    String? codigoUnico = await authController.register(
       email: emailController.text.trim(),
       password: passwordController.text,
       nombre: nombreController.text.trim(),
       apellido: apellidoController.text.trim(),
       telefono: telefonoController.text.trim(),
       rut: rutController.text.trim(),
+      rol: rolValue,
     );
 
-    // Limpiar campos si fue exitoso
-    if (success) {
+    if (codigoUnico != null) {
       _clearFields();
+      
+      // Mostrar el diálogo y al cerrarlo, volver al login
+      if (mounted) {
+        CodigoUnicoDialog.show(
+          context,
+          codigoUnico,
+          onClose: () {
+            // Volver a la página de login
+            Get.back();
+          },
+        );
+      }
     }
   }
 
@@ -283,6 +341,7 @@ class _RegisterPageState extends State<RegisterPage> {
     passwordController.clear();
     confirmPasswordController.clear();
     setState(() {
+      selectedRol = 'Odontólogo';
       isPasswordVisible = false;
       isConfirmPasswordVisible = false;
       acceptTerms = false;

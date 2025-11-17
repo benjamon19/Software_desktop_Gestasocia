@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'components/calendar_header.dart';
-import 'components/calendar_grid_week.dart';
 import 'components/calendar_grid_day.dart';
+import 'components/calendar_grid_week.dart';
 import 'components/calendar_grid_month.dart';
 
 class CalendarMainViewSection extends StatelessWidget {
@@ -25,8 +26,6 @@ class CalendarMainViewSection extends StatelessWidget {
           selectedView: selectedView,
           onDateChanged: onDateChanged,
         ),
-
-
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(16),
@@ -38,26 +37,31 @@ class CalendarMainViewSection extends StatelessWidget {
   }
 
   Widget _buildCalendarView(BuildContext context) {
-    switch (selectedView) {
-      case 'day':
-        return CalendarGridDay(
-          selectedDate: selectedDate,
-          onTimeSlotTap: (dt) => onDateChanged(dt),
-        );
-
-      case 'month':
-        return CalendarGridMonth(
-          selectedDate: selectedDate,
-          onDateTap: onDateChanged,
-        );
-
-      case 'week':
-      default:
-        return CalendarGridWeek(
-          selectedDate: selectedDate,
-          onTimeSlotTap: (dt) => onDateChanged(dt),
-          onDateTap: onDateChanged,
-        );
+    if (selectedView == 'day') {
+      return CalendarGridDay(
+        selectedDate: selectedDate,
+        onTimeSlotTap: (dt) => onDateChanged(dt),
+      );
     }
+
+    if (selectedView == 'month') {
+      return CalendarGridMonth(
+        selectedDate: selectedDate,
+        onDateTap: onDateChanged,
+      );
+    }
+
+    if (selectedView == 'week') {
+      return CalendarGridWeek(
+        selectedDate: selectedDate,
+        onTimeSlotTap: (dt) => onDateChanged(dt),
+        onDateTap: onDateChanged,
+      );
+    }
+
+    return CalendarGridDay(
+      selectedDate: selectedDate,
+      onTimeSlotTap: (dt) => onDateChanged(dt),
+    );
   }
 }

@@ -17,10 +17,8 @@ class ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obtener el controller para reaccionar a cambios
     final AsociadosController controller = Get.find<AsociadosController>();
     
-    // Detectar tamaño de pantalla
     final screenWidth = MediaQuery.of(context).size.width;
     final bool isSmallScreen = screenWidth < 600;
     final bool isVerySmall = screenWidth < 400;
@@ -44,7 +42,6 @@ class ProfileHeader extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Fila superior con botón volver y botón editar
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -65,11 +62,10 @@ class ProfileHeader extends StatelessWidget {
           
           SizedBox(height: isVerySmall ? 4 : 8),
           
-          // Información principal del asociado - AHORA REACTIVA
           Obx(() {
             final currentAsociado = controller.selectedAsociado.value;
             if (currentAsociado == null) {
-              return const SizedBox(); // Si no hay asociado, no mostrar nada
+              return const SizedBox();
             }
             
             return isVerySmall 
@@ -84,12 +80,8 @@ class ProfileHeader extends StatelessWidget {
   Widget _buildNormalLayout(dynamic currentAsociado, bool isSmallScreen) {
     return Row(
       children: [
-        // Avatar más pequeño
         _buildAvatar(isSmallScreen, false),
-        
         SizedBox(width: isSmallScreen ? 12 : 16),
-        
-        // Información básica más compacta
         Expanded(
           child: _buildBasicInfo(currentAsociado, isSmallScreen, false),
         ),
@@ -100,12 +92,8 @@ class ProfileHeader extends StatelessWidget {
   Widget _buildCompactLayout(dynamic currentAsociado, bool isVerySmall) {
     return Row(
       children: [
-        // Avatar pequeño a la izquierda en vez de centrado
         _buildAvatar(false, isVerySmall),
-        
         const SizedBox(width: 12),
-        
-        // Información compacta
         Expanded(
           child: _buildBasicInfo(currentAsociado, false, isVerySmall),
         ),
@@ -148,7 +136,6 @@ class ProfileHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nombre completo más pequeño
         Text(
           currentAsociado.nombreCompleto,
           style: TextStyle(
@@ -163,29 +150,54 @@ class ProfileHeader extends StatelessWidget {
         
         SizedBox(height: isVerySmall ? 3 : 4),
         
-        // RUT más pequeño
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isVerySmall ? 6 : 8,
-            vertical: isVerySmall ? 2 : 3,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            'RUT: ${currentAsociado.rut}',
-            style: TextStyle(
-              fontSize: isVerySmall ? 10 : 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.95),
+        Row(
+          children: [
+            // RUT
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isVerySmall ? 6 : 8,
+                vertical: isVerySmall ? 2 : 3,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'RUT: ${currentAsociado.rut}',
+                style: TextStyle(
+                  fontSize: isVerySmall ? 10 : 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+              ),
             ),
-          ),
+
+            SizedBox(width: 6),
+
+            // SAP
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isVerySmall ? 6 : 8,
+                vertical: isVerySmall ? 2 : 3,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'SAP: ${currentAsociado.sap}',
+                style: TextStyle(
+                  fontSize: isVerySmall ? 10 : 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.95),
+                ),
+              ),
+            ),
+          ],
         ),
         
         SizedBox(height: isVerySmall ? 6 : 8),
         
-        // Badges más pequeños en una sola fila
         Row(
           children: [
             _buildStatusBadge(currentAsociado.estado, isVerySmall),
@@ -267,13 +279,13 @@ class ProfileHeader extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'activo':
-        return const Color(0xFF059669); // Verde más oscuro
+        return const Color(0xFF059669);
       case 'inactivo':
-        return const Color(0xFFDC2626); // Rojo más oscuro
+        return const Color(0xFFDC2626);
       case 'suspendido':
-        return const Color(0xFFD97706); // Naranja más oscuro
+        return const Color(0xFFD97706);
       default:
-        return const Color(0xFF4B5563); // Gris más oscuro
+        return const Color(0xFF4B5563);
     }
   }
 }

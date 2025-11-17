@@ -32,7 +32,7 @@ class _FormSectionState extends State<FormSection> {
   final _costoController = TextEditingController();
   
   String _tipoConsulta = 'consulta';
-  String _odontologo = 'dr.lopez';
+  String _odontologo = 'ejemplo1'; // ← Cambiado a ejemplo1
   String _estado = 'pendiente';
   DateTime? _proximaCita;
 
@@ -361,8 +361,8 @@ class _FormSectionState extends State<FormSection> {
                             label: 'Odontólogo',
                             value: _odontologo,
                             items: [
-                              {'value': 'dr.lopez', 'label': 'Dr. López'},
-                              {'value': 'dr.martinez', 'label': 'Dr. Martínez'},
+                              {'value': 'ejemplo1', 'label': 'Ejemplo 1'}, // ← Cambiado
+                              {'value': 'ejemplo2', 'label': 'Ejemplo 2'}, // ← Cambiado
                             ],
                             icon: Icons.person_outline,
                             onChanged: (value) {
@@ -847,7 +847,7 @@ class _FormSectionState extends State<FormSection> {
     setState(() {
       _selectedPaciente = null;
       _tipoConsulta = 'consulta';
-      _odontologo = 'dr.lopez';
+      _odontologo = 'ejemplo1'; // ← Reiniciar a ejemplo1
       _estado = 'pendiente';
       _proximaCita = null;
     });
@@ -891,7 +891,7 @@ class _FormSectionState extends State<FormSection> {
         
         // Información de la consulta
         'tipoConsulta': _tipoConsulta,
-        'odontologo': _odontologo == 'dr.lopez' ? 'Dr. López' : 'Dr. Martínez',
+        'odontologo': _odontologo, // ← Guarda "ejemplo1" o "ejemplo2" directamente
         'fecha': DateTime.now(),
         'hora': '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
         'motivoPrincipal': _motivoController.text.trim(),

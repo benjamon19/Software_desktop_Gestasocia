@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
-import '../../controllers/usuario_controller.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/app_routes.dart';
 import '../../widgets/interactive_link.dart';
 import '../../widgets/shared_widgets.dart';
 import '../../widgets/theme_toggle_button.dart';
+import '../../dialog/codigo_input_dialog.dart';
+import '../../dialog/nuevo_codigo_dialog.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -50,7 +51,6 @@ class _LoginPageState extends State<LoginPage> {
               color: AppTheme.backgroundColor,
               child: Row(
                 children: [
-                  // Panel izquierdo (siempre oscuro)
                   LeftPanel(
                     title: 'GestAsocia',
                     subtitle: 'Sistema de Gestión de Asociados',
@@ -60,7 +60,6 @@ class _LoginPageState extends State<LoginPage> {
                       FeatureItem(icon: Icons.calendar_today, text: 'Sistema de reservas médicas'),
                     ],
                   ),
-                  // Panel derecho (adaptativo)
                   Expanded(
                     flex: 4,
                     child: Container(
@@ -74,12 +73,10 @@ class _LoginPageState extends State<LoginPage> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 const SizedBox(height: 32),
-                                // Header
                                 Text('Bienvenido', style: AppTheme.getHeadingMedium(context)),
                                 const SizedBox(height: 8),
                                 Text('Ingresa a tu cuenta para continuar', style: AppTheme.getBodyMedium(context)),
                                 const SizedBox(height: 32),
-                                // Email/RUT field
                                 AppTextField(
                                   controller: emailController,
                                   label: 'RUT o Correo electrónico',
@@ -88,7 +85,6 @@ class _LoginPageState extends State<LoginPage> {
                                   keyboardType: TextInputType.text,
                                 ),
                                 const SizedBox(height: 24),
-                                // Password field
                                 AppTextField(
                                   controller: passwordController,
                                   label: 'Contraseña',
@@ -105,7 +101,6 @@ class _LoginPageState extends State<LoginPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                // Remember me
                                 Row(
                                   children: [
                                     Checkbox(
@@ -116,7 +111,6 @@ class _LoginPageState extends State<LoginPage> {
                                   ],
                                 ),
                                 const SizedBox(height: 32),
-                                // Login button
                                 Obx(() => ElevatedButton(
                                   onPressed: authController.isLoading.value ? null : _handleLogin,
                                   style: ElevatedButton.styleFrom(
@@ -137,19 +131,16 @@ class _LoginPageState extends State<LoginPage> {
                                     : const Text('Iniciar Sesión', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                                 )),
                                 const SizedBox(height: 32),
-                                // Divider
                                 Row(
                                   children: [
                                     Expanded(child: Divider(color: AppTheme.getBorderLight(context))),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 16), 
-                                      child: Text('o', style: AppTheme.getBodyMedium(context)),
-                                    ),
+                                    const SizedBox(width: 16),
+                                    Text('o', style: AppTheme.getBodyMedium(context)),
+                                    const SizedBox(width: 16),
                                     Expanded(child: Divider(color: AppTheme.getBorderLight(context))),
                                   ],
                                 ),
                                 const SizedBox(height: 32),
-                                // Register text
                                 Center(
                                   child: InteractiveLink(
                                     text: '¿No tienes una cuenta? Regístrate',
@@ -166,7 +157,6 @@ class _LoginPageState extends State<LoginPage> {
                 ],
               ),
             ),
-            // Botón de cambio de tema
             const ThemeToggleButton(),
           ],
         ),
@@ -178,23 +168,89 @@ class _LoginPageState extends State<LoginPage> {
     String emailOrRut = emailController.text.trim();
     String password = passwordController.text;
 
-    // Validaciones básicas
     if (emailOrRut.isEmpty || password.isEmpty) {
       Get.snackbar('Error', 'Completa todos los campos');
       return;
     }
 
-    // PASAR EL VALOR DE rememberMe al AuthController
-    bool success = await authController.login(emailOrRut, password, rememberMe: rememberMe);
-
-    // Si el login fue exitoso, establecer el usuario en UsuarioController
-    if (success) {
-      try {
-        final usuarioController = Get.find<UsuarioController>();
-        await usuarioController.loadCurrentUser(emailOrRut);
-      } catch (e) {
-        // Error silencioso
+    bool authSuccess = await authController.login(emailOrRut, password, rememberMe: rememberMe);
+    
+    if (authSuccess) {
+      final userId = authController.currentUserId;
+      if (userId != null) {
+        _showCodigoInputDialog(userId);
       }
     }
+  }
+
+  void _showCodigoInputDialog(String userId) {
+    CodigoInputDialog.show(
+      context,
+      onConfirm: (codigo) async {
+        if (codigo.isEmpty) {
+          Get.snackbar('Error', 'El código no puede estar vacío');
+          _showCodigoInputDialog(userId);
+          return;
+        }
+
+        String? resultado = await authController.validateCodigoUnico(userId, codigo);
+        
+        if (resultado == '') {
+          // Código válido - Mostrar snackbar de éxito
+          Get.snackbar(
+            'Éxito',
+            'Sesión iniciada correctamente',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.8),
+            colorText: Get.theme.colorScheme.onPrimary,
+            margin: const EdgeInsets.all(16),
+            borderRadius: 8,
+            duration: const Duration(seconds: 3),
+          );
+          Get.offAllNamed('/dashboard');
+        } else if (resultado != null) {
+          // Código expirado, mostrar nuevo código
+          _showNuevoCodigoDialog(resultado);
+        } else {
+          // Código incorrecto - Con estética correcta
+          Get.snackbar(
+            'Error',
+            'Código incorrecto. Verifica e intenta nuevamente.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
+            colorText: Get.theme.colorScheme.onError,
+            margin: const EdgeInsets.all(16),
+            borderRadius: 8,
+            duration: const Duration(seconds: 4),
+          );
+          _showCodigoInputDialog(userId);
+        }
+      },
+      onCancel: () {
+        // Si cancela, hacer logout
+        authController.logout();
+      },
+    );
+  }
+
+  void _showNuevoCodigoDialog(String nuevoCodigo) {
+    NuevoCodigoDialog.show(
+      context,
+      nuevoCodigo,
+      onClose: () {
+        // Después de ver el nuevo código, mostrar snackbar y ir al dashboard
+        Get.snackbar(
+          'Éxito',
+          'Sesión iniciada correctamente',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.8),
+          colorText: Get.theme.colorScheme.onPrimary,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          duration: const Duration(seconds: 3),
+        );
+        Get.offAllNamed('/dashboard');
+      },
+    );
   }
 }

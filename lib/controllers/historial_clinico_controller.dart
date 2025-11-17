@@ -153,30 +153,42 @@ class HistorialClinicoController extends GetxController {
 
       filtered = filtered.where((historial) {
         try {
-          // Buscar por SAP (solo para asociados)
+          // Caso 1: Historial de asociado
           if (historial.pacienteTipo == 'asociado') {
             final asociadosController = Get.find<AsociadosController>();
             final asociado = asociadosController.getAsociadoById(historial.pacienteId);
 
-            if (asociado != null && asociado.sap != null) {
-              if (asociado.sap!.contains(querySinFormato)) {
+            if (asociado != null) {
+              // Buscar por SAP del asociado
+              if (asociado.sap != null && 
+                  asociado.sap!.contains(querySinFormato)) {
                 return true;
               }
-            }
-
-            if (asociado != null) {
+              // Buscar por RUT del asociado
               final rutSinFormato = asociado.rut.replaceAll(RegExp(r'[^0-9kK]'), '');
               if (rutSinFormato.contains(querySinFormato)) {
                 return true;
               }
             }
-          } else if (historial.pacienteTipo == 'carga') {
+          }
+          // Caso 2: Historial de carga familiar
+          else if (historial.pacienteTipo == 'carga') {
             final cargasController = Get.find<CargasFamiliaresController>();
             final carga = cargasController.getCargaById(historial.pacienteId);
 
             if (carga != null) {
-              final rutSinFormato = carga.rut.replaceAll(RegExp(r'[^0-9kK]'), '');
-              if (rutSinFormato.contains(querySinFormato)) {
+              // Buscar por RUT de la carga
+              final rutCargaSinFormato = carga.rut.replaceAll(RegExp(r'[^0-9kK]'), '');
+              if (rutCargaSinFormato.contains(querySinFormato)) {
+                return true;
+              }
+
+              // Buscar por SAP del asociado titular
+              final asociadosController = Get.find<AsociadosController>();
+              final asociadoTitular = asociadosController.getAsociadoById(carga.asociadoId);
+              if (asociadoTitular != null &&
+                  asociadoTitular.sap != null &&
+                  asociadoTitular.sap!.contains(querySinFormato)) {
                 return true;
               }
             }
@@ -197,12 +209,6 @@ class HistorialClinicoController extends GetxController {
     // Filtro por estado
     if (selectedStatus.value != 'todos') {
       filtered = filtered.where((h) => h.estado.toLowerCase() == selectedStatus.value).toList();
-    }
-
-    // Filtro por odontólogo
-    if (selectedOdontologo.value != 'todos') {
-      final odontologoNombre = selectedOdontologo.value == 'dr.lopez' ? 'Dr. López' : 'Dr. Martínez';
-      filtered = filtered.where((h) => h.odontologo == odontologoNombre).toList();
     }
 
     // Ordenar por fecha más reciente
@@ -232,8 +238,8 @@ class HistorialClinicoController extends GetxController {
         _showSuccessSnackbar(
           'Encontrado',
           historiales.length == 1
-              ? 'Historial clínico encontrado'
-              : 'Se encontraron ${historiales.length} historiales. Mostrando el más reciente.',
+              ? 'Historial encontrado'
+              : 'Se encontró el historial',
         );
       } else {
         _showErrorSnackbar(

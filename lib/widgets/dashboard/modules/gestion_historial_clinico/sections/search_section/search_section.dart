@@ -59,8 +59,8 @@ class _SearchSectionState extends State<SearchSection> {
             Expanded(
               child: Focus(
                 onKeyEvent: (node, event) {
-                  // Manejar tecla ESC para limpiar el campo
-                  if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+                  if (event is KeyDownEvent &&
+                      event.logicalKey == LogicalKeyboardKey.escape) {
                     if (_searchController.text.isNotEmpty) {
                       _searchController.clear();
                       widget.controller.clearSearch();
@@ -84,7 +84,6 @@ class _SearchSectionState extends State<SearchSection> {
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Botón para limpiar campo
                         if (_searchController.text.trim().isNotEmpty)
                           IconButton(
                             onPressed: () {
@@ -99,22 +98,22 @@ class _SearchSectionState extends State<SearchSection> {
                             ),
                             tooltip: 'Limpiar',
                           ),
-                        // Botón de búsqueda
                         IconButton(
-                          onPressed: _searchController.text.trim().isEmpty 
-                              ? null 
+                          onPressed: _searchController.text.trim().isEmpty
+                              ? null
                               : () {
                                   _focusNode.unfocus();
-                                  widget.controller.searchHistorialExacto(_searchController.text.trim());
+                                  widget.controller.searchHistorialExacto(
+                                      _searchController.text.trim());
                                 },
                           icon: Icon(
                             Icons.search,
-                            color: _searchController.text.trim().isEmpty 
+                            color: _searchController.text.trim().isEmpty
                                 ? AppTheme.getTextSecondary(context)
                                 : AppTheme.primaryColor,
                             size: 20,
                           ),
-                          tooltip: 'Buscar',
+                          tooltip: 'Buscar exacto',
                         ),
                       ],
                     ),
@@ -122,7 +121,8 @@ class _SearchSectionState extends State<SearchSection> {
                     fillColor: AppTheme.getInputBackground(context),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+                      borderSide:
+                          BorderSide(color: AppTheme.getBorderLight(context)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
@@ -133,11 +133,14 @@ class _SearchSectionState extends State<SearchSection> {
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
+                      borderSide:
+                          BorderSide(color: AppTheme.getBorderLight(context)),
                     ),
-                    labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
+                    labelStyle:
+                        TextStyle(color: AppTheme.getTextSecondary(context)),
                     hintStyle: TextStyle(
-                      color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7),
+                      color: AppTheme.getTextSecondary(context)
+                          .withValues(alpha: 0.7),
                       fontSize: 14,
                     ),
                   ),
@@ -155,7 +158,8 @@ class _SearchSectionState extends State<SearchSection> {
                   onFieldSubmitted: (value) {
                     if (value.trim().isNotEmpty) {
                       _focusNode.unfocus();
-                      widget.controller.searchHistorialExacto(value.trim());
+                      widget.controller
+                          .searchHistorialExacto(value.trim());
                     }
                   },
                   onChanged: (value) {
@@ -167,58 +171,38 @@ class _SearchSectionState extends State<SearchSection> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 12),
-        
-        // Segunda fila: Filtros compactos
+
+        // Segunda fila: SOLO tipo y estado
         Row(
           children: [
-            // Dropdown Tipo
             Expanded(
               child: Obx(() => _buildCompactDropdown(
-                'Tipo',
-                widget.controller.selectedFilter.value,
-                [
-                  {'value': 'todos', 'label': 'Todos', 'icon': Icons.all_inclusive},
-                  {'value': 'consulta', 'label': 'Consulta', 'icon': Icons.medical_information_outlined},
-                  {'value': 'control', 'label': 'Control', 'icon': Icons.check_circle_outline},
-                  {'value': 'urgencia', 'label': 'Urgencia', 'icon': Icons.emergency},
-                  {'value': 'tratamiento', 'label': 'Tratamiento', 'icon': Icons.healing},
-                ],
-                widget.controller.setFilter,
-              )),
+                    'Tipo',
+                    widget.controller.selectedFilter.value,
+                    [
+                      {'value': 'todos', 'label': 'Todos', 'icon': Icons.all_inclusive},
+                      {'value': 'consulta', 'label': 'Consulta', 'icon': Icons.medical_information_outlined},
+                      {'value': 'control', 'label': 'Control', 'icon': Icons.check_circle_outline},
+                      {'value': 'urgencia', 'label': 'Urgencia', 'icon': Icons.emergency},
+                      {'value': 'tratamiento', 'label': 'Tratamiento', 'icon': Icons.healing},
+                    ],
+                    widget.controller.setFilter,
+                  )),
             ),
-            
             const SizedBox(width: 8),
-            
-            // Dropdown Estado
             Expanded(
               child: Obx(() => _buildCompactDropdown(
-                'Estado',
-                widget.controller.selectedStatus.value,
-                [
-                  {'value': 'todos', 'label': 'Todos', 'icon': Icons.all_inclusive},
-                  {'value': 'completado', 'label': 'Completado', 'icon': Icons.check_circle},
-                  {'value': 'pendiente', 'label': 'Pendiente', 'icon': Icons.pending_actions},
-                ],
-                widget.controller.setStatus,
-              )),
-            ),
-            
-            const SizedBox(width: 8),
-            
-            // Dropdown Odontólogo
-            Expanded(
-              child: Obx(() => _buildCompactDropdown(
-                'Odontólogo',
-                widget.controller.selectedOdontologo.value,
-                [
-                  {'value': 'todos', 'label': 'Todos', 'icon': Icons.all_inclusive},
-                  {'value': 'dr.lopez', 'label': 'Dr. López', 'icon': Icons.person},
-                  {'value': 'dr.martinez', 'label': 'Dr. Martínez', 'icon': Icons.person},
-                ],
-                widget.controller.setOdontologo,
-              )),
+                    'Estado',
+                    widget.controller.selectedStatus.value,
+                    [
+                      {'value': 'todos', 'label': 'Todos', 'icon': Icons.all_inclusive},
+                      {'value': 'completado', 'label': 'Completado', 'icon': Icons.check_circle},
+                      {'value': 'pendiente', 'label': 'Pendiente', 'icon': Icons.pending_actions},
+                    ],
+                    widget.controller.setStatus,
+                  )),
             ),
           ],
         ),
@@ -253,16 +237,16 @@ class _SearchSectionState extends State<SearchSection> {
               Icon(
                 option['icon'] as IconData,
                 size: 18,
-                color: isSelected 
-                    ? AppTheme.primaryColor 
+                color: isSelected
+                    ? AppTheme.primaryColor
                     : AppTheme.getTextSecondary(context),
               ),
               const SizedBox(width: 8),
               Text(
                 option['label'],
                 style: TextStyle(
-                  color: isSelected 
-                      ? AppTheme.primaryColor 
+                  color: isSelected
+                      ? AppTheme.primaryColor
                       : AppTheme.getTextPrimary(context),
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -294,7 +278,6 @@ class _SearchSectionState extends State<SearchSection> {
           ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               selectedOption['icon'] as IconData,
@@ -332,32 +315,27 @@ class _SearchSectionState extends State<SearchSection> {
   }
 }
 
-// Formatter que SOLO formatea cuando ya escribiste 8-9 dígitos
 class _DelayedRutFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
+      TextEditingValue oldValue, TextEditingValue newValue) {
     String text = newValue.text.replaceAll('-', '');
-    
-    // Si tiene menos de 8 caracteres, NO formatear
+
     if (text.length < 8) {
       return newValue;
     }
-    
-    // Si tiene 8 o 9 caracteres (RUT completo), formatear con guión
+
     if (text.length >= 8 && text.length <= 9) {
       String body = text.substring(0, text.length - 1);
       String dv = text.substring(text.length - 1);
       String formatted = '$body-$dv';
-      
+
       return TextEditingValue(
         text: formatted,
         selection: TextSelection.collapsed(offset: formatted.length),
       );
     }
-    
+
     return newValue;
   }
 }

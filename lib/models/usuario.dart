@@ -7,8 +7,11 @@ class Usuario {
   String email;
   String telefono;
   String rut;
-  String? photoUrl; // NUEVO: URL de la foto de perfil
+  String rol;
+  String codigoUnico;
+  String? photoUrl;
   DateTime fechaCreacion;
+  DateTime? fechaActualizacionCodigo;
   bool isActive;
 
   Usuario({
@@ -18,8 +21,11 @@ class Usuario {
     required this.email,
     required this.telefono,
     required this.rut,
-    this.photoUrl, // NUEVO
+    required this.rol,
+    required this.codigoUnico,
+    this.photoUrl,
     required this.fechaCreacion,
+    this.fechaActualizacionCodigo,
     this.isActive = true,
   });
 
@@ -31,7 +37,6 @@ class Usuario {
     String cuerpo = rut.substring(0, rut.length - 1);
     String dv = rut.substring(rut.length - 1);
     
-    // Formatear cuerpo con puntos
     String cuerpoFormateado = '';
     for (int i = cuerpo.length - 1; i >= 0; i--) {
       if ((cuerpo.length - i) % 3 == 1 && i != cuerpo.length - 1) {
@@ -46,7 +51,6 @@ class Usuario {
   // Validación de RUT chileno
   static bool validarRUT(String rut) {
     try {
-      // Limpiar RUT (quitar puntos y guión)
       String rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
       
       if (rutLimpio.length < 2) return false;
@@ -54,10 +58,8 @@ class Usuario {
       String cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
       String dv = rutLimpio.substring(rutLimpio.length - 1).toUpperCase();
       
-      // Validar que el cuerpo sean solo números
       if (!RegExp(r'^[0-9]+$').hasMatch(cuerpo)) return false;
       
-      // Calcular dígito verificador
       int suma = 0;
       int multiplicador = 2;
       
@@ -83,8 +85,11 @@ class Usuario {
       'email': email,
       'telefono': telefono,
       'rut': rut,
-      'photoUrl': photoUrl, // NUEVO
+      'rol': rol,
+      'codigoUnico': codigoUnico,
+      'photoUrl': photoUrl,
       'fechaCreacion': fechaCreacion,
+      'fechaActualizacionCodigo': fechaActualizacionCodigo,
       'isActive': isActive,
     };
   }
@@ -98,8 +103,13 @@ class Usuario {
       email: map['email'] ?? '',
       telefono: map['telefono'] ?? '',
       rut: map['rut'] ?? '',
-      photoUrl: map['photoUrl'], // NUEVO
+      rol: map['rol'] ?? 'usuario',
+      codigoUnico: map['codigoUnico'] ?? '',
+      photoUrl: map['photoUrl'],
       fechaCreacion: _parseDateTime(map['fechaCreacion']),
+      fechaActualizacionCodigo: map['fechaActualizacionCodigo'] != null 
+          ? _parseDateTime(map['fechaActualizacionCodigo']) 
+          : null, // ← NUEVO: puede ser null para usuarios antiguos
       isActive: map['isActive'] ?? true,
     );
   }
@@ -117,7 +127,6 @@ class Usuario {
         return DateTime.now();
       }
     } else if (fecha is Timestamp) {
-      // Para Timestamp de Firestore
       return fecha.toDate();
     } else {
       return DateTime.now();
@@ -132,8 +141,11 @@ class Usuario {
     String? email,
     String? telefono,
     String? rut,
-    String? photoUrl, // NUEVO
+    String? rol,
+    String? codigoUnico,
+    String? photoUrl,
     DateTime? fechaCreacion,
+    DateTime? fechaActualizacionCodigo, // ← NUEVO
     bool? isActive,
   }) {
     return Usuario(
@@ -143,15 +155,18 @@ class Usuario {
       email: email ?? this.email,
       telefono: telefono ?? this.telefono,
       rut: rut ?? this.rut,
-      photoUrl: photoUrl ?? this.photoUrl, // NUEVO
+      rol: rol ?? this.rol,
+      codigoUnico: codigoUnico ?? this.codigoUnico,
+      photoUrl: photoUrl ?? this.photoUrl,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
+      fechaActualizacionCodigo: fechaActualizacionCodigo ?? this.fechaActualizacionCodigo, // ← NUEVO
       isActive: isActive ?? this.isActive,
     );
   }
 
   @override
   String toString() {
-    return 'Usuario{id: $id, nombreCompleto: $nombreCompleto, email: $email, rut: $rutFormateado}';
+    return 'Usuario{id: $id, nombreCompleto: $nombreCompleto, email: $email, rut: $rutFormateado, rol: $rol}';
   }
 
   @override

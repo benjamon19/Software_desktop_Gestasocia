@@ -11,7 +11,7 @@ class ReservaDeHorasMainView extends StatefulWidget {
 }
 
 class _ReservaDeHorasMainViewState extends State<ReservaDeHorasMainView> {
-  String selectedView = 'week';
+  String selectedView = 'day';
   DateTime selectedDate = DateTime.now();
 
   @override
