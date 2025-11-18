@@ -140,18 +140,16 @@ lib/
 ```bash
 git clone https://github.com/benjamon19/Software_desktop_Gestasocia.git
 cd Software_desktop_Gestasocia
-Instalar dependencias:
+```
 
-bash
-Copiar código
+2. Instalar dependencias:
+
+```bash
 flutter pub get
-Ejecutar la app en Windows:
+```
 
-bash
-Copiar código
+3. Ejecutar la app en Windows:
+
+```bash
 flutter run -d windows
-Crear build release (opcional):
-
-bash
-Copiar código
-flutter build windows
+```
