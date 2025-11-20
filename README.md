@@ -10,21 +10,18 @@ Repositorio: [https://github.com/benjamon19/Software_desktop_Gestasocia.git](htt
 
 ## Login
 
-**Login con tema oscuro**  
-![Login oscuro](assets/screenshots/login-oscuro.png)
-
-**Login con tema claro**  
-![Login claro](assets/screenshots/login-claro.png)
+**Login del software**  
+![Login oscuro](assets/screenshots/2.png)
 
 **Código de acceso doble factor**  
-![Código de acceso](assets/screenshots/codigo.png)
+![Código de acceso](assets/screenshots/3.png)
 
 ---
 
 ## Dashboard
-
+ 
 El **dashboard** muestra gráficas, cartas y estadísticas principales de la aplicación.
-
+![Login oscuro](assets/screenshots/4.png)
 
 ---
 
@@ -36,8 +33,14 @@ Permite:
 - CRUD completo de asociados.  
 - Exportación de datos y acceso a historial.  
 
-**Vista asociado**  
-![Vista asociado](assets/screenshots/vista-asociado.png)
+**Vista lista de asociados**  
+![Vista asociado](assets/screenshots/5.png)
+
+**Crear nuevo asociado** este dialog tiene la misma estética que todos los demás del sistema.
+![Vista asociado](assets/screenshots/6.png)
+
+**Vista perfil del asociado** 
+![Vista asociado](assets/screenshots/7.png)
 
 ---
 
@@ -49,8 +52,11 @@ Permite:
 - Transferencia de cargas entre asociados.  
 - Exportación de datos e historial.   
 
-**Vista carga**  
-![Vista carga](assets/screenshots/vista-carga.png)
+**Vista lista de cargas familiares**  
+![Vista carga](assets/screenshots/8.png)
+
+**Vista perfil de la carga familiar** 
+![Vista asociado](assets/screenshots/9.png)
 
 ---
 
@@ -62,17 +68,55 @@ Permite:
 - Exportación de datos e historial.  
 - Adjuntar documentos (radiografías) usando Storage. 
 
-**Vista historial**  
-![Vista historial](assets/screenshots/vista-historial.png)
+**Vista lista de historiales y formulario**  
+![Vista historial](assets/screenshots/10.png)
+
+**Vista perfil de un historial clínico** esto aplica para asociado y carga.
+![Vista asociado](assets/screenshots/11.png)
+
+---
+
+## Gestión de reserva de horas
+
+Permite:
+
+- CRUD completo de reserva de horas por paciente del sistema.   
+
+**Vista reserva de horas diarias**  
+![Vista historial](assets/screenshots/12.png)
+
+**Vista crear nueva reserva**
+![Vista asociado](assets/screenshots/13.png)
+
+**Múltiple cita** cuando hay más de una cita en un horario despliega este dialog.
+![Vista asociado](assets/screenshots/14.png)
+
+**Detalle de la cita** cuando se le hace click a una cita despliga este dialog con los detalles y se puede solicitar la confirmación por Whatsapp.
+![Vista asociado](assets/screenshots/15.png)
+
+**Vista reserva de horas semanal**
+![Vista asociado](assets/screenshots/16.png)
+
+**Vista reserva de horas mensual**
+![Vista asociado](assets/screenshots/17.png)
 
 ---
 
 ## Gestión de perfil y configuración
 
-- Actualización de información personal.  
+- Cambio de contraseña.  
 - Cambio de foto mediante Storage.  
 - Cierre de sesión.  
-- Configuración de la aplicación según roles.
+- Cambio de tema de la aplicación.
+
+**Tema claro**
+![Vista asociado](assets/screenshots/20.png)
+
+**Tema oscuro**
+![Vista asociado](assets/screenshots/21.png)
+
+**Creación de usuarios** solo a los administradores del sistema se les permite crear usuarios.
+![Vista asociado](assets/screenshots/22.png)
 
 ---
 
