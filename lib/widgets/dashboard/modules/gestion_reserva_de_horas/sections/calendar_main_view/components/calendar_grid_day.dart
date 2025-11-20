@@ -3,8 +3,9 @@ import 'package:get/get.dart';
 import '../../../../../../../utils/app_theme.dart';
 import '../../../../../../../controllers/reserva_horas_controller.dart';
 import 'calendar_appointment_item.dart';
-import '../../../shared/dialogs/new_reserva_dialog.dart';
+import 'calendar_group_item.dart'; 
 import '../../../shared/dialogs/reserva_detail_dialog.dart';
+import '../../../shared/dialogs/multi_reserva_dialog.dart'; 
 
 class CalendarGridDay extends StatelessWidget {
   final DateTime selectedDate;
@@ -27,15 +28,14 @@ class CalendarGridDay extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           const startHour = 8;
-          const endHour = 20; // 8 AM a 8 PM -> 12 horas
+          const endHour = 20; 
           const hoursToShow = endHour - startHour;
           const double borderWidth = 0.6;
 
-          // Altura fija para cada celda horaria
+          // CORRECCIÓN DE ALTURA: No restar bordes para evitar el desfase de píxeles
           final double cellHeight = constraints.maxHeight / hoursToShow;
 
           return Obx(() {
-            // FIX CRÍTICO: Lectura inmediata de reservas
             final allReservas = controller.reservas.toList();
 
             final reservasDelDia = allReservas.where((r) =>
@@ -87,12 +87,12 @@ class CalendarGridDay extends StatelessWidget {
                     children: List.generate(hoursToShow, (index) {
                       final currentHour = startHour + index;
                       
-                      // Buscar reserva en esta hora
-                      final reservaEnEstaHora = reservasDelDia.firstWhereOrNull((r) {
+                      // Buscar TODAS las reservas en esta hora
+                      final reservasEnEstaHora = reservasDelDia.where((r) {
                         final parts = r.hora.split(':');
                         final horaReserva = int.tryParse(parts[0]);
                         return horaReserva == currentHour;
-                      });
+                      }).toList();
 
                       final DateTime slotTime = DateTime(
                         selectedDate.year,
@@ -100,6 +100,43 @@ class CalendarGridDay extends StatelessWidget {
                         selectedDate.day,
                         currentHour,
                       );
+
+                      // Decidir qué widget mostrar
+                      Widget contentWidget;
+                      
+                      if (reservasEnEstaHora.isEmpty) {
+                        // Caso 0: Vacío -> Botón transparente
+                        contentWidget = Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => onTimeSlotTap(slotTime),
+                            mouseCursor: SystemMouseCursors.click,
+                            child: Container(),
+                          ),
+                        );
+                      } else if (reservasEnEstaHora.length == 1) {
+                        // Caso 1: Una sola reserva -> Detalle normal
+                        final reserva = reservasEnEstaHora.first;
+                        contentWidget = CalendarAppointmentItem(
+                          reserva: reserva,
+                          viewType: 'day',
+                          onTap: () {
+                            ReservaDetailDialog.show(context, reserva);
+                          },
+                        );
+                      } else {
+                        // Caso 2+: Múltiples reservas -> Grupo
+                        contentWidget = CalendarGroupItem(
+                          reservas: reservasEnEstaHora,
+                          onTap: () {
+                            MultiReservaDialog.show(
+                              context, 
+                              reservasEnEstaHora, 
+                              '${currentHour.toString().padLeft(2, '0')}:00'
+                            );
+                          },
+                        );
+                      }
 
                       return Container(
                         height: cellHeight,
@@ -115,28 +152,7 @@ class CalendarGridDay extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: reservaEnEstaHora != null
-                            ? CalendarAppointmentItem(
-                                reserva: reservaEnEstaHora,
-                                viewType: 'day',
-                                onTap: () {
-                                  // Mostrar diálogo de detalle al hacer clic en la reserva
-                                  ReservaDetailDialog.show(context, reservaEnEstaHora);
-                                },
-                              )
-                            : Material( // Material para soportar InkWell sobre fondo transparente
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  onTap: () {
-                                    NewReservaDialog.show(
-                                      context, 
-                                      preSelectedDate: slotTime
-                                    );
-                                  },
-                                  mouseCursor: SystemMouseCursors.click, // Cursor de mano explícito
-                                  child: Container(), // Ocupa todo el espacio disponible
-                                ),
-                              ),
+                        child: contentWidget,
                       );
                     }),
                   ),

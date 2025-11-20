@@ -10,6 +10,7 @@ class CalendarMainViewSection extends StatelessWidget {
   final String selectedView;
   final Function(DateTime) onDateChanged;
   final Function(DateTime) onTimeSlotTap;
+  final Function(String) onViewChanged;
 
   const CalendarMainViewSection({
     super.key,
@@ -17,6 +18,7 @@ class CalendarMainViewSection extends StatelessWidget {
     required this.selectedView,
     required this.onDateChanged,
     required this.onTimeSlotTap,
+    required this.onViewChanged,
   });
 
   @override
@@ -31,7 +33,32 @@ class CalendarMainViewSection extends StatelessWidget {
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(16),
-            child: _buildCalendarView(context),
+            // === ANIMATION IMPLEMENTATION ===
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              switchInCurve: Curves.easeOut,
+              switchOutCurve: Curves.easeIn,
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                // Transición con fade y un ligero slide horizontal
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      // El movimiento es mínimo (0.05) para ser un efecto sutil y rápido
+                      begin: const Offset(0.05, 0.0), 
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              // La clave debe cambiar si la fecha o la vista cambia
+              child: KeyedSubtree(
+                key: ValueKey('${selectedDate.year}-${selectedDate.month}-${selectedDate.day}-$selectedView'),
+                child: _buildCalendarView(context),
+              ),
+            ),
+            // === END ANIMATION ===
           ),
         ),
       ],
@@ -50,6 +77,7 @@ class CalendarMainViewSection extends StatelessWidget {
       return CalendarGridMonth(
         selectedDate: selectedDate,
         onDateTap: onDateChanged,
+        onViewChanged: onViewChanged, 
       );
     }
 

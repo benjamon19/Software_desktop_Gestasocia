@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../models/reserva_hora.dart'; // Asegúrate que esta ruta sea correcta
+import '../models/reserva_hora.dart';
 
 class ReservaHorasController extends GetxController {
   // === ESTADO REACTIVO ===
@@ -9,10 +9,55 @@ class ReservaHorasController extends GetxController {
   RxBool isLoading = false.obs;
   Rx<DateTime> selectedDate = DateTime.now().obs;
 
+  // === CONFIGURACIÓN DE HORARIO ===
+  // Esto asegura que nadie agende a las 3 AM
+  static const int horaApertura = 8; // 8:00 AM
+  static const int horaCierre = 20;  // 20:00 PM
+
   @override
   void onInit() {
     super.onInit();
     loadReservas();
+  }
+
+  // === VALIDACIÓN DE DISPONIBILIDAD (NUEVO) ===
+  /// Retorna un String con el error si no es válido, o null si está disponible.
+  String? validarReserva(String odontologoNombre, DateTime fecha, String horaStr) {
+    
+    // 1. Validar Horario de Clínica (ej: 08:00 - 20:00)
+    final parts = horaStr.split(':');
+    final horaInt = int.parse(parts[0]);
+    
+    if (horaInt < horaApertura || horaInt >= horaCierre) {
+      return 'La clínica está cerrada a esa hora. Horario: $horaApertura:00 - $horaCierre:00';
+    }
+
+    // 2. Validar Disponibilidad del Odontólogo
+    // Buscamos si ESTE odontólogo ya tiene algo ese día a esa hora.
+    final conflicto = reservas.firstWhereOrNull((reserva) {
+      // Ignoramos citas canceladas
+      if (reserva.estado.toLowerCase() == 'cancelada') return false;
+
+      // Si es OTRO odontólogo, no hay conflicto (pueden trabajar en paralelo)
+      if (reserva.odontologo != odontologoNombre) return false;
+
+      // Verificar misma fecha (año, mes, día)
+      if (reserva.fecha.year != fecha.year || 
+          reserva.fecha.month != fecha.month || 
+          reserva.fecha.day != fecha.day) {
+        return false;
+      }
+
+      // Verificar misma hora
+      return reserva.hora == horaStr;
+    });
+
+    if (conflicto != null) {
+      return 'El $odontologoNombre ya tiene una cita agendada a las $horaStr.';
+    }
+
+    // Si pasa todas las pruebas, retornamos null (todo OK)
+    return null;
   }
 
   // === CARGAR RESERVAS ===
@@ -104,14 +149,6 @@ class ReservaHorasController extends GetxController {
     } finally {
       isLoading.value = false;
     }
-  }
-
-  // === FILTRO POR FECHA (Helper) ===
-  List<ReservaHora> getReservasPorFecha(DateTime fecha) {
-    return reservas.where((r) =>
-        r.fecha.year == fecha.year &&
-        r.fecha.month == fecha.month &&
-        r.fecha.day == fecha.day).toList();
   }
 
   // === UI HELPERS ===

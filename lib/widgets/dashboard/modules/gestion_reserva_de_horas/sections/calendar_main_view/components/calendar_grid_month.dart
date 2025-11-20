@@ -7,11 +7,13 @@ import 'calendar_appointment_item.dart';
 class CalendarGridMonth extends StatelessWidget {
   final DateTime selectedDate;
   final Function(DateTime) onDateTap;
+  final Function(String) onViewChanged; // <-- NUEVO
 
   const CalendarGridMonth({
     super.key,
     required this.selectedDate,
     required this.onDateTap,
+    required this.onViewChanged, // <-- NUEVO
   });
 
   @override
@@ -23,9 +25,7 @@ class CalendarGridMonth extends StatelessWidget {
     final DateTime firstDayOfMonth = DateTime(selectedDate.year, selectedDate.month, 1);
     final int weekdayOffset = firstDayOfMonth.weekday % 7;
     final DateTime firstVisibleDate = firstDayOfMonth.subtract(Duration(days: weekdayOffset));
-    //final int daysInMonth = DateTime(selectedDate.year, selectedDate.month + 1, 0).day; // No se usa directamente
-    //final int totalCells = weekdayOffset + daysInMonth; // No se usa
-    final int totalRows = 6; // Forzar 6 filas para consistencia visual mensual
+    final int totalRows = 6; 
     final List<DateTime> visibleDays = List.generate(
       totalRows * 7,
       (i) => firstVisibleDate.add(Duration(days: i)),
@@ -46,7 +46,6 @@ class CalendarGridMonth extends StatelessWidget {
 
             Expanded(
               child: Obx(() {
-                // Materializar lista para evitar error de GetX
                 final allReservas = controller.reservas.toList();
 
                 return GridView.builder(
@@ -63,7 +62,6 @@ class CalendarGridMonth extends StatelessWidget {
                     final bool isSelected = _isSameDay(day, selectedDate);
                     final bool isCurrentMonth = day.month == selectedDate.month;
 
-                    // Contar reservas del día (sin filtrar detalles, solo cantidad)
                     final int totalCitas = allReservas.where((r) =>
                         r.fecha.year == day.year &&
                         r.fecha.month == day.month &&
@@ -73,8 +71,9 @@ class CalendarGridMonth extends StatelessWidget {
                     return Material(
                       color: Colors.transparent,
                       child: InkWell(
+                        // Acción al tocar el número del día (solo cambia la fecha, no la vista)
                         onTap: () => onDateTap(day),
-                        mouseCursor: SystemMouseCursors.click, // Cursor de mano en todo el día
+                        mouseCursor: SystemMouseCursors.click,
                         child: Container(
                           decoration: BoxDecoration(
                             border: Border.all(
@@ -116,15 +115,18 @@ class CalendarGridMonth extends StatelessWidget {
                                 ),
                               ),
                               
-                              // Indicador de Citas (Bloque único centrado)
+                              // Indicador de Citas
                               if (totalCitas > 0)
                                 Expanded(
                                   child: Center(
                                     child: CalendarAppointmentItem(
-                                      summaryCount: totalCitas, // Solo pasamos la cantidad
+                                      summaryCount: totalCitas, 
                                       viewType: 'month',
                                       onTap: () {
-                                        onDateTap(day); // Al tocar, ir al día para ver detalles
+                                        // 1. Establecer la fecha seleccionada
+                                        onDateTap(day); 
+                                        // 2. Cambiar la vista a 'day'
+                                        onViewChanged('day'); 
                                       },
                                     ),
                                   ),

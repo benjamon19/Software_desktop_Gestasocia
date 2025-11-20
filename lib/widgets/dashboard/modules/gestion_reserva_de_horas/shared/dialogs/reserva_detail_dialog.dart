@@ -1,19 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../models/reserva_hora.dart';
 import '../../../../../../controllers/reserva_horas_controller.dart';
+import '../../../../../../controllers/asociados_controller.dart';
+import '../../../../../../controllers/cargas_familiares_controller.dart';
 import 'delete_reserva_dialog.dart';
 import 'edit_reserva_dialog.dart';
 
 class ReservaDetailDialog {
   static const double dialogWidth = 550.0; 
+  
   static void show(BuildContext context, ReservaHora reserva) {
     final ReservaHorasController controller = Get.find<ReservaHorasController>();
+    final AsociadosController asociadosController = Get.find<AsociadosController>();
+    final CargasFamiliaresController cargasController = Get.find<CargasFamiliaresController>();
     
     final selectedEstado = reserva.estado.obs;
     final isLoading = false.obs;
+
+    // --- LÓGICA PARA OBTENER EL TELÉFONO ---
+    String? obtenerTelefono() {
+      String? tel;
+      if (reserva.pacienteTipo == 'asociado') {
+        final asociado = asociadosController.getAsociadoById(reserva.pacienteId);
+        tel = asociado?.telefono;
+      } else {
+        // Si es carga, intentamos buscar su teléfono
+        final carga = cargasController.getCargaById(reserva.pacienteId);
+        tel = carga?.telefono;
+        
+        // Si la carga no tiene teléfono o está vacío, usamos el del asociado titular (padre/madre/cónyuge)
+        if ((tel == null || tel.isEmpty) && carga != null) {
+           final titular = asociadosController.getAsociadoById(carga.asociadoId);
+           tel = titular?.telefono;
+        }
+      }
+      return tel;
+    }
+
+    final String? telefonoPaciente = obtenerTelefono();
+
+    // --- FUNCIÓN PARA ENVIAR WHATSAPP ---
+    Future<void> enviarWhatsAppConfirmacion() async {
+      if (telefonoPaciente == null || telefonoPaciente.isEmpty) {
+        Get.snackbar('Error', 'No hay teléfono registrado para este paciente');
+        return;
+      }
+
+      // Limpiamos el número (sacamos espacios, guiones, etc.)
+      String phone = telefonoPaciente.replaceAll(RegExp(r'[^0-9]'), '');
+      
+      // Asumimos Chile (56) si no tiene código de país y tiene 9 dígitos
+      if (phone.length == 9 && !phone.startsWith('56')) {
+        phone = '56$phone';
+      }
+
+      // Mensaje personalizado
+      final String mensaje = Uri.encodeComponent(
+        'Hola ${reserva.pacienteNombre}, le escribimos para confirmar su cita dental para el día ${reserva.fechaFormateada} a las ${reserva.hora} con el/la ${reserva.odontologo}. \n\nPor favor responda este mensaje para confirmar su asistencia.'
+      );
+
+      final Uri url = Uri.parse("https://wa.me/$phone?text=$mensaje");
+
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        Get.snackbar('Error', 'No se pudo abrir WhatsApp');
+      }
+    }
 
     Future<void> quickUpdateAction() async {
       if (isLoading.value) return;
@@ -87,7 +144,7 @@ class ReservaDetailDialog {
                   color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.calendar_today, color: AppTheme.primaryColor, size: 24),
+                child: const Icon(Icons.calendar_today, color: AppTheme.primaryColor, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -124,14 +181,33 @@ class ReservaDetailDialog {
             ],
           ),
 
-          // CONTENIDO (Aquí se aplica el ancho controlado por la variable)
+          // CONTENIDO
           content: SizedBox(
-            width: dialogWidth, // <--- AQUI SE USA LA VARIABLE
+            width: dialogWidth,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // --- BOTÓN WHATSAPP (Solo si está pendiente y tiene teléfono) ---
+                  if (reserva.estado == 'pendiente' && telefonoPaciente != null) ...[
+                    Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 24),
+                      child: ElevatedButton.icon(
+                        onPressed: enviarWhatsAppConfirmacion,
+                        icon: const Icon(Icons.chat_bubble_outline, size: 18), // Icono genérico o de mensaje
+                        label: const Text('Solicitar confirmación por WhatsApp'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF25D366), // Color oficial WhatsApp
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ),
+                  ],
+
                   Obx(() => _buildDropdown(
                         context, 'Estado Actual',
                         ['Pendiente', 'Confirmada', 'Realizada', 'Cancelada'],
@@ -147,7 +223,7 @@ class ReservaDetailDialog {
                     const SizedBox(height: 8),
                     _buildInfoRow(context, 'RUT', reserva.pacienteRut, Icons.badge),
                     const SizedBox(height: 8),
-                    _buildInfoRow(context, 'Tipo', reserva.pacienteTipo.capitalizeFirst ?? '', Icons.category),
+                    _buildInfoRow(context, 'Teléfono', telefonoPaciente ?? 'No registrado', Icons.phone),
                   ]),
 
                   const SizedBox(height: 24),
@@ -172,12 +248,11 @@ class ReservaDetailDialog {
           // ACCIONES
           actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
           actions: [
-            // Usamos un SizedBox con el mismo ancho que el contenido para mantener consistencia
             SizedBox(
               width: dialogWidth, 
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center, // ALINEACION VERTICAL CENTRADA
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Botón Eliminar
                   if (!isLoading.value)
@@ -191,7 +266,7 @@ class ReservaDetailDialog {
                       child: const Text('Eliminar'),
                     ),
                   
-                  const Spacer(), // Empuja los siguientes botones a la derecha
+                  const Spacer(),
 
                   TextButton(
                     onPressed: isLoading.value ? null : fullEditAction,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../../utils/app_theme.dart';
 import 'sections/calendar_sidebar/calendar_sidebar_section.dart';
 import 'sections/calendar_main_view/calendar_main_view_section.dart';
@@ -15,13 +16,37 @@ class _ReservaDeHorasMainViewState extends State<ReservaDeHorasMainView> {
   String selectedView = 'day';
   DateTime selectedDate = DateTime.now();
 
-  // Método para abrir el diálogo recibiendo la fecha del grid
   void _onTimeSlotTap(DateTime dateWithTime) {
+    final now = DateTime.now();
+
+    if (dateWithTime.isBefore(now)) {
+      Get.snackbar(
+        'Acción no permitida',
+        'No puedes agendar una hora en el pasado.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange.withValues(alpha: 0.9),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+        duration: const Duration(seconds: 3),
+        icon: const Icon(Icons.warning_amber, color: Colors.white),
+      );
+      return; 
+    }
+
     NewReservaDialog.show(
       context,
-      preSelectedDate: dateWithTime, // Pasamos la fecha con hora
+      preSelectedDate: dateWithTime,
     );
   }
+
+  // === Botón Flotante para VOLVER (si es necesario) o NULO ===
+  Widget _buildFloatingActionButtons() {
+    // Si necesitas un botón para volver a la vista principal, lo pondrías aquí.
+    // Por simplicidad, y siguiendo la estructura anterior, retornamos un widget vacío.
+    return const SizedBox.shrink();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +62,8 @@ class _ReservaDeHorasMainViewState extends State<ReservaDeHorasMainView> {
                     selectedDate: selectedDate,
                     selectedView: selectedView,
                     onDateChanged: (date) => setState(() => selectedDate = date),
-                    onTimeSlotTap: _onTimeSlotTap, // Pasamos el callback
+                    onTimeSlotTap: _onTimeSlotTap, 
+                    onViewChanged: (view) => setState(() => selectedView = view),
                   )
                 : Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -56,12 +82,15 @@ class _ReservaDeHorasMainViewState extends State<ReservaDeHorasMainView> {
                           selectedDate: selectedDate,
                           selectedView: selectedView,
                           onDateChanged: (date) => setState(() => selectedDate = date),
-                          onTimeSlotTap: _onTimeSlotTap, // Pasamos el callback
+                          onTimeSlotTap: _onTimeSlotTap, 
+                          onViewChanged: (view) => setState(() => selectedView = view),
                         ),
                       ),
                     ],
                   ),
           ),
+          floatingActionButton: _buildFloatingActionButtons(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         );
       },
     );

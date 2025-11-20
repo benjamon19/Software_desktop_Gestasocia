@@ -15,45 +15,58 @@ class MiniCalendarWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayYear = selectedDate.year;
     final displayMonth = selectedDate.month;
-    final daysInMonth = DateTime(displayYear, displayMonth + 1, 0).day;
-    final firstWeekday = DateTime(displayYear, displayMonth, 1).weekday;
-
     final now = DateTime.now();
+    
+    // FIX ERRORES: Declaramos firstDayOfMonth para que sea accesible.
+    final DateTime firstDayOfMonth = DateTime(displayYear, displayMonth, 1); 
+
+    // Cálculo de días visibles
+    final int totalRows = 6; 
+    // Cálculo de offset (Sunday=0, Monday=1, ..., Saturday=6).
+    // Si es domingo (7), 7 % 7 = 0. Si es lunes (1), 1 % 7 = 1.
+    final int weekdayOffset = firstDayOfMonth.weekday % 7; 
+    final DateTime firstVisibleDate = firstDayOfMonth.subtract(Duration(days: weekdayOffset)); 
+    final List<DateTime> visibleDays = List.generate(
+      totalRows * 7,
+      (i) => firstVisibleDate.add(Duration(days: i)),
+    );
 
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: AppTheme.getBorderLight(context)),
-        borderRadius: BorderRadius.circular(8), // ligeramente menos redondeado
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // === Encabezado (mes y año) ===
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 6), // menos padding
+            padding: const EdgeInsets.symmetric(vertical: 6),
             alignment: Alignment.center,
             child: Text(
               '${_monthName(displayMonth)} $displayYear',
               style: TextStyle(
-                fontSize: 13, // antes: implícito ~14-16
+                fontSize: 13, 
                 fontWeight: FontWeight.w600,
                 color: AppTheme.getTextPrimary(context),
               ),
             ),
           ),
-          // === Días de la semana (L, M, X...) ===
+          
+          // === Días de la semana (D, L, M, X...) ===
           Wrap(
             spacing: 0,
             runSpacing: 0,
-            children: ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day) {
+            // Empieza en Domingo (D) para la estética de Google Calendar
+            children: ['D', 'L', 'M', 'X', 'J', 'V', 'S'].map((day) { 
               return SizedBox(
-                width: 28, // antes: 32
-                height: 28, // antes: 32
+                width: 28, 
+                height: 28, 
                 child: Center(
                   child: Text(
                     day,
                     style: TextStyle(
-                      fontSize: 10, // antes: 11
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.getTextSecondary(context),
                     ),
@@ -62,56 +75,74 @@ class MiniCalendarWidget extends StatelessWidget {
               );
             }).toList(),
           ),
-          // === Días del mes ===
-          Wrap(
-            spacing: 0,
-            runSpacing: 0,
-            children: List.generate(42, (index) {
-              final dayNumber = index - firstWeekday + 2;
-              if (dayNumber < 1 || dayNumber > daysInMonth) {
-                return const SizedBox(width: 28, height: 28); // antes: 32
-              }
+          
+          // === Días del mes (ENVUELTO EN ANIMATED SWITCHER) ===
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (Widget child, Animation<double> animation) {
+              return FadeTransition(
+                opacity: animation,
+                child: child,
+              );
+            },
+            child: KeyedSubtree(
+              key: ValueKey('$displayYear-$displayMonth'),
+              child: Wrap(
+                spacing: 0,
+                runSpacing: 0,
+                children: List.generate(visibleDays.length, (index) {
+                  final day = visibleDays[index];
+                  final bool isToday = _isSameDay(day, now);
+                  final bool isSelected = _isSameDay(day, selectedDate);
+                  final bool isCurrentMonth = day.month == displayMonth;
 
-              final date = DateTime(displayYear, displayMonth, dayNumber);
-              final isToday = _isSameDay(date, now);
-              final isSelected = _isSameDay(date, selectedDate);
-
-              return SizedBox(
-                width: 28,
-                height: 28,
-                child: InkWell(
-                  onTap: () => onDateSelected(date),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Center(
-                    child: Container(
-                      width: 24, // antes: 28
-                      height: 24, // antes: 28
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppTheme.primaryColor
-                            : isToday
-                                ? AppTheme.primaryColor.withValues(alpha: 0.2)
-                                : Colors.transparent,
-                        shape: BoxShape.circle,
-                      ),
+                  // Ocultar los días de relleno al final si no son del mes
+                  if (index >= 35 && day.month != displayMonth) {
+                      return const SizedBox(width: 28, height: 28);
+                  }
+                  
+                  return SizedBox(
+                    width: 28,
+                    height: 28,
+                    child: InkWell(
+                      onTap: () => onDateSelected(day),
+                      borderRadius: BorderRadius.circular(14),
                       child: Center(
-                        child: Text(
-                          '$dayNumber',
-                          style: TextStyle(
-                            fontSize: 11, // antes: 12
-                            fontWeight: isToday || isSelected ? FontWeight.w600 : FontWeight.normal,
+                        child: Container(
+                          width: 24, 
+                          height: 24, 
+                          decoration: BoxDecoration(
+                            // Fondo sólido para el seleccionado
                             color: isSelected
-                                ? Colors.white
-                                : AppTheme.getTextPrimary(context),
+                                ? AppTheme.primaryColor
+                                : isToday
+                                    ? AppTheme.primaryColor.withValues(alpha: 0.2)
+                                    : Colors.transparent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              "${day.day}",
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: isToday || isSelected ? FontWeight.w600 : FontWeight.normal,
+                                color: isSelected
+                                    ? Colors.white
+                                    : (isCurrentMonth
+                                        ? AppTheme.getTextPrimary(context)
+                                        : AppTheme.getTextSecondary(context).withValues(alpha: 0.35)), // Opacidad para días fuera del mes actual
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              );
-            }),
+                  );
+                }),
+              ),
+            ),
           ),
+          const SizedBox(height: 8), 
         ],
       ),
     );

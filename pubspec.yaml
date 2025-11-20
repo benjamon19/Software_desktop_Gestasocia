@@ -14,7 +14,7 @@ dependencies:
   # Gráficos
   fl_chart: ^1.0.0
   
-  # Firebase - VERSIONES QUE EXISTEN REALMENTE
+  # Firebase - VERSIONES COMPATIBLES
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.0
   cloud_firestore: ^5.4.0
@@ -44,6 +44,9 @@ dependencies:
   share_plus: ^12.0.1
   pdf: ^3.10.8
   excel: ^4.0.3
+
+  # WSP
+  url_launcher: ^6.2.5
   
   # Imágenes y archivos
   image_picker: ^1.1.2
