@@ -6,9 +6,7 @@ import '../../utils/app_theme.dart';
 import '../../utils/terms_and_conditions_dialog.dart';
 import '../../widgets/interactive_link.dart';
 import '../../widgets/shared_widgets.dart';
-import '../../widgets/theme_toggle_button.dart';
 import '../dialog/codigo_unico_dialog.dart';
-import '../utils/app_routes.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -76,214 +74,254 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Lógica de dimensiones extraída de SistemaSection
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bool isSmallScreen = screenWidth < 600;
+    final bool isVeryShortScreen = screenHeight < 600;
+
+    // 2. Variables de estilo adaptativo
+    double cardPadding = isVeryShortScreen ? 16 : (isSmallScreen ? 20 : 24);
+    double borderRadius = isSmallScreen ? 12 : 16;
+
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            color: AppTheme.backgroundColor,
-            child: Row(
+      backgroundColor: AppTheme.getSurfaceColor(context),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(40),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                LeftPanel(
-                  title: 'GestAsocia',
-                  subtitle: 'Sistema de Gestión de Asociados',
-                  features: const [
-                    FeatureItem(icon: Icons.person_add_outlined, text: 'Registro rápido y seguro'),
-                    FeatureItem(icon: Icons.security, text: 'Protección de datos garantizada'),
-                    FeatureItem(icon: Icons.verified_user, text: 'Verificación automática'),
-                  ],
-                ),
-                Expanded(
-                  flex: 4,
-                  child: Container(
-                    color: AppTheme.getSurfaceColor(context),
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(40),
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 400),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const SizedBox(height: 32),
-                              Text('Crear Cuenta', style: AppTheme.getHeadingMedium(context)),
-                              const SizedBox(height: 8),
-                              Text('Completa los datos para registrarte', style: AppTheme.getBodyMedium(context)),
-                              const SizedBox(height: 32),
-
-                              const SectionHeader(icon: Icons.person, title: 'Información Personal'),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: AppTextField(
-                                      controller: nombreController,
-                                      label: 'Nombre',
-                                      hint: 'Tu nombre',
-                                      icon: Icons.person_outline,
-                                      keyboardType: TextInputType.name,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: AppTextField(
-                                      controller: apellidoController,
-                                      label: 'Apellido',
-                                      hint: 'Tu apellido',
-                                      icon: Icons.person_outline,
-                                      keyboardType: TextInputType.name,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 20),
-
-                              AppTextField(
-                                controller: rutController,
-                                label: 'RUT',
-                                hint: '12345678-9',
-                                icon: Icons.badge_outlined,
-                                onChanged: _formatRut,
-                                keyboardType: TextInputType.text,
-                              ),
-                              const SizedBox(height: 20),
-
-                              DropdownButtonFormField<String>(
-                                initialValue: selectedRol,
-                                decoration: InputDecoration(
-                                  labelText: 'Cargo',
-                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                items: const [
-                                  DropdownMenuItem(value: 'Odontólogo', child: Text('Odontólogo')),
-                                  DropdownMenuItem(value: 'Administrativo', child: Text('Administrativo')),
-                                ],
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    setState(() => selectedRol = value);
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 32),
-
-                              const SectionHeader(icon: Icons.contact_mail, title: 'Comunicación'),
-                              const SizedBox(height: 16),
-                              AppTextField(
-                                controller: emailController,
-                                label: 'Correo electrónico',
-                                hint: 'tu@correo.com',
-                                icon: Icons.email_outlined,
-                                keyboardType: TextInputType.emailAddress,
-                              ),
-                              const SizedBox(height: 20),
-                              AppTextField(
-                                controller: telefonoController,
-                                label: 'Teléfono',
-                                hint: '9 1234 5678',
-                                icon: Icons.phone_outlined,
-                                keyboardType: TextInputType.phone,
-                              ),
-                              const SizedBox(height: 32),
-
-                              const SectionHeader(icon: Icons.security, title: 'Seguridad'),
-                              const SizedBox(height: 16),
-                              AppTextField(
-                                controller: passwordController,
-                                label: 'Contraseña',
-                                hint: '••••••••',
-                                icon: Icons.lock_outline,
-                                obscureText: !isPasswordVisible,
-                                suffixIcon: IconButton(
-                                  onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
-                                  icon: Icon(
-                                    isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                                    size: 20,
-                                    color: AppTheme.getTextSecondary(context),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              AppTextField(
-                                controller: confirmPasswordController,
-                                label: 'Confirmar Contraseña',
-                                hint: '••••••••',
-                                icon: Icons.lock_outline,
-                                obscureText: !isConfirmPasswordVisible,
-                                suffixIcon: IconButton(
-                                  onPressed: () => setState(() => isConfirmPasswordVisible = !isConfirmPasswordVisible),
-                                  icon: Icon(
-                                    isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                                    size: 20,
-                                    color: AppTheme.getTextSecondary(context),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Checkbox(
-                                    value: acceptTerms,
-                                    onChanged: (value) => setState(() => acceptTerms = value ?? false),
-                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  InteractiveLink(
-                                    text: 'Acepto los términos y condiciones de uso',
-                                    onTap: () => TermsAndConditionsDialog.show(context),
-                                  ),
-                                ],
-                              ),
-
-                              const SizedBox(height: 32),
-                              Obx(() => ElevatedButton(
-                                onPressed: authController.isLoading.value || !acceptTerms ? null : _handleRegister,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.primaryColor,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                ),
-                                child: authController.isLoading.value
-                                    ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                        ),
-                                      )
-                                    : const Text('Registrarse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                              )),
-                              const SizedBox(height: 32),
-                              Row(
-                                children: [
-                                  Expanded(child: Divider(color: AppTheme.getBorderLight(context))),
-                                  const SizedBox(width: 16),
-                                  Text('o', style: AppTheme.getBodyMedium(context)),
-                                  const SizedBox(width: 16),
-                                  Expanded(child: Divider(color: AppTheme.getBorderLight(context))),
-                                ],
-                              ),
-                              const SizedBox(height: 32),
-                              Center(
-                                child: InteractiveLink(
-                                  text: '¿Ya tienes una cuenta? Inicia Sesión',
-                                  onTap: () => Get.back(),
-                                ),
-                              ),
-                            ],
+                // ==========================================
+                // AVISO DE SEGURIDAD (Fuera de la carta)
+                // ==========================================
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.security, color: Colors.orange),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Por términos de seguridad, la creación de usuarios se realiza exclusivamente desde este panel administrativo.',
+                          style: TextStyle(
+                            color: AppTheme.getTextPrimary(context),
+                            fontSize: 13,
                           ),
                         ),
                       ),
-                    ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // ==========================================
+                // CARTA CON ESTILO DE SISTEMASECTION
+                // ==========================================
+                Container(
+                  padding: EdgeInsets.all(cardPadding),
+                  decoration: isVeryShortScreen
+                      ? BoxDecoration(
+                          color: AppTheme.getSurfaceColor(context),
+                          borderRadius: BorderRadius.circular(borderRadius),
+                          border: Border.all(color: AppTheme.getBorderLight(context)),
+                        )
+                      : BoxDecoration(
+                          color: AppTheme.getSurfaceColor(context),
+                          borderRadius: BorderRadius.circular(borderRadius),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.black.withValues(alpha: 0.3)
+                                  : Colors.grey.withValues(alpha: 0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('Crear Cuenta', style: AppTheme.getHeadingMedium(context)),
+                      const SizedBox(height: 8),
+                      Text('Completa los datos para registrar un nuevo usuario',
+                          style: AppTheme.getBodyMedium(context)),
+                      const SizedBox(height: 32),
+
+                      const SectionHeader(icon: Icons.person, title: 'Información Personal'),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AppTextField(
+                              controller: nombreController,
+                              label: 'Nombre',
+                              hint: 'Tu nombre',
+                              icon: Icons.person_outline,
+                              keyboardType: TextInputType.name,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: AppTextField(
+                              controller: apellidoController,
+                              label: 'Apellido',
+                              hint: 'Tu apellido',
+                              icon: Icons.person_outline,
+                              keyboardType: TextInputType.name,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      AppTextField(
+                        controller: rutController,
+                        label: 'RUT',
+                        hint: '12345678-9',
+                        icon: Icons.badge_outlined,
+                        onChanged: _formatRut,
+                        keyboardType: TextInputType.text,
+                      ),
+                      const SizedBox(height: 20),
+
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedRol,
+                        decoration: InputDecoration(
+                          labelText: 'Cargo',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: AppTheme.getInputBackground(context),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'Odontólogo', child: Text('Odontólogo')),
+                          DropdownMenuItem(value: 'Administrativo', child: Text('Administrativo')),
+                        ],
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => selectedRol = value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 32),
+
+                      const SectionHeader(icon: Icons.contact_mail, title: 'Comunicación'),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        controller: emailController,
+                        label: 'Correo electrónico',
+                        hint: 'tu@correo.com',
+                        icon: Icons.email_outlined,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 20),
+                      AppTextField(
+                        controller: telefonoController,
+                        label: 'Teléfono',
+                        hint: '9 1234 5678',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
+                      ),
+                      const SizedBox(height: 32),
+
+                      const SectionHeader(icon: Icons.security, title: 'Seguridad'),
+                      const SizedBox(height: 16),
+                      AppTextField(
+                        controller: passwordController,
+                        label: 'Contraseña',
+                        hint: '••••••••',
+                        icon: Icons.lock_outline,
+                        obscureText: !isPasswordVisible,
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() => isPasswordVisible = !isPasswordVisible),
+                          icon: Icon(
+                            isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            size: 20,
+                            color: AppTheme.getTextSecondary(context),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      AppTextField(
+                        controller: confirmPasswordController,
+                        label: 'Confirmar Contraseña',
+                        hint: '••••••••',
+                        icon: Icons.lock_outline,
+                        obscureText: !isConfirmPasswordVisible,
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(
+                              () => isConfirmPasswordVisible = !isConfirmPasswordVisible),
+                          icon: Icon(
+                            isConfirmPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                            size: 20,
+                            color: AppTheme.getTextSecondary(context),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Checkbox(
+                            value: acceptTerms,
+                            onChanged: (value) => setState(() => acceptTerms = value ?? false),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          const SizedBox(width: 4),
+                          InteractiveLink(
+                            text: 'Acepto los términos y condiciones de uso',
+                            onTap: () => TermsAndConditionsDialog.show(context),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 32),
+                      Obx(() => ElevatedButton(
+                            onPressed: authController.isLoading.value || !acceptTerms
+                                ? null
+                                : _handleRegister,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: authController.isLoading.value
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Text('Registrar Usuario',
+                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                          )),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const ThemeToggleButton(),
-        ],
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startFloat,
+      floatingActionButton: FloatingActionButton(
+        mini: true,
+        onPressed: () => Get.back(),
+        backgroundColor: Colors.grey[600],
+        foregroundColor: Colors.white,
+        tooltip: 'Volver',
+        child: const Icon(Icons.arrow_back, size: 20),
       ),
     );
   }
@@ -318,14 +356,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
     if (codigoUnico != null) {
       _clearFields();
-      
-      // Mostrar el diálogo y al cerrarlo, volver al login
+
       if (mounted) {
         CodigoUnicoDialog.show(
           context,
           codigoUnico,
           onClose: () {
-            Get.offAllNamed(AppRoutes.login);
+            Get.back(); // Volver al dashboard al terminar
           },
         );
       }

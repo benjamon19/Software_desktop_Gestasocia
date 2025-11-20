@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../utils/app_theme.dart';
-import '../../utils/app_routes.dart';
-import '../../widgets/interactive_link.dart';
+// import '../../utils/app_routes.dart'; // Ya no es necesario para ir al registro
 import '../../widgets/shared_widgets.dart';
 import '../../widgets/theme_toggle_button.dart';
 import '../../dialog/codigo_input_dialog.dart';
@@ -141,10 +140,24 @@ class _LoginPageState extends State<LoginPage> {
                                   ],
                                 ),
                                 const SizedBox(height: 32),
+                                
+                                // AQUI ESTÁ EL CAMBIO: Texto estático sin acción de click
                                 Center(
-                                  child: InteractiveLink(
-                                    text: '¿No tienes una cuenta? Regístrate',
-                                    onTap: () => Get.toNamed(AppRoutes.register),
+                                  child: Text.rich(
+                                    TextSpan(
+                                      text: '¿No tienes una cuenta? ',
+                                      style: AppTheme.getBodyMedium(context),
+                                      children: [
+                                        TextSpan(
+                                          text: 'Contacta a administración',
+                                          style: TextStyle(
+                                            color: AppTheme.primaryColor, // Mantiene el color visual
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
                                 ),
                               ],
