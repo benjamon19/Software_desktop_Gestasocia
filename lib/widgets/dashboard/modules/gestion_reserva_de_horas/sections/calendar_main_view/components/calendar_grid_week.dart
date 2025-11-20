@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../../../../utils/app_theme.dart';
+import '../../../../../../../controllers/reserva_horas_controller.dart';
+import 'calendar_appointment_item.dart';
+import '../../../shared/dialogs/new_reserva_dialog.dart';
+import '../../../shared/dialogs/reserva_detail_dialog.dart';
 
 class CalendarGridWeek extends StatelessWidget {
   final DateTime selectedDate;
@@ -15,6 +20,10 @@ class CalendarGridWeek extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ReservaHorasController controller = Get.isRegistered<ReservaHorasController>()
+        ? Get.find<ReservaHorasController>()
+        : Get.put(ReservaHorasController());
+
     final DateTime weekStart = _getStartOfWeek(selectedDate);
     final List<DateTime> days = List.generate(6, (i) => weekStart.add(Duration(days: i)));
 
@@ -34,89 +43,122 @@ class CalendarGridWeek extends StatelessWidget {
               final double cellHeight = availableHeight / hoursToShow;
               final double fontSmall = 10 * scale;
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 60 * scale,
-                    child: Column(
-                      children: List.generate(hoursToShow, (index) {
-                        final hour = startHour + index;
-                        final String time = hour <= 12 ? "$hour AM" : "${hour - 12} PM";
-                        return Container(
-                          height: cellHeight,
-                          padding: EdgeInsets.only(right: 6 * scale, top: 4 * scale),
-                          alignment: Alignment.topRight,
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.grey.withValues(alpha: 0.35),
-                                width: border,
-                              ),
-                              right: BorderSide(
-                                color: Colors.grey.withValues(alpha: 0.25),
-                                width: border,
+              return Obx(() {
+                final allReservas = controller.reservas.toList();
+
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Columna Horas
+                    SizedBox(
+                      width: 60 * scale,
+                      child: Column(
+                        children: List.generate(hoursToShow, (index) {
+                          final hour = startHour + index;
+                          final String time = hour <= 12 ? "$hour AM" : "${hour - 12} PM";
+                          return Container(
+                            height: cellHeight,
+                            padding: EdgeInsets.only(right: 6 * scale, top: 4 * scale),
+                            alignment: Alignment.topRight,
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.35),
+                                  width: border,
+                                ),
+                                right: BorderSide(
+                                  color: Colors.grey.withValues(alpha: 0.25),
+                                  width: border,
+                                ),
                               ),
                             ),
-                          ),
-                          child: Text(
-                            time,
-                            style: TextStyle(
-                              fontSize: fontSmall,
-                              color: AppTheme.getTextSecondary(context),
+                            child: Text(
+                              time,
+                              style: TextStyle(
+                                fontSize: fontSmall,
+                                color: AppTheme.getTextSecondary(context),
+                              ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: Row(
-                      children: List.generate(6, (dayIndex) {
-                        final date = days[dayIndex];
-                        final bool isSelected = _isSameDay(date, selectedDate);
-                        return Expanded(
-                          child: Container(
-                            color: isSelected
-                                ? AppTheme.primaryColor.withValues(alpha: 0.06)
-                                : AppTheme.getBackgroundColor(context),
-                            child: Column(
-                              children: List.generate(hoursToShow, (hourIndex) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    final slot = DateTime(
-                                      date.year,
-                                      date.month,
-                                      date.day,
-                                      startHour + hourIndex,
-                                    );
-                                    onTimeSlotTap(slot);
-                                  },
-                                  child: Container(
-                                    height: cellHeight,
-                                    decoration: BoxDecoration(
-                                      border: Border(
-                                        bottom: BorderSide(
-                                          color: Colors.grey.withValues(alpha: 0.3),
-                                          width: border,
+                    // Grid de Días
+                    Expanded(
+                      child: Row(
+                        children: List.generate(6, (dayIndex) {
+                          final date = days[dayIndex];
+                          final bool isSelected = _isSameDay(date, selectedDate);
+
+                          final reservasDelDia = allReservas.where((r) =>
+                              r.fecha.year == date.year &&
+                              r.fecha.month == date.month &&
+                              r.fecha.day == date.day
+                          ).toList();
+
+                          return Expanded(
+                            child: Container(
+                              color: isSelected
+                                  ? AppTheme.primaryColor.withValues(alpha: 0.06)
+                                  : AppTheme.getBackgroundColor(context),
+                              child: Column(
+                                children: List.generate(hoursToShow, (hourIndex) {
+                                  final currentHour = startHour + hourIndex;
+                                  
+                                  final reserva = reservasDelDia.firstWhereOrNull((r) {
+                                    final parts = r.hora.split(':');
+                                    final h = int.tryParse(parts[0]);
+                                    return h == currentHour;
+                                  });
+
+                                  return Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      mouseCursor: SystemMouseCursors.click,
+                                      onTap: () {
+                                        if (reserva == null) {
+                                          final slot = DateTime(date.year, date.month, date.day, currentHour);
+                                          onTimeSlotTap(slot);
+                                          NewReservaDialog.show(context, preSelectedDate: slot);
+                                        }
+                                      },
+                                      child: Container(
+                                        height: cellHeight,
+                                        decoration: BoxDecoration(
+                                          border: Border(
+                                            bottom: BorderSide(
+                                              color: Colors.grey.withValues(alpha: 0.3),
+                                              width: border,
+                                            ),
+                                            right: BorderSide(
+                                              color: Colors.grey.withValues(alpha: 0.2),
+                                              width: border,
+                                            ),
+                                          ),
                                         ),
-                                        right: BorderSide(
-                                          color: Colors.grey.withValues(alpha: 0.2),
-                                          width: border,
-                                        ),
+                                        child: reserva != null 
+                                            ? CalendarAppointmentItem(
+                                                reserva: reserva,
+                                                viewType: 'week',
+                                                onTap: () {
+                                                  // Mostrar diálogo de detalle
+                                                  ReservaDetailDialog.show(context, reserva);
+                                                },
+                                              )
+                                            : null,
                                       ),
                                     ),
-                                  ),
-                                );
-                              }),
+                                  );
+                                }),
+                              ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
-                  ),
-                ],
-              );
+                  ],
+                );
+              });
             },
           ),
         ),
@@ -141,48 +183,52 @@ class CalendarGridWeek extends StatelessWidget {
                 final String dayLabel = ['L', 'M', 'X', 'J', 'V', 'S'][date.weekday - 1];
 
                 return Expanded(
-                  child: GestureDetector(
-                    onTap: () => onDateTap(date),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            dayLabel,
-                            style: TextStyle(
-                              fontSize: fontMedium,
-                              fontWeight: FontWeight.w600,
-                              color: isToday
-                                  ? AppTheme.primaryColor
-                                  : AppTheme.getTextSecondary(context),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => onDateTap(date),
+                      mouseCursor: SystemMouseCursors.click,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              dayLabel,
+                              style: TextStyle(
+                                fontSize: fontMedium,
+                                fontWeight: FontWeight.w600,
+                                color: isToday
+                                    ? AppTheme.primaryColor
+                                    : AppTheme.getTextSecondary(context),
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 4),
-                          Container(
-                            width: 26 * scale,
-                            height: 26 * scale,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isSelected
-                                  ? AppTheme.primaryColor.withValues(alpha: 0.9)
-                                  : isToday
-                                      ? AppTheme.primaryColor.withValues(alpha: 0.25)
-                                      : Colors.transparent,
-                            ),
-                            child: Center(
-                              child: Text(
-                                "${date.day}",
-                                style: TextStyle(
-                                  fontSize: fontMedium,
-                                  fontWeight: FontWeight.w600,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : AppTheme.getTextPrimary(context),
+                            SizedBox(height: 4),
+                            Container(
+                              width: 26 * scale,
+                              height: 26 * scale,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected
+                                    ? AppTheme.primaryColor.withValues(alpha: 0.9)
+                                    : isToday
+                                        ? AppTheme.primaryColor.withValues(alpha: 0.25)
+                                        : Colors.transparent,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  "${date.day}",
+                                  style: TextStyle(
+                                    fontSize: fontMedium,
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppTheme.getTextPrimary(context),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

@@ -9,12 +9,14 @@ class CalendarMainViewSection extends StatelessWidget {
   final DateTime selectedDate;
   final String selectedView;
   final Function(DateTime) onDateChanged;
+  final Function(DateTime) onTimeSlotTap;
 
   const CalendarMainViewSection({
     super.key,
     required this.selectedDate,
     required this.selectedView,
     required this.onDateChanged,
+    required this.onTimeSlotTap,
   });
 
   @override
@@ -40,7 +42,7 @@ class CalendarMainViewSection extends StatelessWidget {
     if (selectedView == 'day') {
       return CalendarGridDay(
         selectedDate: selectedDate,
-        onTimeSlotTap: (dt) => onDateChanged(dt),
+        onTimeSlotTap: onTimeSlotTap,
       );
     }
 
@@ -54,14 +56,15 @@ class CalendarMainViewSection extends StatelessWidget {
     if (selectedView == 'week') {
       return CalendarGridWeek(
         selectedDate: selectedDate,
-        onTimeSlotTap: (dt) => onDateChanged(dt),
         onDateTap: onDateChanged,
+        onTimeSlotTap: onTimeSlotTap,
       );
     }
 
+    // Default a día
     return CalendarGridDay(
       selectedDate: selectedDate,
-      onTimeSlotTap: (dt) => onDateChanged(dt),
+      onTimeSlotTap: onTimeSlotTap,
     );
   }
 }

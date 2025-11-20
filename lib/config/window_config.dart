@@ -4,8 +4,8 @@ import 'package:window_manager/window_manager.dart';
 
 class WindowConfig {
   // Configuración de tamaños más compactos
-  static const double minWidth = 1024.0;     // Reducido de 1500 a 1024
-  static const double minHeight = 600.0;     // Reducido de 1000 a 600
+  static const double minWidth = 1200.0;
+  static const double minHeight = 700.0;
   
   // Tamaño inicial recomendado (más cómodo que el mínimo)
   static const double defaultWidth = 1200.0;

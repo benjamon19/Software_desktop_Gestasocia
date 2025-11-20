@@ -23,33 +23,37 @@ class MiniCalendarWidget extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: AppTheme.getBorderLight(context)),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8), // ligeramente menos redondeado
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
+          // === Encabezado (mes y año) ===
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 6), // menos padding
             alignment: Alignment.center,
             child: Text(
               '${_monthName(displayMonth)} $displayYear',
               style: TextStyle(
+                fontSize: 13, // antes: implícito ~14-16
                 fontWeight: FontWeight.w600,
                 color: AppTheme.getTextPrimary(context),
               ),
             ),
           ),
+          // === Días de la semana (L, M, X...) ===
           Wrap(
             spacing: 0,
             runSpacing: 0,
             children: ['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day) {
               return SizedBox(
-                width: 32,
-                height: 32,
+                width: 28, // antes: 32
+                height: 28, // antes: 32
                 child: Center(
                   child: Text(
                     day,
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 10, // antes: 11
                       fontWeight: FontWeight.w600,
                       color: AppTheme.getTextSecondary(context),
                     ),
@@ -58,13 +62,14 @@ class MiniCalendarWidget extends StatelessWidget {
               );
             }).toList(),
           ),
+          // === Días del mes ===
           Wrap(
             spacing: 0,
             runSpacing: 0,
             children: List.generate(42, (index) {
               final dayNumber = index - firstWeekday + 2;
               if (dayNumber < 1 || dayNumber > daysInMonth) {
-                return const SizedBox(width: 32, height: 32);
+                return const SizedBox(width: 28, height: 28); // antes: 32
               }
 
               final date = DateTime(displayYear, displayMonth, dayNumber);
@@ -72,14 +77,15 @@ class MiniCalendarWidget extends StatelessWidget {
               final isSelected = _isSameDay(date, selectedDate);
 
               return SizedBox(
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 child: InkWell(
                   onTap: () => onDateSelected(date),
+                  borderRadius: BorderRadius.circular(14),
                   child: Center(
                     child: Container(
-                      width: 28,
-                      height: 28,
+                      width: 24, // antes: 28
+                      height: 24, // antes: 28
                       decoration: BoxDecoration(
                         color: isSelected
                             ? AppTheme.primaryColor
@@ -92,8 +98,8 @@ class MiniCalendarWidget extends StatelessWidget {
                         child: Text(
                           '$dayNumber',
                           style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isToday || isSelected ? FontWeight.w600 : null,
+                            fontSize: 11, // antes: 12
+                            fontWeight: isToday || isSelected ? FontWeight.w600 : FontWeight.normal,
                             color: isSelected
                                 ? Colors.white
                                 : AppTheme.getTextPrimary(context),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../../utils/app_theme.dart';
 import 'components/mini_calendar_widget.dart';
+import '../../shared/dialogs/new_reserva_dialog.dart';
 
 class CalendarSidebarSection extends StatelessWidget {
   final DateTime selectedDate;
@@ -24,6 +25,7 @@ class CalendarSidebarSection extends StatelessWidget {
         builder: (context, constraints) {
           final width = constraints.maxWidth;
           final scale = (width / 280).clamp(0.45, 1.0);
+          final isSmallScreen = scale < 0.85;
 
           return Scrollbar(
             child: SingleChildScrollView(
@@ -31,11 +33,44 @@ class CalendarSidebarSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // === BOTÓN "CREAR NUEVA CITA" en estilo ElevatedButton.icon ===
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      NewReservaDialog.show(context, preSelectedDate: selectedDate);
+                    },
+                    icon: Icon(
+                      Icons.event,
+                      size: 18 * scale,
+                      color: Colors.white,
+                    ),
+                    label: Text(
+                      isSmallScreen ? 'Nueva cita' : 'Crear nueva cita',
+                      style: TextStyle(
+                        fontSize: 14 * scale,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        vertical: 12 * scale,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8 * scale),
+                      ),
+                      elevation: 0,
+                      minimumSize: Size(double.infinity, 40 * scale),
+                    ),
+                  ),
+                  SizedBox(height: 16 * scale),
                   Text(
                     'Navegación',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16 * scale,
+                      color: AppTheme.getTextPrimary(context),
                     ),
                   ),
                   SizedBox(height: 12 * scale),
@@ -49,6 +84,7 @@ class CalendarSidebarSection extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16 * scale,
+                      color: AppTheme.getTextPrimary(context),
                     ),
                   ),
                   SizedBox(height: 8 * scale),
@@ -87,6 +123,7 @@ class CalendarSidebarSection extends StatelessWidget {
           borderRadius: BorderRadius.circular(8 * scale),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,

@@ -18,7 +18,7 @@ class LoadingIndicator extends StatelessWidget {
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
           Text(
-            message ?? 'Buscando reservas...',
+            message ?? 'Cargando...',
             style: TextStyle(
               color: AppTheme.getTextSecondary(context),
               fontSize: 16,

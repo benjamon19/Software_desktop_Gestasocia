@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:gestasocia/utils/app_theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import necesario
+import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
 import '../../shared/dialog/select_asociado_dialog.dart';
 
@@ -30,7 +31,12 @@ class _FormSectionState extends State<FormSection> {
   final _alergiasController = TextEditingController();
   final _medicamentosController = TextEditingController();
   final _costoController = TextEditingController();
-  final _odontologoController = TextEditingController();
+  // final _odontologoController = TextEditingController(); // YA NO SE USA
+
+  // Variables para Odontólogo Dinámico
+  String? _selectedOdontologo;
+  List<Map<String, String>> _listaOdontologos = [];
+  bool _loadingOdontologos = false;
 
   String _tipoConsulta = 'consulta';
   String _estado = 'pendiente';
@@ -39,6 +45,7 @@ class _FormSectionState extends State<FormSection> {
   @override
   void initState() {
     super.initState();
+    _loadOdontologos(); // Cargar lista al iniciar
   }
 
   @override
@@ -52,8 +59,44 @@ class _FormSectionState extends State<FormSection> {
     _alergiasController.dispose();
     _medicamentosController.dispose();
     _costoController.dispose();
-    _odontologoController.dispose(); // ← Dispose del nuevo controlador
+    // _odontologoController.dispose();
     super.dispose();
+  }
+
+  // Cargar odontólogos desde Firebase
+  Future<void> _loadOdontologos() async {
+    setState(() => _loadingOdontologos = true);
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .where('rol', isEqualTo: 'odontologo')
+          .get();
+
+      final List<Map<String, String>> loaded = [];
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final nombre = data['nombre'] ?? '';
+        final apellido = data['apellido'] ?? '';
+        loaded.add({
+          'id': doc.id,
+          'nombreCompleto': '$nombre $apellido'.trim(),
+        });
+      }
+
+      if (mounted) {
+        setState(() {
+          _listaOdontologos = loaded;
+          // Si solo hay un odontólogo, preseleccionarlo por comodidad
+          if (loaded.length == 1) {
+            _selectedOdontologo = loaded.first['nombreCompleto'];
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error cargando odontólogos: $e');
+    } finally {
+      if (mounted) setState(() => _loadingOdontologos = false);
+    }
   }
   
   Future<void> _selectPaciente() async {
@@ -362,15 +405,38 @@ class _FormSectionState extends State<FormSection> {
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: _buildTextField(
-                            context: context,
-                            controller: _odontologoController,
-                            label: 'Odontólogo',
-                            icon: Icons.person_outline,
-                            hint: 'Ej: Dr. Juan Pérez',
-                            maxLines: 1,
-                            isSmallScreen: isSmallScreen,
-                          ),
+                          child: _loadingOdontologos
+                            ? Container(
+                                height: 56, // Altura aproximada del input
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.getInputBackground(context),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: AppTheme.getBorderLight(context)),
+                                ),
+                                child: const Row(
+                                  children: [
+                                    SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                    SizedBox(width: 12),
+                                    Text('Cargando...', style: TextStyle(fontSize: 13)),
+                                  ],
+                                ),
+                              )
+                            : _buildDropdown(
+                                context: context,
+                                label: 'Odontólogo',
+                                value: _selectedOdontologo,
+                                items: _listaOdontologos.map((o) => {
+                                  'value': o['nombreCompleto']!,
+                                  'label': o['nombreCompleto']!
+                                }).toList(),
+                                icon: Icons.person_outline,
+                                onChanged: (value) {
+                                  if (!mounted) return;
+                                  setState(() => _selectedOdontologo = value);
+                                },
+                                isSmallScreen: isSmallScreen,
+                              ),
                         ),
                       ],
                     ),
@@ -780,7 +846,7 @@ class _FormSectionState extends State<FormSection> {
   Widget _buildDropdown({
     required BuildContext context,
     required String label,
-    required String value,
+    required String? value,
     required List<Map<String, String>> items,
     required IconData icon,
     required Function(String?) onChanged,
@@ -793,7 +859,18 @@ class _FormSectionState extends State<FormSection> {
         border: Border.all(color: AppTheme.getBorderLight(context)),
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: value,
+        initialValue: value, // Usar value (nullable) en lugar de initialValue
+        items: items.map((item) {
+          return DropdownMenuItem<String>(
+            value: item['value'],
+            child: Text(item['label']!),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        style: TextStyle(
+          color: AppTheme.getTextPrimary(context),
+          fontSize: isSmallScreen ? 13 : 14,
+        ),
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(
@@ -812,21 +889,11 @@ class _FormSectionState extends State<FormSection> {
           ),
         ),
         dropdownColor: AppTheme.getSurfaceColor(context),
-        style: TextStyle(
-          color: AppTheme.getTextPrimary(context),
-          fontSize: isSmallScreen ? 13 : 14,
-        ),
+        isExpanded: true,
         icon: Icon(
           Icons.keyboard_arrow_down,
           color: AppTheme.getTextSecondary(context),
         ),
-        items: items.map((item) {
-          return DropdownMenuItem<String>(
-            value: item['value'],
-            child: Text(item['label']!),
-          );
-        }).toList(),
-        onChanged: onChanged,
       ),
     );
   }
@@ -843,13 +910,19 @@ class _FormSectionState extends State<FormSection> {
     _alergiasController.clear();
     _medicamentosController.clear();
     _costoController.clear();
-    _odontologoController.clear();
+    // _odontologoController.clear(); // Ya no se usa
     
     setState(() {
       _selectedPaciente = null;
       _tipoConsulta = 'consulta';
       _estado = 'pendiente';
       _proximaCita = null;
+      // No reseteamos _selectedOdontologo si hay una lista, para mantener la comodidad
+      if (_listaOdontologos.length == 1) {
+        _selectedOdontologo = _listaOdontologos.first['nombreCompleto'];
+      } else {
+        _selectedOdontologo = null;
+      }
     });
   }
 
@@ -861,6 +934,22 @@ class _FormSectionState extends State<FormSection> {
         Get.snackbar(
           'Error',
           'Debes seleccionar un paciente',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red.withValues(alpha: 0.1),
+          colorText: Colors.red,
+          duration: const Duration(seconds: 3),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          icon: const Icon(Icons.error_outline, color: Colors.red),
+        );
+        return;
+      }
+      
+      // Validar que se haya seleccionado un odontólogo
+      if (_selectedOdontologo == null || _selectedOdontologo!.isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Debes seleccionar un odontólogo',
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.red.withValues(alpha: 0.1),
           colorText: Colors.red,
@@ -888,7 +977,7 @@ class _FormSectionState extends State<FormSection> {
         'pacienteTelefono': _selectedPaciente!['telefono'] ?? '',
         
         'tipoConsulta': _tipoConsulta,
-        'odontologo': _odontologoController.text.trim().isEmpty ? null : _odontologoController.text.trim(),
+        'odontologo': _selectedOdontologo, // Usar valor seleccionado
         'fecha': DateTime.now(),
         'hora': '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
         'motivoPrincipal': _motivoController.text.trim(),

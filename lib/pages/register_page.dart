@@ -150,7 +150,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               DropdownButtonFormField<String>(
                                 initialValue: selectedRol,
                                 decoration: InputDecoration(
-                                  labelText: 'Rol',
+                                  labelText: 'Cargo',
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                                 ),
                                 items: const [
