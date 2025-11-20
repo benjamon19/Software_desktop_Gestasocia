@@ -1,171 +1,256 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:get/get.dart';
+import '../../../../utils/app_theme.dart';
+import '../../../../controllers/reserva_horas_controller.dart';
 
 class WeeklyAttendanceChart extends StatelessWidget {
-  const WeeklyAttendanceChart({super.key});
+  final bool isCompact; // Permite forzar modo compacto desde ChartsGridSection
 
-  // Datos de asistencia vs ausencias por día
-  final List<AttendanceData> _attendanceData = const [
-    AttendanceData(day: "Lun", attended: 14, missed: 2, rate: 87.5),
-    AttendanceData(day: "Mar", attended: 17, missed: 1, rate: 94.4),
-    AttendanceData(day: "Mié", attended: 19, missed: 1, rate: 95.0),
-    AttendanceData(day: "Jue", attended: 15, missed: 2, rate: 88.2),
-    AttendanceData(day: "Vie", attended: 14, missed: 1, rate: 93.3),
-    AttendanceData(day: "Sáb", attended: 8, missed: 1, rate: 88.9),
-  ];
+  const WeeklyAttendanceChart({super.key, this.isCompact = false});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
-          flex: 4,
-          child: LineChart(
-            LineChartData(
-              lineBarsData: [
-                // Línea de asistencias
-                LineChartBarData(
-                  spots: _attendanceData.asMap().entries.map((entry) => 
-                    FlSpot(entry.key.toDouble(), entry.value.attended.toDouble())
-                  ).toList(),
-                  isCurved: true,
-                  color: const Color(0xFF10B981),
-                  barWidth: 3,
-                  belowBarData: BarAreaData(
-                    show: true,
-                    gradient: const LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color.fromARGB(77, 16, 185, 129), // 0xFF10B981 with 0.3 alpha
-                        Color.fromARGB(13, 16, 185, 129), // 0xFF10B981 with 0.05 alpha
-                      ],
+    final ReservaHorasController controller = Get.find<ReservaHorasController>();
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final double height = constraints.maxHeight;
+
+        // Modo compacto: forzado o por espacio limitado
+        final bool compactMode = isCompact || width < 300 || height < 180;
+
+        final double fontSize = compactMode ? 9 : 12;
+        final double barWidth = compactMode ? 2 : 4;
+        final double dotRadius = compactMode ? 2.5 : 5;
+        final bool showArea = height > 220 && !compactMode;
+        final bool showLegend = height > 160;
+        final double titleSpacing = compactMode ? 2 : 4;
+        final double topSpacing = compactMode ? 12 : 24;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Asistencia Mensual',
+              style: TextStyle(
+                fontSize: fontSize + 4,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.getTextPrimary(context),
+              ),
+            ),
+            SizedBox(height: titleSpacing),
+            Text(
+              'Comparativa Realizadas vs Canceladas',
+              style: TextStyle(
+                fontSize: fontSize,
+                color: AppTheme.getTextSecondary(context),
+              ),
+            ),
+            SizedBox(height: topSpacing),
+
+            Expanded(
+              flex: showLegend ? 4 : 5,
+              child: Obx(() {
+                final data = controller.attendanceStatsLast4Weeks;
+                if (data.isEmpty) {
+                  return const Center(child: Text('Sin datos'));
+                }
+
+                double maxY = 0;
+                for (var item in data) {
+                  if (item.attended > maxY) maxY = item.attended.toDouble();
+                  if (item.missed > maxY) maxY = item.missed.toDouble();
+                }
+                if (maxY < 5) maxY = 5;
+                maxY += (maxY * 0.2);
+                double interval = (maxY / 4).floorToDouble();
+                if (interval <= 0) interval = 1;
+
+                return LineChart(
+                  LineChartData(
+                    gridData: FlGridData(
+                      show: !compactMode,
+                      drawVerticalLine: false,
+                      horizontalInterval: interval,
+                      getDrawingHorizontalLine: (value) => FlLine(
+                        color: Colors.grey.withValues(alpha: 0.1),
+                        strokeWidth: 1,
+                      ),
+                    ),
+                    titlesData: FlTitlesData(
+                      show: true,
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: compactMode ? 20 : 30,
+                          interval: 1,
+                          getTitlesWidget: (value, meta) {
+                            final index = value.toInt();
+                            if (index >= 0 && index < data.length) {
+                              String label = data[index].label;
+                              if (compactMode) {
+                                if (label.contains('Sem ')) {
+                                  label = label.replaceAll('Sem ', 'S');
+                                } else if (label.length > 6) {
+                                  label = '${label.substring(0, 5)}..';
+                                }
+                              }
+                              return SideTitleWidget(
+                                meta: meta,
+                                space: compactMode ? 2 : 4,
+                                child: Text(
+                                  label,
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: fontSize - 2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }
+                            return const Text('');
+                          },
+                        ),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: !compactMode,
+                          interval: interval,
+                          reservedSize: compactMode ? 20 : 30,
+                          getTitlesWidget: (value, meta) {
+                            if (value % 1 != 0) return const SizedBox.shrink();
+                            return Text(
+                              value.toInt().toString(),
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: fontSize - 2,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: (data.length - 1).toDouble(),
+                    minY: 0,
+                    maxY: maxY,
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.attended.toDouble())).toList(),
+                        isCurved: !compactMode,
+                        color: const Color(0xFF10B981),
+                        barWidth: barWidth,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: !compactMode,
+                          getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                            radius: dotRadius,
+                            color: const Color(0xFF10B981),
+                            strokeWidth: compactMode ? 1 : 2,
+                            strokeColor: Colors.white,
+                          ),
+                        ),
+                        belowBarData: BarAreaData(
+                          show: showArea,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFF10B981).withValues(alpha: 0.3),
+                              const Color(0xFF10B981).withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                      ),
+                      LineChartBarData(
+                        spots: data.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.missed.toDouble())).toList(),
+                        isCurved: !compactMode,
+                        color: const Color(0xFFEF4444),
+                        barWidth: barWidth,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: !compactMode,
+                          getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                            radius: dotRadius,
+                            color: const Color(0xFFEF4444),
+                            strokeWidth: compactMode ? 1 : 2,
+                            strokeColor: Colors.white,
+                          ),
+                        ),
+                        belowBarData: BarAreaData(show: false),
+                      ),
+                    ],
+                    lineTouchData: LineTouchData(
+                      enabled: !compactMode,
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipColor: (spot) => Colors.black.withValues(alpha: 0.8),
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((spot) {
+                            final isAttendance = spot.barIndex == 0;
+                            return LineTooltipItem(
+                              '${isAttendance ? "Asistieron" : "Faltaron"}: ${spot.y.toInt()}',
+                              TextStyle(
+                                color: isAttendance ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                                fontWeight: FontWeight.bold,
+                                fontSize: fontSize,
+                              ),
+                            );
+                          }).toList();
+                        },
+                      ),
                     ),
                   ),
-                  dotData: FlDotData(
-                    show: true,
-                    getDotPainter: (spot, percent, barData, index) => 
-                      FlDotCirclePainter(
-                        radius: 4, 
-                        color: const Color(0xFF10B981), 
-                        strokeWidth: 2, 
-                        strokeColor: Colors.white
-                      )
-                  ),
-                ),
-                // Línea de ausencias
-                LineChartBarData(
-                  spots: _attendanceData.asMap().entries.map((entry) => 
-                    FlSpot(entry.key.toDouble(), entry.value.missed.toDouble())
-                  ).toList(),
-                  isCurved: true,
-                  color: const Color(0xFFEF4444),
-                  barWidth: 3,
-                  dotData: FlDotData(
-                    show: true,
-                    getDotPainter: (spot, percent, barData, index) => 
-                      FlDotCirclePainter(
-                        radius: 3, 
-                        color: const Color(0xFFEF4444), 
-                        strokeWidth: 2, 
-                        strokeColor: Colors.white
-                      )
-                  ),
-                ),
-              ],
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 35,
-                    getTitlesWidget: (value, meta) {
-                      return Text(
-                        value.toInt().toString(),
-                        style: const TextStyle(fontSize: 10, color: Colors.grey),
-                      );
-                    },
-                  ),
-                ),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, meta) {
-                      int index = value.toInt();
-                      if (index >= 0 && index < _attendanceData.length) {
-                        return Text(
-                          _attendanceData[index].day,
-                          style: const TextStyle(fontSize: 10, color: Colors.grey),
-                        );
-                      }
-                      return const Text('');
-                    },
-                  ),
-                ),
-                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              ),
-              borderData: FlBorderData(show: false),
-              gridData: FlGridData(
-                show: true,
-                drawHorizontalLine: true,
-                drawVerticalLine: false,
-                getDrawingHorizontalLine: (value) => FlLine(
-                  color: Colors.grey.withValues(alpha: 0.2),
-                  strokeWidth: 1,
-                ),
-              ),
-              maxY: 25,
-              lineTouchData: LineTouchData(enabled: false),
+                );
+              }),
             ),
-          ),
-        ),
-        Expanded(
-          flex: 1,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildLegendItem("Asistieron", const Color(0xFF10B981)),
-              const SizedBox(width: 20),
-              _buildLegendItem("Faltaron", const Color(0xFFEF4444)),
-            ],
-          ),
-        ),
-      ],
+            if (showLegend)
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildLegendItem("Asistieron", const Color(0xFF10B981), fontSize, compactMode),
+                    SizedBox(width: compactMode ? 8 : 20),
+                    _buildLegendItem("Faltaron", const Color(0xFFEF4444), fontSize, compactMode),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildLegendItem(String label, Color color) {
+  Widget _buildLegendItem(String label, Color color, double fontSize, bool compactMode) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 12,
-          height: 3,
+          height: compactMode ? 2 : 3,
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
-        const SizedBox(width: 6),
+        SizedBox(width: compactMode ? 4 : 6),
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: Colors.grey),
+          style: TextStyle(
+            fontSize: fontSize - 1,
+            color: Colors.grey,
+          ),
         ),
       ],
     );
   }
-}
-
-class AttendanceData {
-  final String day;
-  final int attended;
-  final int missed;
-  final double rate;
-
-  const AttendanceData({
-    required this.day, 
-    required this.attended, 
-    required this.missed, 
-    required this.rate
-  });
 }

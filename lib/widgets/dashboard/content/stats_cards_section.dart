@@ -2,25 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../utils/app_theme.dart';
 import '../../../controllers/asociados_controller.dart';
+import '../../../controllers/reserva_horas_controller.dart'; 
+import '../../../controllers/historial_clinico_controller.dart'; 
 
 class StatsCardsSection extends StatelessWidget {
   const StatsCardsSection({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final AsociadosController controller = Get.find<AsociadosController>();
+    // Inyección de controladores
+    final AsociadosController asociadoController = Get.find<AsociadosController>();
+    final ReservaHorasController reservaController = Get.find<ReservaHorasController>(); 
+    final HistorialClinicoController historialController = Get.find<HistorialClinicoController>(); 
+    
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
+    
     final bool isSmallScreen = screenWidth < 600;
-    final bool hasVerticalSpace = screenHeight > 600;
+    final bool hasVerticalSpace = screenWidth >= 1350 && screenHeight >= 800;
     
     return Row(
       children: [
-        // ⭐ ESTA ES LA ÚNICA TARJETA QUE CAMBIA
+        // 1. Pacientes Activos
         Expanded(
           child: Obx(() => StatCard(
             title: 'Pacientes Activos',
-            value: controller.totalAsociadosActivos.toString(),
+            value: asociadoController.totalPacientesActivos.toString(),
             icon: Icons.people_outline,
             iconColor: const Color(0xFF4299E1),
             backgroundColor: const Color(0xFFEBF8FF),
@@ -29,48 +36,52 @@ class StatsCardsSection extends StatelessWidget {
           )),
         ),
         SizedBox(width: isSmallScreen ? 8 : 12),
-        // Las demás tarjetas quedan igual
+        
+        // 2. Citas Hoy
         Expanded(
-          child: StatCard(
+          child: Obx(() => StatCard( 
             title: 'Citas Hoy',
-            value: '34',
+            value: reservaController.totalCitasHoy.toString(), 
             icon: Icons.calendar_today_outlined,
             iconColor: const Color(0xFF48BB78),
             backgroundColor: const Color(0xFFF0FDF4),
             isSmallScreen: isSmallScreen,
             hasVerticalSpace: hasVerticalSpace,
-          ),
+          )),
         ),
         SizedBox(width: isSmallScreen ? 8 : 12),
+
+        // 3. Nuevos Historiales
         Expanded(
-          child: StatCard(
-            title: 'Nuevos Historiales',
-            value: '12',
+          child: Obx(() => StatCard(
+            title: 'Nuevos Historiales (Último Mes)',
+            value: historialController.totalNuevosHistorialesMes.toString(), 
             icon: Icons.person_add_outlined,
             iconColor: const Color(0xFF9F7AEA),
             backgroundColor: const Color(0xFFF9F5FF),
             isSmallScreen: isSmallScreen,
             hasVerticalSpace: hasVerticalSpace,
-          ),
+          )),
         ),
         SizedBox(width: isSmallScreen ? 8 : 12),
+        
+        // 4. Urgencias
         Expanded(
-          child: StatCard(
+          child: Obx(() => StatCard(
             title: 'Urgencias',
-            value: '3',
+            value: historialController.totalUrgencias.toString(),
             icon: Icons.warning_amber_outlined,
             iconColor: const Color(0xFFF56565),
             backgroundColor: const Color(0xFFFFF5F5),
             isSmallScreen: isSmallScreen,
             hasVerticalSpace: hasVerticalSpace,
-          ),
+          )),
         ),
       ],
     );
   }
-}
+}  
 
-// El resto del código de StatCard queda igual...
 class StatCard extends StatelessWidget {
   final String title;
   final String value;

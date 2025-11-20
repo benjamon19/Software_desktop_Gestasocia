@@ -111,19 +111,17 @@ class AsociadosController extends GetxController {
   
   void clearSearchField() {
     try {
-      // Verificar que el controller sigue registrado
       if (!Get.isRegistered<AsociadosController>()) return;
       
       final dynamic searchField = searchFieldKey.currentState;
       
-      // Verificar que el widget aún está montado
       if (searchField != null && searchField is State && searchField.mounted) {
         if (searchField.runtimeType.toString().contains('_RutSearchFieldState')) {
           (searchField as dynamic).clearField();
         }
       }
     } catch (e) {
-      // Error silencioso - no hacer nada si el widget ya no existe
+      // Error silencioso
     }
   }
 
@@ -216,7 +214,6 @@ class AsociadosController extends GetxController {
 
       _showSuccessSnackbar("Éxito!", "Asociado creado correctamente");
       
-      // Registrar en historial
       _registrarCreacion(docRef.id, asociadoConId);
       
       return true;
@@ -331,7 +328,6 @@ class AsociadosController extends GetxController {
         return false;
       }
 
-      // Guardar asociado anterior para comparación
       final asociadoAnterior = _allAsociados.firstWhere((a) => a.id == asociado.id);
       
       final asociadoActualizado = asociado.actualizarActividad();
@@ -353,7 +349,6 @@ class AsociadosController extends GetxController {
 
       _showSuccessSnackbar("Éxito!", "Asociado actualizado correctamente");
       
-      // Registrar edición con comparación
       _registrarEdicion(asociadoAnterior, asociadoActualizado);
       
       return true;
@@ -420,7 +415,6 @@ class AsociadosController extends GetxController {
     if (cargasFamiliares.isNotEmpty) {
       return;
     }
-    
     await loadAllCargasFamiliares();
   }
 
@@ -487,7 +481,6 @@ class AsociadosController extends GetxController {
 
       _showSuccessSnackbar("Éxito!", "Carga familiar agregada correctamente");
       
-      // Registrar en historial
       _registrarCargaAgregada(selectedAsociado.value!.id!, cargaConId);
       
       return true;
@@ -504,10 +497,8 @@ class AsociadosController extends GetxController {
 
   Future<void> biometricSearch() async {
     isLoading.value = true;
-    
     try {
       await Future.delayed(const Duration(seconds: 3));
-      
       if (_allAsociados.isNotEmpty) {
         final primerAsociado = _allAsociados.first;
         await searchAsociado(primerAsociado.rut);
@@ -636,7 +627,6 @@ class AsociadosController extends GetxController {
         borderRadius: 8,
       );
       
-      // Registrar en historial
       _registrarCodigoBarras(asociadoId, codigoBarras);
       
       return true;
@@ -718,9 +708,7 @@ class AsociadosController extends GetxController {
             _allAsociados[index] = asociadoActualizado;
           }
           
-          // Registrar en historial
           _registrarSAP(asociado.id!, sap);
-          
           generated++;
         }
       }
@@ -838,5 +826,33 @@ class AsociadosController extends GetxController {
   int get totalAllAsociados => _allAsociados.length;
   bool get hasAsociados => asociados.isNotEmpty;
   int get totalCargasFamiliares => cargasFamiliares.length;
-  int get totalAsociadosActivos => _allAsociados.where((a) => a.estaActivo).length;
+  
+  int get totalPacientesActivos { 
+      final int asociadosActivos = _allAsociados.where((a) => a.estaActivo).length;
+      final int cargasActivas = cargasFamiliares.where((c) => c.estaActivo).length;
+      return asociadosActivos + cargasActivas;
+  }
+
+  // GRÁFICO: Crecimiento de Pacientes (Últimos 6 meses)
+  List<int> get patientGrowthLast6Months {
+    final now = DateTime.now();
+    List<int> counts = [];
+
+    // Generar datos para los últimos 6 meses (0 = hace 5 meses ... 5 = actual)
+    for (int i = 5; i >= 0; i--) {
+      // Mes objetivo
+      final targetMonth = DateTime(now.year, now.month - i);
+      // Último momento de ese mes para comparación
+      final endOfMonth = DateTime(targetMonth.year, targetMonth.month + 1, 0, 23, 59, 59);
+
+      // Contar asociados acumulados hasta ese mes
+      final asociadosCount = _allAsociados.where((a) => a.fechaIngreso.isBefore(endOfMonth)).length;
+      
+      // Contar cargas acumuladas hasta ese mes
+      final cargasCount = cargasFamiliares.where((c) => c.fechaCreacion.isBefore(endOfMonth)).length;
+      
+      counts.add(asociadosCount + cargasCount);
+    }
+    return counts;
+  }
 }

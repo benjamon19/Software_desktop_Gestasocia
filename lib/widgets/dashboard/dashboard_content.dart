@@ -111,7 +111,7 @@ class DashboardContent extends StatelessWidget {
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'Actualizado hace 5 min',
+                  'Se actualiza al iniciar sesión y solo si hay cambios relevantes.',
                   style: TextStyle(
                     fontSize: 11,
                     color: AppTheme.getTextSecondary(context),

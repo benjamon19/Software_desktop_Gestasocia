@@ -10,7 +10,7 @@ class CalendarMainViewSection extends StatelessWidget {
   final String selectedView;
   final Function(DateTime) onDateChanged;
   final Function(DateTime) onTimeSlotTap;
-  final Function(String) onViewChanged;
+  final Function(String) onViewChanged; 
 
   const CalendarMainViewSection({
     super.key,
@@ -21,8 +21,27 @@ class CalendarMainViewSection extends StatelessWidget {
     required this.onViewChanged,
   });
 
+  // Helper para obtener la fecha clave que define el contenido visible
+  DateTime _getAnimationBaseDate(DateTime date, String view) {
+    if (view == 'month') {
+      // Clave basada en el inicio del mes (Día 1)
+      return DateTime(date.year, date.month, 1);
+    } else if (view == 'week') {
+      // Clave basada en el inicio de la semana (Lunes). 
+      // Si seleccionas Miércoles o Viernes de la misma semana, la clave NO cambia.
+      // Dart: weekday=1(Mon), ..., weekday=7(Sun)
+      final int weekday = date.weekday;
+      return date.subtract(Duration(days: weekday - 1));
+    }
+    // Para 'day' o cualquier otra vista, la fecha completa es la clave
+    return date; 
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Calcular la fecha base para la clave de animación
+    final DateTime animationBaseDate = _getAnimationBaseDate(selectedDate, selectedView);
+
     return Column(
       children: [
         CalendarHeader(
@@ -35,16 +54,14 @@ class CalendarMainViewSection extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             // === ANIMATION IMPLEMENTATION ===
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
+              duration: const Duration(milliseconds: 250), 
               switchInCurve: Curves.easeOut,
               switchOutCurve: Curves.easeIn,
               transitionBuilder: (Widget child, Animation<double> animation) {
-                // Transición con fade y un ligero slide horizontal
                 return FadeTransition(
                   opacity: animation,
                   child: SlideTransition(
                     position: Tween<Offset>(
-                      // El movimiento es mínimo (0.05) para ser un efecto sutil y rápido
                       begin: const Offset(0.05, 0.0), 
                       end: Offset.zero,
                     ).animate(animation),
@@ -52,9 +69,10 @@ class CalendarMainViewSection extends StatelessWidget {
                   ),
                 );
               },
-              // La clave debe cambiar si la fecha o la vista cambia
+              // La clave ahora usa la fecha base (inicio de semana/mes), 
+              // impidiendo la animación al seleccionar un día dentro del rango visible.
               child: KeyedSubtree(
-                key: ValueKey('${selectedDate.year}-${selectedDate.month}-${selectedDate.day}-$selectedView'),
+                key: ValueKey('${animationBaseDate.year}-${animationBaseDate.month}-${animationBaseDate.day}-$selectedView'),
                 child: _buildCalendarView(context),
               ),
             ),
@@ -89,7 +107,6 @@ class CalendarMainViewSection extends StatelessWidget {
       );
     }
 
-    // Default a día
     return CalendarGridDay(
       selectedDate: selectedDate,
       onTimeSlotTap: onTimeSlotTap,

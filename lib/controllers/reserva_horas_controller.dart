@@ -3,6 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/reserva_hora.dart';
 
+// Modelo simple para los datos del gráfico
+class AttendanceData {
+  final String label; // Ej: "Sem 1"
+  final int attended;
+  final int missed;
+
+  AttendanceData({required this.label, required this.attended, required this.missed});
+}
+
 class ReservaHorasController extends GetxController {
   // === ESTADO REACTIVO ===
   RxList<ReservaHora> reservas = <ReservaHora>[].obs;
@@ -10,9 +19,8 @@ class ReservaHorasController extends GetxController {
   Rx<DateTime> selectedDate = DateTime.now().obs;
 
   // === CONFIGURACIÓN DE HORARIO ===
-  // Esto asegura que nadie agende a las 3 AM
-  static const int horaApertura = 8; // 8:00 AM
-  static const int horaCierre = 20;  // 20:00 PM
+  static const int horaApertura = 8;
+  static const int horaCierre = 20;
 
   @override
   void onInit() {
@@ -20,11 +28,66 @@ class ReservaHorasController extends GetxController {
     loadReservas();
   }
 
-  // === VALIDACIÓN DE DISPONIBILIDAD (NUEVO) ===
-  /// Retorna un String con el error si no es válido, o null si está disponible.
+  // =========================================================
+  // === GETTERS PARA DASHBOARD Y GRÁFICOS ===
+  // =========================================================
+
+  // KPI: Total de citas activas hoy
+  int get totalCitasHoy {
+    final today = DateTime.now();
+    return reservas.where((r) {
+      final bool isToday = r.fecha.year == today.year &&
+                           r.fecha.month == today.month &&
+                           r.fecha.day == today.day;
+      final bool isNotCancelled = r.estado.toLowerCase() != 'cancelada';
+      return isToday && isNotCancelled;
+    }).length;
+  }
+
+  // GRÁFICO: Asistencia Mensual (Últimas 4 semanas)
+  List<AttendanceData> get attendanceStatsLast4Weeks {
+    final now = DateTime.now();
+    // Inicializamos contadores: [Semana-3, Semana-2, Semana-1, Actual]
+    List<int> attendedCounts = [0, 0, 0, 0];
+    List<int> missedCounts = [0, 0, 0, 0];
+
+    for (var r in reservas) {
+      final differenceInDays = now.difference(r.fecha).inDays;
+      
+      // Filtramos solo lo que está dentro de los últimos 28 días
+      if (differenceInDays >= 0 && differenceInDays < 28) {
+        int weekIndex;
+        
+        // FIX LINTER: Agregadas llaves {} a los bloques if/else
+        if (differenceInDays < 7) {
+          weekIndex = 3;       // Semana Actual
+        } else if (differenceInDays < 14) {
+          weekIndex = 2;       // Semana Anterior
+        } else if (differenceInDays < 21) {
+          weekIndex = 1;       // Hace 2 semanas
+        } else {
+          weekIndex = 0;       // Hace 3 semanas
+        }
+
+        if (r.estado.toLowerCase() == 'realizada') {
+          attendedCounts[weekIndex]++;
+        } else if (r.estado.toLowerCase() == 'cancelada' || r.estado.toLowerCase() == 'no_asistio') {
+          missedCounts[weekIndex]++;
+        }
+      }
+    }
+
+    return [
+      AttendanceData(label: "Sem 1", attended: attendedCounts[0], missed: missedCounts[0]),
+      AttendanceData(label: "Sem 2", attended: attendedCounts[1], missed: missedCounts[1]),
+      AttendanceData(label: "Sem 3", attended: attendedCounts[2], missed: missedCounts[2]),
+      AttendanceData(label: "Actual", attended: attendedCounts[3], missed: missedCounts[3]),
+    ];
+  }
+  // =========================================================
+
+  // === VALIDACIÓN DE DISPONIBILIDAD ===
   String? validarReserva(String odontologoNombre, DateTime fecha, String horaStr) {
-    
-    // 1. Validar Horario de Clínica (ej: 08:00 - 20:00)
     final parts = horaStr.split(':');
     final horaInt = int.parse(parts[0]);
     
@@ -32,31 +95,23 @@ class ReservaHorasController extends GetxController {
       return 'La clínica está cerrada a esa hora. Horario: $horaApertura:00 - $horaCierre:00';
     }
 
-    // 2. Validar Disponibilidad del Odontólogo
-    // Buscamos si ESTE odontólogo ya tiene algo ese día a esa hora.
+    // 2. Validar Colisión
     final conflicto = reservas.firstWhereOrNull((reserva) {
-      // Ignoramos citas canceladas
       if (reserva.estado.toLowerCase() == 'cancelada') return false;
-
-      // Si es OTRO odontólogo, no hay conflicto (pueden trabajar en paralelo)
       if (reserva.odontologo != odontologoNombre) return false;
 
-      // Verificar misma fecha (año, mes, día)
       if (reserva.fecha.year != fecha.year || 
           reserva.fecha.month != fecha.month || 
           reserva.fecha.day != fecha.day) {
         return false;
       }
-
-      // Verificar misma hora
       return reserva.hora == horaStr;
     });
 
     if (conflicto != null) {
-      return 'El $odontologoNombre ya tiene una cita agendada a las $horaStr.';
+      return 'El $odontologoNombre ya tiene una cita a las $horaStr.';
     }
 
-    // Si pasa todas las pruebas, retornamos null (todo OK)
     return null;
   }
 

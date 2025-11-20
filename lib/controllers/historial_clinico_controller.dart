@@ -1,10 +1,10 @@
-import 'dart:io'; // ← AGREGAR para File
+import 'dart:io';
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import '../models/historial_clinico.dart';
-import 'dart:async';
 import '../controllers/asociados_controller.dart';
 import '../controllers/cargas_familiares_controller.dart';
 
@@ -53,6 +53,57 @@ class HistorialClinicoController extends GetxController {
     _debounceTimer?.cancel();
     super.onClose();
   }
+
+  // =========================================================================
+  // === GETTERS DINÁMICOS PARA DASHBOARD (KPIs y Listas) ===
+  // =========================================================================
+
+  /// KPI: Nuevos Historiales (Creados en los últimos 30 días)
+  int get totalNuevosHistorialesMes {
+    final DateTime fechaLimite = DateTime.now().subtract(const Duration(days: 30));
+    return _allHistoriales.where((historial) {
+      return historial.fechaCreacion.isAfter(fechaLimite);
+    }).length;
+  }
+
+  /// KPI: Urgencias (Registros donde el tipo es 'urgencia')
+  int get totalUrgencias {
+    return _allHistoriales.where((historial) {
+      return historial.tipoConsulta.toLowerCase() == 'urgencia';
+    }).length;
+  }
+
+  /// LISTA: Urgencias Pendientes (Para la tarjeta "TreatmentAlertCard")
+  /// Retorna una lista de historiales clínicos que son urgencias y están pendientes.
+  List<HistorialClinico> get urgenciasPendientes {
+    return _allHistoriales.where((h) {
+      final isUrgencia = h.tipoConsulta.toLowerCase() == 'urgencia';
+      // Consideramos pendiente si no está completado ni cancelado
+      // Ajusta estos estados según tu lógica de negocio
+      final isPendiente = ['pendiente', 'requiere_seguimiento', 'en_proceso'].contains(h.estado.toLowerCase());
+      return isUrgencia && isPendiente;
+    }).toList()
+    // Ordenar por fecha (las más antiguas primero, ya que son urgencias pendientes)
+    ..sort((a, b) => a.fecha.compareTo(b.fecha));
+  }
+
+  /// GRÁFICO: Estadísticas de Tratamientos (Agrupados por nombre)
+  Map<String, int> get tratamientosPorTipo {
+    final Map<String, int> counts = {};
+    for (var h in _allHistoriales) {
+      final t = h.tratamientoRealizado?.trim();
+      if (t != null && t.isNotEmpty) {
+        // Normalización: Primera mayúscula
+        final formatted = t.length > 1 
+            ? t[0].toUpperCase() + t.substring(1).toLowerCase() 
+            : t.toUpperCase();
+        counts[formatted] = (counts[formatted] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+  // =========================================================================
+
 
   // ========== CARGAR DESDE FIREBASE CON REFERENCIAS ==========
 
@@ -210,6 +261,11 @@ class HistorialClinicoController extends GetxController {
     if (selectedStatus.value != 'todos') {
       filtered = filtered.where((h) => h.estado.toLowerCase() == selectedStatus.value).toList();
     }
+    
+    // Filtro por odontólogo
+    if (selectedOdontologo.value != 'todos') {
+      filtered = filtered.where((h) => h.odontologo == selectedOdontologo.value).toList();
+    }
 
     // Ordenar por fecha más reciente
     filtered.sort((a, b) => b.fecha.compareTo(a.fecha));
@@ -239,7 +295,7 @@ class HistorialClinicoController extends GetxController {
           'Encontrado',
           historiales.length == 1
               ? 'Historial encontrado'
-              : 'Se encontró el historial',
+              : 'Se encontraron historiales',
         );
       } else {
         _showErrorSnackbar(
@@ -497,15 +553,12 @@ class HistorialClinicoController extends GetxController {
     try {
       isLoading.value = true;
 
-      // Buscar el historial en la lista local para obtener su imagenUrl
       final historialEliminar =
           _allHistoriales.firstWhere((h) => h.id == historialId, orElse: () => throw Exception('Historial no encontrado'));
 
-      // 1. Eliminar imagen del Storage si existe
       if (historialEliminar.imagenUrl != null && historialEliminar.imagenUrl!.isNotEmpty) {
         final uri = Uri.parse(historialEliminar.imagenUrl!);
         final pathSegments = uri.pathSegments;
-        // Buscar el segmento "o" (de object) y tomar lo que viene después
         final startIndex = pathSegments.indexOf('o');
         if (startIndex != -1 && startIndex + 1 < pathSegments.length) {
           final encodedPath = pathSegments.sublist(startIndex + 1).join('/');
@@ -515,20 +568,16 @@ class HistorialClinicoController extends GetxController {
             final ref = FirebaseStorage.instance.ref().child(decodedPath);
             await ref.delete();
           } catch (e) {
-            // Si falla la eliminación de la imagen, seguimos igual (no es crítico)
-            Get.log('⚠️ Advertencia: No se pudo eliminar la imagen del Storage: $e');
+            Get.log('Advertencia: No se pudo eliminar la imagen del Storage: $e');
           }
         }
       }
 
-      // 2. Eliminar documento en Firestore
       await FirebaseFirestore.instance.collection('historiales_clinicos').doc(historialId).delete();
 
-      // 3. Actualizar estado local
       _allHistoriales.removeWhere((h) => h.id == historialId);
       _applyFilters();
 
-      // Si era el historial seleccionado, limpiar vista
       if (selectedHistorial.value?.id == historialId) {
         showListView();
       }
@@ -541,7 +590,6 @@ class HistorialClinicoController extends GetxController {
     }
   }
 
-  // Este método antiguo se mantiene por compatibilidad (opcional)
   Future<void> eliminarHistorialPorId(String id) async {
     await deleteHistorialCompleto(id);
   }
@@ -639,37 +687,7 @@ class HistorialClinicoController extends GetxController {
   // ========== CONVERTIR A MAP PARA LA VISTA ==========
 
   List<Map<String, dynamic>> get filteredHistorial {
-    return historiales.map((h) {
-      final pacienteInfo = _getPacienteInfo(h);
-      return {
-        'id': h.id,
-        'pacienteId': h.pacienteId,
-        'pacienteTipo': h.pacienteTipo,
-        'pacienteNombre': pacienteInfo?['nombre'] ?? 'Paciente no encontrado',
-        'pacienteRut': pacienteInfo?['rut'] ?? 'N/A',
-        'pacienteEdad': pacienteInfo?['edad'] ?? 0,
-        'pacienteTelefono': pacienteInfo?['telefono'] ?? '',
-        'pacienteSap': pacienteInfo?['sap'],
-        'tipoConsulta': h.tipoConsultaFormateado,
-        'odontologo': h.odontologo,
-        'fecha': h.fechaFormateada,
-        'hora': h.hora,
-        'motivoPrincipal': h.motivoPrincipal,
-        'diagnostico': h.diagnostico ?? '',
-        'tratamientoRealizado': h.tratamientoRealizado ?? '',
-        'tratamiento': h.tratamientoRealizado ?? '',
-        'dienteTratado': h.dienteTratado ?? '',
-        'observacionesOdontologo': h.observacionesOdontologo ?? '',
-        'observaciones': h.observacionesOdontologo ?? '',
-        'alergias': h.alergias ?? '',
-        'medicamentosActuales': h.medicamentosActuales ?? '',
-        'proximaCita': h.proximaCitaFormateada,
-        'estado': h.estadoFormateado,
-        'costoTratamiento': h.costoTratamiento,
-        'imagenUrl': h.imagenUrl ?? '',
-        'asociadoTitular': pacienteInfo?['titularNombre'] ?? '',
-      };
-    }).toList();
+    return historiales.map((h) => toDisplayMap(h)).toList();
   }
 
   Map<String, dynamic> toDisplayMap(HistorialClinico h) {
