@@ -2,24 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import necesario para buscar usuarios
+import 'package:cloud_firestore/cloud_firestore.dart'; 
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/reserva_horas_controller.dart';
 import '../../../../../../models/reserva_hora.dart';
 import '../../../gestion_historial_clinico/shared/dialog/select_asociado_dialog.dart';
 
 class NewReservaDialog {
-  // Parámetro opcional preSelectedDate
   static void show(BuildContext context, {DateTime? preSelectedDate}) {
     
-    // Obtener controlador
     final ReservaHorasController controller = Get.isRegistered<ReservaHorasController>()
         ? Get.find<ReservaHorasController>()
         : Get.put(ReservaHorasController());
 
     // Variables reactivas
     final selectedPaciente = Rxn<Map<String, dynamic>>();
-    // Reemplazamos el controller de texto por una variable para la selección
     final RxString selectedOdontologo = ''.obs; 
     final RxList<Map<String, String>> listaOdontologos = <Map<String, String>>[].obs;
     final RxBool loadingOdontologos = true.obs;
@@ -27,12 +24,12 @@ class NewReservaDialog {
     final motivoController = TextEditingController();
     final isLoading = false.obs;
     
-    // LÓGICA DE FECHA Y HORA INICIAL
+    // Fecha y hora inicial
     final DateTime initialDate = preSelectedDate ?? DateTime.now();
     final selectedDate = Rx<DateTime>(initialDate);
     final selectedTime = Rx<TimeOfDay>(TimeOfDay.fromDateTime(initialDate));
 
-    // Cargar lista de odontólogos desde Firebase
+    // Cargar odontólogos
     Future<void> loadOdontologos() async {
       try {
         loadingOdontologos.value = true;
@@ -42,21 +39,16 @@ class NewReservaDialog {
             .get();
 
         final List<Map<String, String>> odontologos = [];
-        
         for (var doc in snapshot.docs) {
           final data = doc.data();
           final nombre = data['nombre'] ?? '';
           final apellido = data['apellido'] ?? '';
-          // Guardamos el nombre completo para mostrar y usar
           odontologos.add({
             'id': doc.id,
             'nombreCompleto': '$nombre $apellido'.trim(),
           });
         }
-        
         listaOdontologos.value = odontologos;
-        
-        // Si solo hay un odontólogo, seleccionarlo por defecto
         if (odontologos.length == 1) {
           selectedOdontologo.value = odontologos.first['nombreCompleto']!;
         }
@@ -67,10 +59,9 @@ class NewReservaDialog {
       }
     }
 
-    // Iniciar carga de odontólogos al abrir
     loadOdontologos();
 
-    // Guardar Reserva
+    // Guardar Reserva (CON VALIDACIÓN)
     Future<void> saveReserva() async {
       if (selectedPaciente.value == null) {
         _showError('Debes seleccionar un paciente');
@@ -85,9 +76,33 @@ class NewReservaDialog {
         return;
       }
 
-      isLoading.value = true;
-
+      // Formatear hora (HH:mm)
       final horaFormat = '${selectedTime.value.hour.toString().padLeft(2, '0')}:${selectedTime.value.minute.toString().padLeft(2, '0')}';
+
+      // === NUEVA VALIDACIÓN: HORARIO Y DISPONIBILIDAD ===
+      final error = controller.validarReserva(
+        selectedOdontologo.value,
+        selectedDate.value,
+        horaFormat
+      );
+
+      if (error != null) {
+        Get.snackbar(
+          'No disponible',
+          error,
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange.withValues(alpha: 0.9),
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          duration: const Duration(seconds: 4),
+          icon: const Icon(Icons.event_busy, color: Colors.white),
+        );
+        return; // Detener guardado
+      }
+      // ==================================================
+
+      isLoading.value = true;
 
       final fechaCompleta = DateTime(
         selectedDate.value.year,
@@ -102,7 +117,7 @@ class NewReservaDialog {
         pacienteNombre: selectedPaciente.value!['nombre'],
         pacienteTipo: selectedPaciente.value!['tipo'],
         pacienteRut: selectedPaciente.value!['rut'],
-        odontologo: selectedOdontologo.value, // Usamos el valor seleccionado
+        odontologo: selectedOdontologo.value,
         fecha: fechaCompleta,
         hora: horaFormat,
         motivo: motivoController.text.trim(),
@@ -137,7 +152,6 @@ class NewReservaDialog {
               if (!isLoading.value) Navigator.of(context).pop();
               return KeyEventResult.handled;
             } else if (event.logicalKey == LogicalKeyboardKey.enter) {
-              // Evitamos guardar con Enter si el dropdown está abierto o si no hay datos
               if (!isLoading.value) saveReserva();
               return KeyEventResult.handled;
             }
@@ -238,7 +252,6 @@ class NewReservaDialog {
                         child: Obx(() => InkWell(
                           onTap: () async {
                             final now = DateTime.now();
-                            // Evitar crash si selectedDate es anterior a now
                             final initialDateForPicker = selectedDate.value.isBefore(now) 
                                 ? now 
                                 : selectedDate.value;
@@ -327,11 +340,7 @@ class NewReservaDialog {
                         ),
                         child: const Row(
                           children: [
-                            SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
+                            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
                             SizedBox(width: 12),
                             Text('Cargando odontólogos...'),
                           ],
@@ -444,7 +453,6 @@ class NewReservaDialog {
     );
   }
 
-  // Widget Dropdown personalizado que hace juego con _buildTextField
   static Widget _buildDropdown(
     BuildContext context, {
     required String label,

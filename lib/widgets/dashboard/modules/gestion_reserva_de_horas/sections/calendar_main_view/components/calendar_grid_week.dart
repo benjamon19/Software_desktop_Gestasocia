@@ -3,8 +3,9 @@ import 'package:get/get.dart';
 import '../../../../../../../utils/app_theme.dart';
 import '../../../../../../../controllers/reserva_horas_controller.dart';
 import 'calendar_appointment_item.dart';
-import '../../../shared/dialogs/new_reserva_dialog.dart';
+import 'calendar_group_item.dart'; 
 import '../../../shared/dialogs/reserva_detail_dialog.dart';
+import '../../../shared/dialogs/multi_reserva_dialog.dart'; 
 
 class CalendarGridWeek extends StatelessWidget {
   final DateTime selectedDate;
@@ -35,12 +36,14 @@ class CalendarGridWeek extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               const startHour = 8;
-              const endHour = 19;
+              const endHour = 20; 
               const hoursToShow = endHour - startHour;
               const double border = 0.6;
               final double scale = (constraints.maxWidth / 900).clamp(0.75, 1.0);
-              final double availableHeight = constraints.maxHeight - (hoursToShow * border);
-              final double cellHeight = availableHeight / hoursToShow;
+              
+              // Altura exacta sin restar bordes para evitar desfases
+              final double cellHeight = constraints.maxHeight / hoursToShow;
+              
               final double fontSmall = 10 * scale;
 
               return Obx(() {
@@ -105,49 +108,69 @@ class CalendarGridWeek extends StatelessWidget {
                                 children: List.generate(hoursToShow, (hourIndex) {
                                   final currentHour = startHour + hourIndex;
                                   
-                                  final reserva = reservasDelDia.firstWhereOrNull((r) {
+                                  final reservasEnEstaHora = reservasDelDia.where((r) {
                                     final parts = r.hora.split(':');
                                     final h = int.tryParse(parts[0]);
                                     return h == currentHour;
-                                  });
+                                  }).toList();
 
-                                  return Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      mouseCursor: SystemMouseCursors.click,
+                                  final DateTime slotTime = DateTime(
+                                    date.year,
+                                    date.month,
+                                    date.day,
+                                    currentHour,
+                                  );
+
+                                  // Decidir qué widget mostrar
+                                  Widget contentWidget;
+
+                                  if (reservasEnEstaHora.isEmpty) {
+                                    // Caso 0: Vacío -> Botón transparente para crear cita
+                                    contentWidget = Material(
+                                      color: Colors.transparent,
+                                      child: InkWell(
+                                        onTap: () => onTimeSlotTap(slotTime),
+                                        mouseCursor: SystemMouseCursors.click,
+                                        child: Container(),
+                                      ),
+                                    );
+                                  } else if (reservasEnEstaHora.length == 1) {
+                                    // Caso 1: Una sola reserva -> Detalle normal
+                                    final reserva = reservasEnEstaHora.first;
+                                    contentWidget = CalendarAppointmentItem(
+                                      reserva: reserva,
+                                      viewType: 'week',
+                                      onTap: () => ReservaDetailDialog.show(context, reserva),
+                                    );
+                                  } else {
+                                    // Caso 2+: Múltiples reservas -> Grupo
+                                    contentWidget = CalendarGroupItem(
+                                      reservas: reservasEnEstaHora,
                                       onTap: () {
-                                        if (reserva == null) {
-                                          final slot = DateTime(date.year, date.month, date.day, currentHour);
-                                          onTimeSlotTap(slot);
-                                          NewReservaDialog.show(context, preSelectedDate: slot);
-                                        }
+                                        MultiReservaDialog.show(
+                                          context, 
+                                          reservasEnEstaHora, 
+                                          '${currentHour.toString().padLeft(2, '0')}:00'
+                                        );
                                       },
-                                      child: Container(
-                                        height: cellHeight,
-                                        decoration: BoxDecoration(
-                                          border: Border(
-                                            bottom: BorderSide(
-                                              color: Colors.grey.withValues(alpha: 0.3),
-                                              width: border,
-                                            ),
-                                            right: BorderSide(
-                                              color: Colors.grey.withValues(alpha: 0.2),
-                                              width: border,
-                                            ),
-                                          ),
+                                    );
+                                  }
+
+                                  return Container(
+                                    height: cellHeight,
+                                    decoration: BoxDecoration(
+                                      border: Border(
+                                        bottom: BorderSide(
+                                          color: Colors.grey.withValues(alpha: 0.3),
+                                          width: border,
                                         ),
-                                        child: reserva != null 
-                                            ? CalendarAppointmentItem(
-                                                reserva: reserva,
-                                                viewType: 'week',
-                                                onTap: () {
-                                                  // Mostrar diálogo de detalle
-                                                  ReservaDetailDialog.show(context, reserva);
-                                                },
-                                              )
-                                            : null,
+                                        right: BorderSide(
+                                          color: Colors.grey.withValues(alpha: 0.2),
+                                          width: border,
+                                        ),
                                       ),
                                     ),
+                                    child: contentWidget,
                                   );
                                 }),
                               ),

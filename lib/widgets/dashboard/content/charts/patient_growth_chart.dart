@@ -1,189 +1,246 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart'; 
+import 'dart:math' as math;
+import '../../../../controllers/asociados_controller.dart';
 
 class PatientGrowthChart extends StatelessWidget {
-  const PatientGrowthChart({super.key});
+  final bool isCompact;
 
-  // Datos más realistas y detallados para una clínica dental
-  final List<FlSpot> _patientData = const [
-    FlSpot(0, 1142), // Enero
-    FlSpot(1, 1168), // Febrero  
-    FlSpot(2, 1205), // Marzo
-    FlSpot(3, 1234), // Abril
-    FlSpot(4, 1267), // Mayo
-    FlSpot(5, 1284), // Junio (actual)
-  ];
-
-  final List<FlSpot> _targetData = const [
-    FlSpot(0, 1150), // Meta Enero
-    FlSpot(1, 1180), // Meta Febrero
-    FlSpot(2, 1210), // Meta Marzo
-    FlSpot(3, 1240), // Meta Abril
-    FlSpot(4, 1270), // Meta Mayo
-    FlSpot(5, 1300), // Meta Junio
-  ];
+  const PatientGrowthChart({super.key, this.isCompact = false});
 
   @override
   Widget build(BuildContext context) {
+    final AsociadosController controller = Get.find<AsociadosController>();
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Responsive breakpoints
-        final isLarge = constraints.maxWidth > 400;
-        final isMedium = constraints.maxWidth > 280;
-        final isSmall = constraints.maxHeight < 200;
+        final double width = constraints.maxWidth;
+        final double height = constraints.maxHeight;
+        final double heightThreshold = width > 400 ? 140 : 180;
+        final bool compactMode = isCompact || height < heightThreshold || width < 250;
+        final bool showMetrics = !compactMode && height > 160;
+        final bool largeWidth = width > 400;
+        final bool mediumWidth = width > 280;
         
-        return Column(
-          children: [
-            // Header con métricas - solo si hay espacio
-            if (!isSmall)
-              Padding(
-                padding: EdgeInsets.only(bottom: isLarge ? 12 : 8),
-                child: _buildMetricsHeader(isLarge, isMedium),
-              ),
-            
-            // Gráfico principal
-            Expanded(
-              child: LineChart(
-                LineChartData(
-                  lineBarsData: [
-                    // Línea de pacientes reales
-                    LineChartBarData(
-                      spots: _patientData,
-                      isCurved: true,
-                      color: const Color(0xFF4299E1),
-                      barWidth: isMedium ? 4 : 3,
-                      belowBarData: BarAreaData(
-                        show: true, 
-                        gradient: const LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Color.fromARGB(102, 66, 153, 225), // 0xFF4299E1 with 0.4 alpha
-                            Color.fromARGB(26, 66, 153, 225), // 0xFF4299E1 with 0.1 alpha
-                            Colors.transparent,
-                          ],
+        final double barWidth = compactMode ? 2 : (mediumWidth ? 4 : 3);
+        final double dotRadius = compactMode ? 2 : 4; // Ajustado ligeramente
+        final double fontSizeMetric = compactMode ? 12 : (largeWidth ? 18 : 16);
+        final double bottomPadding = compactMode ? 4 : 12;
+
+        return Obx(() {
+          final growthData = controller.patientGrowthLast6Months;
+
+          if (growthData.isEmpty) {
+            return const Center(child: Text("Sin datos de crecimiento"));
+          }
+
+          final List<FlSpot> spots = [];
+          for (int i = 0; i < growthData.length; i++) {
+            spots.add(FlSpot(i.toDouble(), growthData[i].toDouble()));
+          }
+
+          final List<FlSpot> trendSpots = [];
+          if (growthData.length >= 2) {
+            final double x0 = 0;
+            final double y0 = growthData.first.toDouble();
+            final double x1 = (growthData.length - 1).toDouble();
+            final double y1 = growthData.last.toDouble();
+            trendSpots.add(FlSpot(x0, y0));
+            trendSpots.add(FlSpot(x1, y1));
+          }
+
+          double minY = growthData.reduce(math.min).toDouble();
+          double maxY = growthData.reduce(math.max).toDouble();
+          
+          if (minY > 10) {
+            minY -= 10;
+          } else {
+            minY = 0;
+          }
+
+          maxY += (maxY * 0.15);
+          double interval = (maxY - minY) / 3;
+          if (interval <= 0) interval = 1.0;
+
+          String growthPercentage = "0%";
+          Color growthColor = Colors.grey;
+          if (growthData.length >= 2) {
+            final current = growthData.last;
+            final previous = growthData[growthData.length - 2];
+            if (previous > 0) {
+              final growth = ((current - previous) / previous) * 100;
+              growthPercentage = "${growth >= 0 ? '+' : ''}${growth.toStringAsFixed(1)}%";
+              growthColor = growth >= 0 ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+            }
+          }
+
+          return Column(
+            children: [
+              // Métricas superiores
+              if (showMetrics)
+                Padding(
+                  padding: EdgeInsets.only(bottom: bottomPadding),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildMetric("Total", growthData.last.toString(), const Color(0xFF4299E1), fontSizeMetric),
+                      _buildMetric("Mensual", growthPercentage, growthColor, fontSizeMetric),
+                    ],
+                  ),
+                ),
+
+              Expanded(
+                child: LineChart(
+                  LineChartData(
+                    lineBarsData: [
+                      // Línea principal de datos
+                      LineChartBarData(
+                        spots: spots,
+                        isCurved: true,
+                        color: const Color(0xFF4299E1),
+                        barWidth: barWidth,
+                        belowBarData: BarAreaData(
+                          show: !compactMode,
+                          gradient: const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Color.fromARGB(80, 66, 153, 225),
+                              Color.fromARGB(0, 66, 153, 225),
+                            ],
+                          ),
+                        ),
+                        dotData: FlDotData(
+                          show: !compactMode || width > 350, 
+                          getDotPainter: (spot, percent, barData, index) {
+                            return FlDotCirclePainter(
+                              radius: dotRadius,
+                              color: const Color(0xFF4299E1),
+                              strokeWidth: 2,
+                              strokeColor: Colors.white,
+                            );
+                          },
                         ),
                       ),
-                      dotData: FlDotData(
-                        show: isMedium,
-                        getDotPainter: (spot, percent, barData, index) => 
-                          FlDotCirclePainter(
-                            radius: isMedium ? 6 : 4, 
-                            color: const Color(0xFF4299E1), 
-                            strokeWidth: 3, 
-                            strokeColor: Colors.white
-                          )
-                      ),
-                    ),
-                    // Línea de meta (punteada) - solo si hay espacio
-                    if (isMedium)
+                      // Línea de tendencia (punteada)
                       LineChartBarData(
-                        spots: _targetData,
-                        isCurved: true,
-                        color: const Color(0xFF10B981),
+                        spots: trendSpots,
+                        isCurved: false,
+                        color: const Color(0xFF10B981).withValues(alpha: 0.5),
                         barWidth: 2,
                         dashArray: [5, 5],
-                        dotData: const FlDotData(
-                          show: false,
-                        ),
+                        dotData: const FlDotData(show: false),
                       ),
-                  ],
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: isMedium,
-                        reservedSize: isLarge ? 60 : 45,
-                        interval: 50,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            '${(value / 1000).toStringAsFixed(1)}K',
-                            style: TextStyle(
-                              fontSize: isLarge ? 11 : 9, 
-                              color: Colors.grey,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
-                          if (value.toInt() >= 0 && value.toInt() < months.length) {
-                            return Padding(
-                              padding: EdgeInsets.only(top: isLarge ? 8 : 4),
-                              child: Text(
-                                months[value.toInt()],
-                                style: TextStyle(
-                                  fontSize: isLarge ? 12 : 10, 
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                    ],
+
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: !compactMode,
+                          reservedSize: 30,
+                          interval: interval,
+                          getTitlesWidget: (value, meta) {
+                            return Text(
+                              value.toInt().toString(),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                color: Colors.grey,
                               ),
                             );
-                          }
-                          return const Text('');
-                        },
+                          },
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          interval: 1,
+                          getTitlesWidget: (value, meta) {
+                            final int index = value.toInt();
+                            if (index >= 0 && index < 6) {
+                              final date = DateTime.now().subtract(
+                                Duration(days: 30 * (5 - index)),
+                              );
+                              final monthName = DateFormat('MMM', 'es').format(date);
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  monthName,
+                                  style: TextStyle(
+                                    fontSize: compactMode ? 9 : 10,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              );
+                            }
+                            return const Text('');
+                          },
+                        ),
+                      ),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    ),
+
+                    borderData: FlBorderData(show: false),
+
+                    gridData: FlGridData(
+                      show: !compactMode, 
+                      drawHorizontalLine: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: interval,
+                      getDrawingHorizontalLine: (value) => FlLine(
+                        color: Colors.grey.withValues(alpha: 0.1),
+                        strokeWidth: 1,
                       ),
                     ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  gridData: FlGridData(
-                    show: isMedium,
-                    drawHorizontalLine: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: 50,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: Colors.grey.withValues(alpha: 0.15),
-                      strokeWidth: 1,
+
+                    minY: minY,
+                    maxY: maxY,
+
+                    lineTouchData: LineTouchData(
+                      enabled: width > 200, 
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipColor: (spot) => Colors.black.withValues(alpha: 0.8),
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((spot) {
+                            return LineTooltipItem(
+                              '${spot.y.toInt()}',
+                              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            );
+                          }).toList();
+                        },
+                      ),
+                      handleBuiltInTouches: true,
                     ),
                   ),
-                  minY: 1100,
-                  maxY: 1320,
-                  lineTouchData: LineTouchData(enabled: false),
                 ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
+        });
       },
     );
   }
 
-  Widget _buildMetricsHeader(bool isLarge, bool isMedium) {
-    if (!isMedium) return const SizedBox.shrink();
-    
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildMetric("Actual", "1,284", const Color(0xFF4299E1), isLarge),
-        if (isLarge) _buildMetric("Meta", "1,300", const Color(0xFF10B981), isLarge),
-        _buildMetric("Crecimiento", "+8.9%", const Color(0xFF6366F1), isLarge),
-      ],
-    );
-  }
-
-  Widget _buildMetric(String label, String value, Color color, bool isLarge) {
+  Widget _buildMetric(String label, String value, Color color, double fontSize) {
     return Column(
       children: [
         Text(
           value,
           style: TextStyle(
-            fontSize: isLarge ? 16 : 14,
-            fontWeight: FontWeight.bold,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w700,
             color: color,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: TextStyle(
-            fontSize: isLarge ? 10 : 9,
+          style: const TextStyle(
+            fontSize: 11,
             color: Colors.grey,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
