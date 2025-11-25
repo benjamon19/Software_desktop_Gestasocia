@@ -109,7 +109,7 @@ class ReservaHorasController extends GetxController {
     });
 
     if (conflicto != null) {
-      return 'El $odontologoNombre ya tiene una cita a las $horaStr.';
+      return 'El odontólogo $odontologoNombre ya tiene una cita a las $horaStr.';
     }
 
     return null;

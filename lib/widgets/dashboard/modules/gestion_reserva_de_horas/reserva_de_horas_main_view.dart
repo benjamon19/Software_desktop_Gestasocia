@@ -29,7 +29,6 @@ class _ReservaDeHorasMainViewState extends State<ReservaDeHorasMainView> {
         margin: const EdgeInsets.all(16),
         borderRadius: 8,
         duration: const Duration(seconds: 3),
-        icon: const Icon(Icons.warning_amber, color: Colors.white),
       );
       return; 
     }

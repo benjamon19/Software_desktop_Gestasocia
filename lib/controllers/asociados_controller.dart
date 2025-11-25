@@ -212,7 +212,7 @@ class AsociadosController extends GetxController {
       selectedAsociado.value = asociadoConId;
       searchQuery.value = '';
 
-      _showSuccessSnackbar("Éxito!", "Asociado creado correctamente");
+      _showSuccessSnackbar("Éxito", "Asociado creado correctamente");
       
       _registrarCreacion(docRef.id, asociadoConId);
       
@@ -347,7 +347,7 @@ class AsociadosController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 50));
       selectedAsociado.value = asociadoActualizado;
 
-      _showSuccessSnackbar("Éxito!", "Asociado actualizado correctamente");
+      _showSuccessSnackbar("Éxito", "Asociado actualizado correctamente");
       
       _registrarEdicion(asociadoAnterior, asociadoActualizado);
       
@@ -479,7 +479,7 @@ class AsociadosController extends GetxController {
       }
       selectedAsociado.value = asociadoActualizado;
 
-      _showSuccessSnackbar("Éxito!", "Carga familiar agregada correctamente");
+      _showSuccessSnackbar("Éxito", "Carga familiar agregada correctamente");
       
       _registrarCargaAgregada(selectedAsociado.value!.id!, cargaConId);
       

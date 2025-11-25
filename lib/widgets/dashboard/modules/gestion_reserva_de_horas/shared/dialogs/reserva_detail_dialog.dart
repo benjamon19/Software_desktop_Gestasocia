@@ -60,7 +60,7 @@ class ReservaDetailDialog {
 
       // Mensaje personalizado
       final String mensaje = Uri.encodeComponent(
-        'Hola ${reserva.pacienteNombre}, le escribimos para confirmar su cita dental para el día ${reserva.fechaFormateada} a las ${reserva.hora} con el/la ${reserva.odontologo}. \n\nPor favor responda este mensaje para confirmar su asistencia.'
+        'Hola ${reserva.pacienteNombre}, le escribimos para confirmar su cita dental para el día ${reserva.fechaFormateada} a las ${reserva.hora} con el/la odontólogo(a) ${reserva.odontologo}. \n\nPor favor responda este mensaje para confirmar su asistencia.'
       );
 
       final Uri url = Uri.parse("https://wa.me/$phone?text=$mensaje");
@@ -172,7 +172,7 @@ class ReservaDetailDialog {
               ),
               const SizedBox(width: 16),
               Text(
-                'ESC volver • Enter guardar',
+                'ESC para cancelar • Enter para guardar',
                 style: TextStyle(
                   color: AppTheme.getTextSecondary(context),
                   fontSize: 12,

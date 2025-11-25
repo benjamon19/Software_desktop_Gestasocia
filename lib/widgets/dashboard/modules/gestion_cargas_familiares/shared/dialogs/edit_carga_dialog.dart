@@ -26,6 +26,10 @@ class EditCargaDialog {
       if (_validateFields(
         nombreController.text,
         apellidoController.text,
+        emailController.text,
+        telefonoController.text,
+        direccionController.text,
+        selectedDate.value,
       )) {
         isLoading.value = true;
         
@@ -110,6 +114,7 @@ class EditCargaDialog {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // RUT (Solo Lectura)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -119,7 +124,7 @@ class EditCargaDialog {
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.badge, color: const Color(0xFF10B981)),
+                        const Icon(Icons.badge, color: Color(0xFF10B981)),
                         const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,6 +152,7 @@ class EditCargaDialog {
                   
                   const SizedBox(height: 20),
                   
+                  // Información Personal
                   Text(
                     'Información Personal',
                     style: TextStyle(
@@ -159,29 +165,36 @@ class EditCargaDialog {
                   
                   Row(
                     children: [
-                      Expanded(child: _buildTextField(context, 'Nombre', Icons.person, nombreController)),
+                      Expanded(child: _buildTextField(
+                        context, 'Nombre', Icons.person, nombreController, 
+                        hintText: 'Ej: Sofía'
+                      )),
                       const SizedBox(width: 16),
-                      Expanded(child: _buildTextField(context, 'Apellido', Icons.person_outline, apellidoController)),
+                      Expanded(child: _buildTextField(
+                        context, 'Apellido', Icons.person_outline, apellidoController,
+                        hintText: 'Ej: González'
+                      )),
                     ],
                   ),
                   const SizedBox(height: 16),
                   
                   Row(
                     children: [
-                      Expanded(child: _buildDatePicker(context, selectedDate, 'Fecha de Nacimiento')),
-                      const SizedBox(width: 16),
                       Expanded(child: Obx(() => _buildDropdown(
                         context, 
                         'Parentesco', 
-                        ['Hijo', 'Hija', 'Cónyuge'], 
+                        ['Hijo', 'Hija', 'Cónyuge', 'Padre', 'Madre'], 
                         Icons.family_restroom,
                         selectedParentesco,
                       ))),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildDatePicker(context, selectedDate, 'Fecha Nacimiento')),
                     ],
                   ),
                   
                   const SizedBox(height: 24),
                   
+                  // Información de Contacto (Opcional)
                   Text(
                     'Información de Contacto',
                     style: TextStyle(
@@ -192,11 +205,23 @@ class EditCargaDialog {
                   ),
                   const SizedBox(height: 16),
                   
-                  _buildTextField(context, 'Email (Opcional)', Icons.email, emailController),
+                  _buildTextField(
+                    context, 'Email (Opcional)', Icons.email, emailController,
+                    hintText: 'Ej: sofia@email.com',
+                    keyboardType: TextInputType.emailAddress
+                  ),
                   const SizedBox(height: 16),
-                  _buildTextField(context, 'Teléfono (Opcional)', Icons.phone, telefonoController),
+                  _buildTextField(
+                    context, 'Teléfono (Opcional)', Icons.phone, telefonoController,
+                    hintText: 'Ej: 9 1234 5678',
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
                   const SizedBox(height: 16),
-                  _buildTextField(context, 'Dirección (Opcional)', Icons.location_on, direccionController),
+                  _buildTextField(
+                    context, 'Dirección (Opcional)', Icons.location_on, direccionController,
+                    hintText: 'Ej: Av. Siempre Viva 742',
+                  ),
                 ],
               ),
             ),
@@ -236,48 +261,100 @@ class EditCargaDialog {
     );
   }
 
-  static bool _validateFields(String nombre, String apellido) {
-    if (nombre.trim().isEmpty) {
-      Get.snackbar('Error', 'El nombre es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+  // --- VALIDACIONES ROBUSTAS ---
+  static bool _validateFields(
+    String nombre, 
+    String apellido,
+    String email,
+    String telefono,
+    String direccion,
+    DateTime? fechaNacimiento,
+  ) {
+    if (nombre.trim().length < 2) {
+      _showSnack('El nombre debe tener al menos 2 caracteres');
       return false;
     }
     
-    if (apellido.trim().isEmpty) {
-      Get.snackbar('Error', 'El apellido es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    if (apellido.trim().length < 2) {
+      _showSnack('El apellido debe tener al menos 2 caracteres');
+      return false;
+    }
+
+    // Validaciones opcionales solo si se ingresó texto
+    if (email.trim().isNotEmpty && !GetUtils.isEmail(email.trim())) {
+      _showSnack('El formato del email no es válido');
+      return false;
+    }
+
+    if (telefono.trim().isNotEmpty && telefono.trim().length < 8) {
+      _showSnack('El teléfono debe tener al menos 8 dígitos');
+      return false;
+    }
+
+    if (direccion.trim().isNotEmpty && direccion.trim().length < 5) {
+      _showSnack('La dirección debe ser más específica');
+      return false;
+    }
+
+    // Validación de Fecha
+    if (fechaNacimiento == null) {
+      _showSnack('La fecha de nacimiento es requerida');
+      return false;
+    }
+    
+    if (fechaNacimiento.isAfter(DateTime.now())) {
+      _showSnack('La fecha de nacimiento no puede estar en el futuro');
       return false;
     }
     
     return true;
   }
 
-  static Widget _buildTextField(BuildContext context, String label, IconData icon, TextEditingController controller) {
+  static void _showSnack(String msg) {
+    Get.snackbar('Atención', msg,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.orange.withValues(alpha: 0.9),
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  // --- WIDGETS AUXILIARES ---
+
+  static Widget _buildTextField(
+    BuildContext context, 
+    String label, 
+    IconData icon, 
+    TextEditingController controller, {
+    String? hintText,
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
     return TextField(
       controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       style: TextStyle(color: AppTheme.getTextPrimary(context)),
       decoration: InputDecoration(
         labelText: label,
+        hintText: hintText,
+        hintStyle: TextStyle(color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5), fontSize: 13),
         prefixIcon: Icon(icon, color: const Color(0xFF10B981)),
         labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF10B981), width: 1),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
         ),
+        filled: true,
+        fillColor: AppTheme.getInputBackground(context),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       ),
     );
   }
@@ -306,26 +383,39 @@ class EditCargaDialog {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           border: Border.all(color: AppTheme.getBorderLight(context)),
           borderRadius: BorderRadius.circular(8),
+          color: AppTheme.getInputBackground(context),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today, color: const Color(0xFF10B981)),
+            const Icon(Icons.calendar_today, color: Color(0xFF10B981), size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                selectedDate.value != null
-                    ? '${selectedDate.value!.day.toString().padLeft(2, '0')}/${selectedDate.value!.month.toString().padLeft(2, '0')}/${selectedDate.value!.year}'
-                    : label,
-                style: TextStyle(
-                  color: selectedDate.value != null 
-                      ? AppTheme.getTextPrimary(context)
-                      : AppTheme.getTextSecondary(context),
-                  fontSize: 16,
-                ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (selectedDate.value != null)
+                    Text(
+                      'Nacimiento',
+                      style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
+                    ),
+                  Text(
+                    selectedDate.value != null
+                        ? '${selectedDate.value!.day}/${selectedDate.value!.month}/${selectedDate.value!.year}'
+                        : label,
+                    style: TextStyle(
+                      color: selectedDate.value != null 
+                          ? AppTheme.getTextPrimary(context)
+                          : AppTheme.getTextSecondary(context),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -335,36 +425,33 @@ class EditCargaDialog {
   }
 
   static Widget _buildDropdown(BuildContext context, String label, List<String> items, IconData icon, RxString selectedValue) {
-    if (!items.contains(selectedValue.value)) {
-      selectedValue.value = items.first;
-    }
+    if (!items.contains(selectedValue.value)) selectedValue.value = items.first;
+    
     return SizedBox(
       width: double.infinity,
       child: DropdownButtonFormField<String>(
         initialValue: selectedValue.value,
         items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
         onChanged: (value) {
-          if (value != null) {
-            selectedValue.value = value;
-          }
+          if (value != null) selectedValue.value = value;
         },
-        style: TextStyle(color: AppTheme.getTextPrimary(context)),
+        style: TextStyle(color: AppTheme.getTextPrimary(context), fontSize: 15),
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: const Color(0xFF10B981)),
           labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFF10B981), width: 1),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
           ),
+          filled: true,
+          fillColor: AppTheme.getInputBackground(context),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         ),
         dropdownColor: AppTheme.getSurfaceColor(context),
         isExpanded: true,

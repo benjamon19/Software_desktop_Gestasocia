@@ -16,10 +16,10 @@ class ConfiguracionController extends GetxController {
   RxBool enableAnimations = true.obs;
   
   // Información del sistema
-  RxString appVersion = '1.0.0'.obs;
+  RxString appVersion = '1.0.1'.obs;
   RxString buildNumber = '1'.obs;
-  RxString flutterVersion = '3.24.0'.obs;
-  RxString buildDate = '28/06/2025'.obs;
+  RxString flutterVersion = '3.35.0'.obs;
+  RxString buildDate = '25-11-2025'.obs;
 
   @override
   void onInit() {

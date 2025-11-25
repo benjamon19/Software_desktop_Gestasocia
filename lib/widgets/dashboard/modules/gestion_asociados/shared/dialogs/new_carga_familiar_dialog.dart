@@ -6,18 +6,21 @@ import '../../../../../../controllers/asociados_controller.dart';
 
 class NewCargaFamiliarDialog {
   static void show(BuildContext context, String asociadoId, String titularNombre) {
-    // Obtener el controller de asociados
     final AsociadosController controller = Get.find<AsociadosController>();
+    
     // Controladores de texto
     final nombreController = TextEditingController();
     final apellidoController = TextEditingController();
     final rutController = TextEditingController();
+    
+    // Variables reactivas
     final selectedParentesco = 'Hijo'.obs;
     final selectedDate = Rxn<DateTime>();
     final isLoading = false.obs;
 
     // Función para crear carga familiar
     Future<void> createCargaFamiliarAction() async {
+      // 1. Validar campos antes de enviar
       if (_validateFields(
         nombreController.text,
         apellidoController.text,
@@ -26,13 +29,14 @@ class NewCargaFamiliarDialog {
       )) {
         isLoading.value = true;
         
-        // Llamar al controller de asociados para crear la carga familiar
+        // 2. Crear la carga vinculada al ID del asociado (comparte su SAP internamente)
         final success = await controller.createCargaFamiliar(
           nombre: nombreController.text.trim(),
           apellido: apellidoController.text.trim(),
           rut: rutController.text.trim(),
           parentesco: selectedParentesco.value,
           fechaNacimiento: selectedDate.value!,
+          // No generamos SAP ni código de barras aquí, hereda la entidad del titular
         );
         
         isLoading.value = false;
@@ -49,17 +53,12 @@ class NewCargaFamiliarDialog {
       builder: (context) => Focus(
         autofocus: true,
         onKeyEvent: (node, event) {
-          // Manejar teclas ESC y Enter
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.escape) {
-              if (!isLoading.value) {
-                Navigator.of(context).pop();
-              }
+              if (!isLoading.value) Navigator.of(context).pop();
               return KeyEventResult.handled;
             } else if (event.logicalKey == LogicalKeyboardKey.enter) {
-              if (!isLoading.value) {
-                createCargaFamiliarAction();
-              }
+              if (!isLoading.value) createCargaFamiliarAction();
               return KeyEventResult.handled;
             }
           }
@@ -67,9 +66,7 @@ class NewCargaFamiliarDialog {
         },
         child: AlertDialog(
           backgroundColor: AppTheme.getSurfaceColor(context),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           title: Row(
             children: [
               const Icon(
@@ -90,7 +87,7 @@ class NewCargaFamiliarDialog {
                       ),
                     ),
                     Text(
-                      'Para: $titularNombre',
+                      'Titular: $titularNombre', // Feedback visual del vínculo
                       style: TextStyle(
                         color: AppTheme.getTextSecondary(context),
                         fontSize: 12,
@@ -106,7 +103,6 @@ class NewCargaFamiliarDialog {
                 style: TextStyle(
                   color: AppTheme.getTextSecondary(context),
                   fontSize: 12,
-                  fontWeight: FontWeight.normal,
                 ),
               ),
             ],
@@ -118,7 +114,6 @@ class NewCargaFamiliarDialog {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Información Personal
                   Text(
                     'Información Básica',
                     style: TextStyle(
@@ -131,73 +126,66 @@ class NewCargaFamiliarDialog {
                   
                   Row(
                     children: [
-                      Expanded(child: _buildTextField(context, 'Nombre', Icons.person, nombreController)),
+                      Expanded(child: _buildTextField(
+                        context, 
+                        'Nombre', 
+                        Icons.person, 
+                        nombreController,
+                        hintText: 'Ej: Benjamín',
+                      )),
                       const SizedBox(width: 16),
-                      Expanded(child: _buildTextField(context, 'Apellido', Icons.person_outline, apellidoController)),
+                      Expanded(child: _buildTextField(
+                        context, 
+                        'Apellido', 
+                        Icons.person_outline, 
+                        apellidoController,
+                        hintText: 'Ej: Vicuña',
+                      )),
                     ],
                   ),
                   const SizedBox(height: 16),
                   
                   _buildRutTextField(context, rutController),
+                  
                   const SizedBox(height: 16),
                   
                   Row(
                     children: [
-                      // ⭐ PARENTESCO CORREGIDO - Solo Hijo, Hija, Cónyuge
                       Expanded(child: Obx(() => _buildDropdown(
                         context, 
                         'Parentesco', 
-                        [
-                          'Hijo',
-                          'Hija',
-                          'Cónyuge',
-                        ], 
+                        ['Hijo', 'Hija', 'Cónyuge'], 
                         Icons.family_restroom,
                         selectedParentesco,
                       ))),
                       const SizedBox(width: 16),
-                      Expanded(child: _buildDatePicker(context, selectedDate, 'Fecha de Nacimiento')),
+                      Expanded(child: _buildDatePicker(context, selectedDate, 'Fecha Nacimiento')),
                     ],
                   ),
                   
                   const SizedBox(height: 20),
                   
-                  // Información adicional
+                  // Aviso informativo
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF10B981).withValues(alpha: 0.05),
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                        color: const Color(0xFF10B981).withValues(alpha: 0.3),
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.info_outline,
-                              color: Color(0xFF10B981),
-                              size: 20,
+                        const Icon(Icons.info_outline, color: Color(0xFF10B981), size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'La carga se asociará automáticamente al plan y SAP de $titularNombre.',
+                            style: TextStyle(
+                              color: AppTheme.getTextPrimary(context),
+                              fontSize: 12,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Información',
-                              style: TextStyle(
-                                color: AppTheme.getTextPrimary(context),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'La carga familiar será asociada automáticamente al plan del titular. Podrás agregar información extra después de crearla.',
-                          style: TextStyle(
-                            color: AppTheme.getTextSecondary(context),
-                            fontSize: 12,
                           ),
                         ),
                       ],
@@ -212,9 +200,7 @@ class NewCargaFamiliarDialog {
               onPressed: isLoading.value ? null : () => Navigator.of(context).pop(),
               child: Text(
                 'Cancelar',
-                style: TextStyle(
-                  color: AppTheme.getTextSecondary(context),
-                ),
+                style: TextStyle(color: AppTheme.getTextSecondary(context)),
               ),
             ),
             Obx(() => ElevatedButton(
@@ -234,7 +220,7 @@ class NewCargaFamiliarDialog {
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Text('Agregar Carga Familiar'),
+                : const Text('Agregar Carga'),
             )),
           ],
         ),
@@ -242,71 +228,87 @@ class NewCargaFamiliarDialog {
     );
   }
 
+  // --- VALIDACIONES ---
   static bool _validateFields(
     String nombre,
     String apellido, 
     String rut,
     DateTime? fechaNacimiento,
   ) {
-    if (nombre.trim().isEmpty) {
-      Get.snackbar('Error', 'El nombre es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    if (nombre.trim().length < 2) {
+      _showSnack('El nombre debe tener al menos 2 caracteres');
       return false;
     }
     
-    if (apellido.trim().isEmpty) {
-      Get.snackbar('Error', 'El apellido es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    if (apellido.trim().length < 2) {
+      _showSnack('El apellido debe tener al menos 2 caracteres');
       return false;
     }
     
-    if (rut.trim().isEmpty) {
-      Get.snackbar('Error', 'El RUT es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    if (rut.trim().length < 8) {
+      _showSnack('El RUT ingresado parece incompleto');
       return false;
     }
     
     if (fechaNacimiento == null) {
-      Get.snackbar('Error', 'La fecha de nacimiento es requerida',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+      _showSnack('La fecha de nacimiento es requerida');
+      return false;
+    }
+
+    if (fechaNacimiento.isAfter(DateTime.now())) {
+      _showSnack('La fecha de nacimiento no puede ser futura');
       return false;
     }
     
     return true;
   }
 
-  static Widget _buildTextField(BuildContext context, String label, IconData icon, TextEditingController controller) {
+  static void _showSnack(String msg) {
+    Get.snackbar(
+      'Atención', 
+      msg,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.orange.withValues(alpha: 0.9),
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  // --- WIDGETS ---
+
+  static Widget _buildTextField(
+    BuildContext context, 
+    String label, 
+    IconData icon, 
+    TextEditingController controller, {
+    String? hintText,
+  }) {
     return TextField(
       controller: controller,
       style: TextStyle(color: AppTheme.getTextPrimary(context)),
       decoration: InputDecoration(
         labelText: label,
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5),
+          fontSize: 13,
+        ),
         prefixIcon: Icon(icon, color: const Color(0xFF10B981)),
         labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
         ),
+        filled: true,
+        fillColor: AppTheme.getInputBackground(context),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       ),
     );
   }
@@ -323,22 +325,21 @@ class NewCargaFamiliarDialog {
       ],
       decoration: InputDecoration(
         labelText: 'RUT',
-        hintText: '12345678-9',
+        hintText: 'Ej: 12345678-9',
+        hintStyle: TextStyle(color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5)),
         prefixIcon: const Icon(Icons.badge, color: Color(0xFF10B981)),
         labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
-        hintStyle: TextStyle(color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
         ),
+        filled: true,
+        fillColor: AppTheme.getInputBackground(context),
       ),
     );
   }
@@ -348,7 +349,7 @@ class NewCargaFamiliarDialog {
       onTap: () async {
         final DateTime? picked = await showDatePicker(
           context: context,
-          initialDate: selectedDate.value ?? DateTime(2010),
+          initialDate: selectedDate.value ?? DateTime(2015),
           firstDate: DateTime(1900),
           lastDate: DateTime.now(),
           builder: (context, child) {
@@ -356,6 +357,9 @@ class NewCargaFamiliarDialog {
               data: Theme.of(context).copyWith(
                 colorScheme: Theme.of(context).colorScheme.copyWith(
                   primary: const Color(0xFF10B981),
+                  onPrimary: Colors.white,
+                  surface: AppTheme.getSurfaceColor(context),
+                  onSurface: AppTheme.getTextPrimary(context),
                 ),
               ),
               child: child!,
@@ -367,26 +371,39 @@ class NewCargaFamiliarDialog {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           border: Border.all(color: AppTheme.getBorderLight(context)),
           borderRadius: BorderRadius.circular(8),
+          color: AppTheme.getInputBackground(context),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today, color: Color(0xFF10B981)),
+            const Icon(Icons.calendar_today, color: Color(0xFF10B981), size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                selectedDate.value != null
-                    ? '${selectedDate.value!.day.toString().padLeft(2, '0')}/${selectedDate.value!.month.toString().padLeft(2, '0')}/${selectedDate.value!.year}'
-                    : label,
-                style: TextStyle(
-                  color: selectedDate.value != null 
-                      ? AppTheme.getTextPrimary(context)
-                      : AppTheme.getTextSecondary(context),
-                  fontSize: 16,
-                ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (selectedDate.value != null)
+                    Text(
+                      'Nacimiento',
+                      style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
+                    ),
+                  Text(
+                    selectedDate.value != null
+                        ? '${selectedDate.value!.day}/${selectedDate.value!.month}/${selectedDate.value!.year}'
+                        : label,
+                    style: TextStyle(
+                      color: selectedDate.value != null 
+                          ? AppTheme.getTextPrimary(context)
+                          : AppTheme.getTextSecondary(context),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -396,42 +413,40 @@ class NewCargaFamiliarDialog {
   }
 
   static Widget _buildDropdown(BuildContext context, String label, List<String> items, IconData icon, RxString selectedValue) {
-    return SizedBox(
-      width: double.infinity,
-      child: DropdownButtonFormField<String>(
-        initialValue: selectedValue.value,
-        items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
-        onChanged: (value) {
-          if (value != null) {
-            selectedValue.value = value;
-          }
-        },
-        style: TextStyle(color: AppTheme.getTextPrimary(context)),
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF10B981)),
-          labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: Color(0xFF10B981), width: 2),
-          ),
+    // Asegurar valor por defecto válido
+    if (!items.contains(selectedValue.value)) selectedValue.value = items.first;
+
+    return DropdownButtonFormField<String>(
+      initialValue: selectedValue.value,
+      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+      onChanged: (value) {
+        if (value != null) selectedValue.value = value;
+      },
+      style: TextStyle(color: AppTheme.getTextPrimary(context), fontSize: 15),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: const Color(0xFF10B981)),
+        labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
         ),
-        dropdownColor: AppTheme.getSurfaceColor(context),
-        isExpanded: true,
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(8)),
+          borderSide: BorderSide(color: Color(0xFF10B981), width: 2),
+        ),
+        filled: true,
+        fillColor: AppTheme.getInputBackground(context),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       ),
+      dropdownColor: AppTheme.getSurfaceColor(context),
+      isExpanded: true,
     );
   }
 }
 
-// Formateador para RUT chileno
+// Formateador de RUT (Sin cambios, solo incluido para integridad)
 class _RutFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -439,10 +454,7 @@ class _RutFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     String text = newValue.text.replaceAll('-', '');
-    
-    if (text.length <= 1) {
-      return newValue;
-    }
+    if (text.length <= 1) return newValue;
     
     String formatted = '';
     if (text.length > 1) {
@@ -450,7 +462,6 @@ class _RutFormatter extends TextInputFormatter {
       String dv = text.substring(text.length - 1);
       formatted = '$body-$dv';
     }
-    
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
