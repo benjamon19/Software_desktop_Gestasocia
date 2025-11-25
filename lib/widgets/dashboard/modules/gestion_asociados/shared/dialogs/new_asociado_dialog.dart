@@ -16,7 +16,7 @@ class NewAsociadoDialog {
     final telefonoController = TextEditingController();
     final direccionController = TextEditingController();
     
-    // Variables reactivas - VALORES CORREGIDOS
+    // Variables reactivas
     final selectedEstadoCivil = 'Soltero'.obs;
     final selectedPlan = 'Asociado'.obs;
     final selectedDate = Rxn<DateTime>();
@@ -24,6 +24,7 @@ class NewAsociadoDialog {
 
     // Función para crear asociado
     Future<void> createAsociadoAction() async {
+      // 1. Validar todos los campos antes de enviar
       if (_validateFields(
         nombreController.text,
         apellidoController.text,
@@ -35,6 +36,9 @@ class NewAsociadoDialog {
       )) {
         isLoading.value = true;
         
+        // 2. Enviar datos al controlador
+        // NOTA: La generación del SAP (código de 5 dígitos) debe realizarse
+        // dentro de este método 'createAsociado' en tu AsociadosController.
         final success = await controller.createAsociado(
           nombre: nombreController.text,
           apellido: apellidoController.text,
@@ -61,7 +65,7 @@ class NewAsociadoDialog {
       builder: (context) => Focus(
         autofocus: true,
         onKeyEvent: (node, event) {
-          // Manejar teclas ESC y Enter
+          // Manejar teclas ESC y Enter para mejorar UX
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.escape) {
               if (!isLoading.value) {
@@ -115,7 +119,7 @@ class NewAsociadoDialog {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Información Personal
+                  // Sección: Información Personal
                   Text(
                     'Información Personal',
                     style: TextStyle(
@@ -128,9 +132,21 @@ class NewAsociadoDialog {
                   
                   Row(
                     children: [
-                      Expanded(child: _buildTextField(context, 'Nombre', Icons.person, nombreController)),
+                      Expanded(child: _buildTextField(
+                        context, 
+                        'Nombre', 
+                        Icons.person, 
+                        nombreController,
+                        hintText: 'Ej: Juan Andrés', // Hint agregado
+                      )),
                       const SizedBox(width: 16),
-                      Expanded(child: _buildTextField(context, 'Apellido', Icons.person_outline, apellidoController)),
+                      Expanded(child: _buildTextField(
+                        context, 
+                        'Apellido', 
+                        Icons.person_outline, 
+                        apellidoController,
+                        hintText: 'Ej: Pérez González', // Hint agregado
+                      )),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -154,7 +170,7 @@ class NewAsociadoDialog {
                   
                   const SizedBox(height: 24),
                   
-                  // Información de Contacto
+                  // Sección: Información de Contacto
                   Text(
                     'Información de Contacto',
                     style: TextStyle(
@@ -165,15 +181,36 @@ class NewAsociadoDialog {
                   ),
                   const SizedBox(height: 16),
                   
-                  _buildTextField(context, 'Email', Icons.email, emailController),
+                  _buildTextField(
+                    context, 
+                    'Email', 
+                    Icons.email, 
+                    emailController,
+                    hintText: 'Ej: juan.perez@email.com',
+                    keyboardType: TextInputType.emailAddress,
+                  ),
                   const SizedBox(height: 16),
-                  _buildTextField(context, 'Teléfono', Icons.phone, telefonoController),
+                  _buildTextField(
+                    context, 
+                    'Teléfono', 
+                    Icons.phone, 
+                    telefonoController,
+                    hintText: 'Ej: 9 1234 5678',
+                    keyboardType: TextInputType.phone,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
                   const SizedBox(height: 16),
-                  _buildTextField(context, 'Dirección', Icons.location_on, direccionController),
+                  _buildTextField(
+                    context, 
+                    'Dirección', 
+                    Icons.location_on, 
+                    direccionController,
+                    hintText: 'Ej: Av. Providencia 1234, Depto 501',
+                  ),
                   
                   const SizedBox(height: 24),
                   
-                  // Plan
+                  // Sección: Plan
                   Text(
                     'Plan de Membresía',
                     style: TextStyle(
@@ -230,6 +267,7 @@ class NewAsociadoDialog {
     );
   }
 
+  // --- VALIDACIONES ROBUSTAS ---
   static bool _validateFields(
     String nombre,
     String apellido, 
@@ -239,78 +277,96 @@ class NewAsociadoDialog {
     String direccion,
     DateTime? fechaNacimiento,
   ) {
-    if (nombre.trim().isEmpty) {
-      Get.snackbar('Error', 'El nombre es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    // Validar Nombre y Apellido (longitud mínima)
+    if (nombre.trim().length < 2) {
+      _showSnack('El nombre debe tener al menos 2 caracteres');
       return false;
     }
     
-    if (apellido.trim().isEmpty) {
-      Get.snackbar('Error', 'El apellido es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    if (apellido.trim().length < 2) {
+      _showSnack('El apellido debe tener al menos 2 caracteres');
       return false;
     }
     
-    if (rut.trim().isEmpty) {
-      Get.snackbar('Error', 'El RUT es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    // Validar RUT (longitud mínima antes de formato)
+    if (rut.trim().length < 8) {
+      _showSnack('El RUT ingresado parece incompleto');
       return false;
     }
     
-    if (email.trim().isEmpty) {
-      Get.snackbar('Error', 'El email es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    // Validar Email (Regex estricto)
+    if (!GetUtils.isEmail(email.trim())) {
+      _showSnack('Ingresa un correo electrónico válido');
       return false;
     }
     
-    if (telefono.trim().isEmpty) {
-      Get.snackbar('Error', 'El teléfono es requerido',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    // Validar Teléfono (Mínimo 8 dígitos)
+    if (telefono.trim().length < 8) {
+      _showSnack('El teléfono debe tener al menos 8 dígitos');
       return false;
     }
     
-    if (direccion.trim().isEmpty) {
-      Get.snackbar('Error', 'La dirección es requerida',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+    // Validar Dirección
+    if (direccion.trim().length < 5) {
+      _showSnack('La dirección debe ser más específica');
       return false;
     }
     
+    // Validar Fecha
     if (fechaNacimiento == null) {
-      Get.snackbar('Error', 'La fecha de nacimiento es requerida',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-        colorText: Get.theme.colorScheme.onError,
-      );
+      _showSnack('La fecha de nacimiento es requerida');
+      return false;
+    }
+
+    if (fechaNacimiento.isAfter(DateTime.now())) {
+      _showSnack('La fecha de nacimiento no puede ser futura');
+      return false;
+    }
+
+    if (fechaNacimiento.isBefore(DateTime(1900))) {
+      _showSnack('La fecha de nacimiento no es válida');
       return false;
     }
     
     return true;
   }
 
-  static Widget _buildTextField(BuildContext context, String label, IconData icon, TextEditingController controller) {
+  static void _showSnack(String msg) {
+    Get.snackbar(
+      'Atención', 
+      msg,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.orange.withValues(alpha: 0.9),
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  // --- WIDGETS AUXILIARES OPTIMIZADOS ---
+
+  static Widget _buildTextField(
+    BuildContext context, 
+    String label, 
+    IconData icon, 
+    TextEditingController controller, {
+    String? hintText,
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+  }) {
     return TextField(
       controller: controller,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       style: TextStyle(color: AppTheme.getTextPrimary(context)),
       decoration: InputDecoration(
         labelText: label,
+        hintText: hintText,
+        hintStyle: TextStyle(
+          color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5),
+          fontSize: 13,
+        ),
         prefixIcon: Icon(icon, color: AppTheme.primaryColor),
         labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
         border: OutlineInputBorder(
@@ -325,11 +381,13 @@ class NewAsociadoDialog {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
         ),
+        filled: true,
+        fillColor: AppTheme.getInputBackground(context),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       ),
     );
   }
 
-  // TextField especial para RUT con formateo automático
   static Widget _buildRutTextField(BuildContext context, TextEditingController controller) {
     return TextField(
       controller: controller,
@@ -342,10 +400,10 @@ class NewAsociadoDialog {
       ],
       decoration: InputDecoration(
         labelText: 'RUT',
-        hintText: '12345678-9',
+        hintText: 'Ej: 12345678-9', // Hint específico para RUT
+        hintStyle: TextStyle(color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5)),
         prefixIcon: Icon(Icons.badge, color: AppTheme.primaryColor),
         labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
-        hintStyle: TextStyle(color: AppTheme.getTextSecondary(context).withValues(alpha: 0.7)),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
@@ -358,6 +416,9 @@ class NewAsociadoDialog {
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
         ),
+        filled: true,
+        fillColor: AppTheme.getInputBackground(context),
+        contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
       ),
     );
   }
@@ -375,6 +436,9 @@ class NewAsociadoDialog {
               data: Theme.of(context).copyWith(
                 colorScheme: Theme.of(context).colorScheme.copyWith(
                   primary: AppTheme.primaryColor,
+                  onPrimary: Colors.white,
+                  surface: AppTheme.getSurfaceColor(context),
+                  onSurface: AppTheme.getTextPrimary(context),
                 ),
               ),
               child: child!,
@@ -386,26 +450,39 @@ class NewAsociadoDialog {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        height: 48, // Altura fija para alinear con los inputs
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           border: Border.all(color: AppTheme.getBorderLight(context)),
           borderRadius: BorderRadius.circular(8),
+          color: AppTheme.getInputBackground(context),
         ),
         child: Row(
           children: [
-            Icon(Icons.calendar_today, color: AppTheme.primaryColor),
+            Icon(Icons.calendar_today, color: AppTheme.primaryColor, size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                selectedDate.value != null
-                    ? '${selectedDate.value!.day.toString().padLeft(2, '0')}/${selectedDate.value!.month.toString().padLeft(2, '0')}/${selectedDate.value!.year}'
-                    : 'Fecha Nacimiento',
-                style: TextStyle(
-                  color: selectedDate.value != null 
-                      ? AppTheme.getTextPrimary(context)
-                      : AppTheme.getTextSecondary(context),
-                  fontSize: 16,
-                ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (selectedDate.value != null)
+                    Text(
+                      'Fecha Nacimiento',
+                      style: TextStyle(fontSize: 10, color: AppTheme.getTextSecondary(context)),
+                    ),
+                  Text(
+                    selectedDate.value != null
+                        ? '${selectedDate.value!.day}/${selectedDate.value!.month}/${selectedDate.value!.year}'
+                        : 'Fecha de Nacimiento',
+                    style: TextStyle(
+                      color: selectedDate.value != null 
+                          ? AppTheme.getTextPrimary(context)
+                          : AppTheme.getTextSecondary(context),
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -418,14 +495,14 @@ class NewAsociadoDialog {
     return SizedBox(
       width: double.infinity,
       child: DropdownButtonFormField<String>(
-        initialValue: selectedValue.value,
+        initialValue: selectedValue.value, // Usar value directo
         items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
         onChanged: (value) {
           if (value != null) {
             selectedValue.value = value;
           }
         },
-        style: TextStyle(color: AppTheme.getTextPrimary(context)),
+        style: TextStyle(color: AppTheme.getTextPrimary(context), fontSize: 14),
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: AppTheme.primaryColor),
@@ -442,6 +519,9 @@ class NewAsociadoDialog {
             borderRadius: BorderRadius.circular(8),
             borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
           ),
+          filled: true,
+          fillColor: AppTheme.getInputBackground(context),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         ),
         dropdownColor: AppTheme.getSurfaceColor(context),
         isExpanded: true,
@@ -450,7 +530,7 @@ class NewAsociadoDialog {
   }
 }
 
-// Formateador para RUT chileno
+// Formateador para RUT
 class _RutFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

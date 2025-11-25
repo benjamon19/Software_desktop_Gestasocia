@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../services/auth_helper.dart';
@@ -16,6 +17,7 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  // --- VARIABLES Y CONTROLADORES (Lógica robusta del Código 1) ---
   final nombreController = TextEditingController();
   final apellidoController = TextEditingController();
   final rutController = TextEditingController();
@@ -57,7 +59,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     String formatted;
-
     if (clean.length <= 7) {
       formatted = clean;
     } else if (clean.length == 8) {
@@ -74,13 +75,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Lógica de dimensiones extraída de SistemaSection
+    // --- ESTÉTICA VISUAL (Layout limpio del Código 2) ---
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final bool isSmallScreen = screenWidth < 600;
     final bool isVeryShortScreen = screenHeight < 600;
 
-    // 2. Variables de estilo adaptativo
     double cardPadding = isVeryShortScreen ? 16 : (isSmallScreen ? 20 : 24);
     double borderRadius = isSmallScreen ? 12 : 16;
 
@@ -94,9 +94,7 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // ==========================================
-                // AVISO DE SEGURIDAD (Fuera de la carta)
-                // ==========================================
+                // AVISO DE SEGURIDAD
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -122,9 +120,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
                 const SizedBox(height: 32),
 
-                // ==========================================
-                // CARTA CON ESTILO DE SISTEMASECTION
-                // ==========================================
+                // CARTA PRINCIPAL
                 Container(
                   padding: EdgeInsets.all(cardPadding),
                   decoration: isVeryShortScreen
@@ -228,6 +224,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         hint: '9 1234 5678',
                         icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       ),
                       const SizedBox(height: 32),
 
@@ -272,6 +269,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         children: [
                           Checkbox(
                             value: acceptTerms,
+                            activeColor: AppTheme.primaryColor,
                             onChanged: (value) => setState(() => acceptTerms = value ?? false),
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
@@ -284,6 +282,9 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
 
                       const SizedBox(height: 32),
+
+                      // --- BOTÓN CON ESTILO DEL CÓDIGO 2 ---
+                      // Sin overrides de color 'disabled'. Se verá sutil/transparente.
                       Obx(() => ElevatedButton(
                             onPressed: authController.isLoading.value || !acceptTerms
                                 ? null
@@ -291,8 +292,11 @@ class _RegisterPageState extends State<RegisterPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryColor,
                               foregroundColor: Colors.white,
+                              // NOTA: Se eliminaron las líneas disabledBackgroundColor
+                              // para usar el estilo nativo (sutil) del Código 2.
                               padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8)),
                             ),
                             child: authController.isLoading.value
                                 ? const SizedBox(
@@ -304,7 +308,8 @@ class _RegisterPageState extends State<RegisterPage> {
                                     ),
                                   )
                                 : const Text('Registrar Usuario',
-                                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                                    style: TextStyle(
+                                        fontSize: 16, fontWeight: FontWeight.w600)),
                           )),
                     ],
                   ),
@@ -326,7 +331,35 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  // --- LÓGICA DE REGISTRO (Validaciones Robustas del Código 1) ---
   Future<void> _handleRegister() async {
+    // 1. Validaciones Anti-tontos locales (estrictas)
+    if (nombreController.text.trim().length < 2) {
+      _snackError('El nombre es muy corto');
+      return;
+    }
+    if (apellidoController.text.trim().length < 2) {
+      _snackError('El apellido es muy corto');
+      return;
+    }
+    if (rutController.text.trim().length < 8) {
+      _snackError('RUT inválido');
+      return;
+    }
+    if (!GetUtils.isEmail(emailController.text.trim())) {
+      _snackError('Correo electrónico inválido');
+      return;
+    }
+    if (passwordController.text.length < 6) {
+      _snackError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    if (passwordController.text != confirmPasswordController.text) {
+      _snackError('Las contraseñas no coinciden');
+      return;
+    }
+
+    // 2. Validación cruzada del Helper
     String? error = AuthHelper.validateRegisterFields(
       nombre: nombreController.text.trim(),
       apellido: apellidoController.text.trim(),
@@ -338,10 +371,11 @@ class _RegisterPageState extends State<RegisterPage> {
     );
 
     if (error != null) {
-      Get.snackbar('Error', error);
+      _snackError(error);
       return;
     }
 
+    // 3. Envío al controlador
     String rolValue = selectedRol == 'Odontólogo' ? 'odontologo' : 'administrativo';
 
     String? codigoUnico = await authController.register(
@@ -367,6 +401,20 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     }
+  }
+
+  // Snackbar personalizado (Más bonito que el default de Get)
+  void _snackError(String msg) {
+    Get.snackbar(
+      'Atención',
+      msg,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.orange.withValues(alpha: 0.9),
+      colorText: Colors.white,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 8,
+      duration: const Duration(seconds: 3),
+    );
   }
 
   void _clearFields() {

@@ -61,7 +61,7 @@ class NewReservaDialog {
 
     loadOdontologos();
 
-    // Guardar Reserva (CON VALIDACIÓN)
+    // Guardar Reserva
     Future<void> saveReserva() async {
       if (selectedPaciente.value == null) {
         _showError('Debes seleccionar un paciente');
@@ -71,15 +71,16 @@ class NewReservaDialog {
         _showError('Debes seleccionar un odontólogo');
         return;
       }
-      if (motivoController.text.trim().isEmpty) {
-        _showError('Debes ingresar un motivo');
+      
+      if (motivoController.text.trim().length < 3) {
+        _showError('Ingresa un motivo válido (mínimo 3 letras)');
         return;
       }
 
       // Formatear hora (HH:mm)
       final horaFormat = '${selectedTime.value.hour.toString().padLeft(2, '0')}:${selectedTime.value.minute.toString().padLeft(2, '0')}';
 
-      // === NUEVA VALIDACIÓN: HORARIO Y DISPONIBILIDAD ===
+      // Validación de disponibilidad
       final error = controller.validarReserva(
         selectedOdontologo.value,
         selectedDate.value,
@@ -96,11 +97,9 @@ class NewReservaDialog {
           margin: const EdgeInsets.all(16),
           borderRadius: 8,
           duration: const Duration(seconds: 4),
-          icon: const Icon(Icons.event_busy, color: Colors.white),
         );
-        return; // Detener guardado
+        return;
       }
-      // ==================================================
 
       isLoading.value = true;
 
@@ -174,7 +173,7 @@ class NewReservaDialog {
               ),
               const Spacer(),
               Text(
-                'ESC cancelar • Enter guardar',
+                'ESC para cancelar • Enter para guardar',
                 style: TextStyle(
                   color: AppTheme.getTextSecondary(context),
                   fontSize: 12,
@@ -190,16 +189,14 @@ class NewReservaDialog {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Paciente (Input fake)
+                  // Paciente
                   Obx(() => InkWell(
                     onTap: pickPaciente,
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: AppTheme.getBorderLight(context)
-                        ),
+                        border: Border.all(color: AppTheme.getBorderLight(context)),
                         borderRadius: BorderRadius.circular(8),
                         color: AppTheme.getInputBackground(context),
                       ),
@@ -245,7 +242,7 @@ class NewReservaDialog {
 
                   const SizedBox(height: 20),
 
-                  // Fecha y Hora
+                  // Fecha y Hora (YA LIMPIOS, HEREDAN IDIOMA GLOBAL)
                   Row(
                     children: [
                       Expanded(
@@ -328,7 +325,7 @@ class NewReservaDialog {
 
                   const SizedBox(height: 20),
 
-                  // Odontólogo (Dropdown dinámico)
+                  // Odontólogo
                   Obx(() {
                     if (loadingOdontologos.value) {
                       return Container(
@@ -369,6 +366,7 @@ class NewReservaDialog {
                   _buildTextField(
                     context,
                     label: 'Motivo de Consulta',
+                    hintText: 'Ej: Control preventivo, Dolor muela',
                     icon: Icons.description_outlined,
                     controller: motivoController,
                     maxLines: 2,
@@ -380,10 +378,7 @@ class NewReservaDialog {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Cancelar',
-                style: TextStyle(color: AppTheme.getTextSecondary(context)),
-              ),
+              child: Text('Cancelar', style: TextStyle(color: AppTheme.getTextSecondary(context))),
             ),
             Obx(() => ElevatedButton(
               onPressed: isLoading.value ? null : saveReserva,
@@ -394,14 +389,7 @@ class NewReservaDialog {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: isLoading.value 
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
                   : const Text('Agendar'),
             )),
           ],
@@ -415,6 +403,7 @@ class NewReservaDialog {
     required String label,
     required IconData icon,
     required TextEditingController controller,
+    String? hintText,
     int maxLines = 1,
   }) {
     return TextField(
@@ -424,30 +413,16 @@ class NewReservaDialog {
       cursorColor: AppTheme.primaryColor,
       decoration: InputDecoration(
         labelText: label,
+        hintText: hintText,
+        hintStyle: TextStyle(color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5), fontSize: 13),
         prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 20),
         filled: true,
         fillColor: AppTheme.getInputBackground(context),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
-        ),
-        labelStyle: TextStyle(
-          color: AppTheme.getTextSecondary(context),
-          fontSize: 14,
-        ),
-        floatingLabelStyle: TextStyle(
-          color: AppTheme.getTextSecondary(context),
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppTheme.getBorderLight(context))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppTheme.getBorderLight(context))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
+        labelStyle: TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 14),
+        floatingLabelStyle: TextStyle(color: AppTheme.getTextSecondary(context), fontSize: 16, fontWeight: FontWeight.w600),
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       ),
     );
@@ -466,13 +441,7 @@ class NewReservaDialog {
       items: items.map((item) {
         return DropdownMenuItem<String>(
           value: item['value'],
-          child: Text(
-            item['label']!,
-            style: TextStyle(
-              color: AppTheme.getTextPrimary(context),
-              fontSize: 15,
-            ),
-          ),
+          child: Text(item['label']!, style: TextStyle(color: AppTheme.getTextPrimary(context), fontSize: 15)),
         );
       }).toList(),
       onChanged: onChanged,
@@ -483,27 +452,9 @@ class NewReservaDialog {
         prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 20),
         filled: true,
         fillColor: AppTheme.getInputBackground(context),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppTheme.getBorderLight(context)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
-        ),
-        labelStyle: TextStyle(
-          color: AppTheme.getTextSecondary(context),
-          fontSize: 14,
-        ),
-        floatingLabelStyle: TextStyle(
-          color: AppTheme.getTextSecondary(context),
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppTheme.getBorderLight(context))),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: AppTheme.getBorderLight(context))),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5)),
         contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       ),
     );
@@ -526,22 +477,9 @@ class NewReservaDialog {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppTheme.getTextSecondary(context),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(label, style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context), fontWeight: FontWeight.w500)),
                 const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: AppTheme.getTextPrimary(context),
-                  ),
-                ),
+                Text(value, style: TextStyle(fontSize: 15, color: AppTheme.getTextPrimary(context))),
               ],
             ),
           ),
@@ -552,9 +490,7 @@ class NewReservaDialog {
   }
 
   static void _showError(String message) {
-    Get.snackbar(
-      'Atención',
-      message,
+    Get.snackbar('Atención', message,
       snackPosition: SnackPosition.BOTTOM,
       backgroundColor: Colors.orange.withValues(alpha: 0.8),
       colorText: Colors.white,

@@ -751,7 +751,7 @@ class CargasFamiliaresController extends GetxController {
       await Future.delayed(const Duration(milliseconds: 50));
       selectedCarga.value = cargaConActividad;
 
-      _showSuccessSnackbar("Éxito!", "Carga familiar actualizada correctamente");
+      _showSuccessSnackbar("Éxito", "Carga familiar actualizada correctamente");
 
       // Registrar en historial
       _registrarEdicion(cargaAnterior, cargaConActividad);
