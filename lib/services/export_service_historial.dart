@@ -14,7 +14,6 @@ class ExportService {
     try {
       final pdf = pw.Document();
 
-      // Logo (opcional, si no existe, omitimos)
       Uint8List? logoBytes;
       try {
         final ByteData logoData = await rootBundle.load('assets/images/gestasocia_logo.png');
@@ -28,7 +27,6 @@ class ExportService {
           pageFormat: PdfPageFormat.letter,
           margin: const pw.EdgeInsets.all(30),
           build: (context) => [
-            // --- Encabezado ---
             if (logoBytes != null)
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
@@ -82,7 +80,6 @@ class ExportService {
             pw.Divider(thickness: 1, color: PdfColors.grey400),
             pw.SizedBox(height: 20),
 
-            // --- Datos del Paciente ---
             _buildSection('Datos del Paciente', [
               _buildRow('ID Paciente', historial.pacienteId),
               _buildRow('Tipo de Paciente', historial.pacienteTipo == 'asociado' ? 'Asociado' : 'Carga Familiar'),
@@ -91,7 +88,6 @@ class ExportService {
 
             pw.SizedBox(height: 20),
 
-            // --- Consulta ---
             _buildSection('Consulta', [
               _buildRow('Tipo de Consulta', historial.tipoConsultaFormateado),
               _buildRow('Fecha', historial.fechaFormateada),
@@ -99,7 +95,6 @@ class ExportService {
               _buildRow('Motivo Principal', historial.motivoPrincipal),
             ]),
 
-            // --- Diagnóstico y Tratamiento (si existen) ---
             if (historial.diagnostico != null && historial.diagnostico!.isNotEmpty)
               ...[
                 pw.SizedBox(height: 20),
@@ -125,7 +120,6 @@ class ExportService {
             if (historial.dienteTratado != null && historial.dienteTratado!.isNotEmpty)
               _buildRow('Diente Tratado', historial.dienteTratado!),
 
-            // --- Observaciones del Odontólogo ---
             if (historial.observacionesOdontologo != null && historial.observacionesOdontologo!.isNotEmpty)
               ...[
                 pw.SizedBox(height: 20),
@@ -137,7 +131,6 @@ class ExportService {
                 ]),
               ],
 
-            // --- Antecedentes Médicos ---
             if (historial.tieneAlergias || historial.tomaMedicamentos)
               ...[
                 pw.SizedBox(height: 20),
@@ -149,7 +142,6 @@ class ExportService {
                 ]),
               ],
 
-            // --- Seguimiento ---
             ...[
               pw.SizedBox(height: 20),
               _buildSection('Seguimiento', [

@@ -36,8 +36,6 @@ class ConfiguracionController extends GetxController {
   // ========== CONFIGURACIONES DE APLICACIÓN ==========
   
   void _loadAppSettings() {
-    // Aquí cargarías las configuraciones desde SharedPreferences o similar
-    // Por ahora usamos valores por defecto
   }
   
   void toggleAutoSave(bool value) {
@@ -76,7 +74,6 @@ class ConfiguracionController extends GetxController {
   }
   
   void _saveAppSettings() {
-    // Simular guardado de configuraciones
     Get.snackbar(
       'Configuración Guardada',
       'Los cambios se aplicaron correctamente',

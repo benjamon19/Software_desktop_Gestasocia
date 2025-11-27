@@ -11,7 +11,6 @@ class UsuarioController extends GetxController {
     try {
       QuerySnapshot snapshot;
       
-      // Intentar buscar por email primero
       if (emailOrRut.contains('@')) {
         snapshot = await FirebaseFirestore.instance
             .collection('usuarios')

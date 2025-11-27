@@ -39,10 +39,7 @@ class _ReservaDeHorasMainViewState extends State<ReservaDeHorasMainView> {
     );
   }
 
-  // === Botón Flotante para VOLVER (si es necesario) o NULO ===
   Widget _buildFloatingActionButtons() {
-    // Si necesitas un botón para volver a la vista principal, lo pondrías aquí.
-    // Por simplicidad, y siguiendo la estructura anterior, retornamos un widget vacío.
     return const SizedBox.shrink();
   }
 

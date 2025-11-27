@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 
-/// Clase específica para suprimir warnings de Firebase en desktop
 class FirebaseWarningSuppressor {
   static bool _isEnabled = false;
   static final List<String> _suppressedPatterns = [
@@ -16,7 +15,6 @@ class FirebaseWarningSuppressor {
     'firebase_auth_plugin',
   ];
 
-  /// Habilitar la supresión de warnings en desktop
   static void enable() {
     if (!_isDesktop || !kDebugMode) return;
     
@@ -28,7 +26,6 @@ class FirebaseWarningSuppressor {
     }
   }
 
-  /// Deshabilitar la supresión
   static void disable() {
     _isEnabled = false;
     if (kDebugMode) {
@@ -36,7 +33,6 @@ class FirebaseWarningSuppressor {
     }
   }
 
-  /// Verificar si un mensaje debe ser suprimido
   static bool shouldSuppressMessage(String message) {
     if (!_isEnabled || !_isDesktop) return false;
 
@@ -46,7 +42,6 @@ class FirebaseWarningSuppressor {
     );
   }
 
-  /// Log personalizado que puede suprimir warnings específicos
   static void logIfNotSuppressed(String message, {
     String? name,
     Object? error,
@@ -54,7 +49,6 @@ class FirebaseWarningSuppressor {
     int level = 0,
   }) {
     if (shouldSuppressMessage(message)) {
-      // Solo log en nivel muy bajo para debugging
       if (kDebugMode && kIsWeb == false) {
         developer.log(
           '[SUPPRESSED] $message',
@@ -65,7 +59,6 @@ class FirebaseWarningSuppressor {
       return;
     }
 
-    // Para mensajes no suprimidos, usar logging normal
     developer.log(
       message,
       name: name ?? 'App',
@@ -75,11 +68,9 @@ class FirebaseWarningSuppressor {
     );
   }
 
-  /// Verificar si estamos en desktop
   static bool get _isDesktop => 
       Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
-  /// Obtener estadísticas de supresión
   static Map<String, dynamic> getStats() {
     return {
       'enabled': _isEnabled,
@@ -90,7 +81,6 @@ class FirebaseWarningSuppressor {
     };
   }
 
-  /// Configurar supresión específica para Firebase Auth
   static void configureForFirebaseAuth() {
     if (!_isDesktop) return;
 
@@ -105,7 +95,6 @@ class FirebaseWarningSuppressor {
     }
   }
 
-  /// Mensaje informativo sobre los warnings
   static void showWarningInfo() {
     if (!_isDesktop || !kDebugMode) return;
 

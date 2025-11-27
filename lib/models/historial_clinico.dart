@@ -18,8 +18,8 @@ class HistorialClinico {
   DateTime? proximaCita;
   String estado;
   double? costoTratamiento;
-  String? imagenUrl; // Imagen en la nube (persistente)
-  String? imagenLocalPath; // Imagen local temporal (solo en memoria)
+  String? imagenUrl;
+  String? imagenLocalPath;
   DateTime fechaCreacion;
   DateTime? fechaActualizacion;
 
@@ -135,7 +135,7 @@ class HistorialClinico {
       estado: map['estado'] ?? 'pendiente',
       costoTratamiento: map['costoTratamiento']?.toDouble(),
       imagenUrl: map['imagenUrl'],
-      imagenLocalPath: null, // Nunca se guarda en Firestore
+      imagenLocalPath: null,
       fechaCreacion: _parseDateTime(map['fechaCreacion']),
       fechaActualizacion: map['fechaActualizacion'] != null ? _parseDateTime(map['fechaActualizacion']) : null,
     );

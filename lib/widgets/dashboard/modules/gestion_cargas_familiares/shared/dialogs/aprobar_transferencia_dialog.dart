@@ -346,8 +346,8 @@ class AprobarTransferenciaDialog {
                 return;
               }
 
-              Navigator.of(dialogContext).pop(); // Cerrar diálogo de motivo
-              Navigator.of(context).pop(); // Cerrar diálogo principal
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context).pop();
 
               await controller.rechazarTransferencia(solicitud, motivoController.text.trim());
             },

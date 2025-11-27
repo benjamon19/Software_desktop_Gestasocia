@@ -67,7 +67,7 @@ class ClinicalDataCard extends StatelessWidget {
           
           const SizedBox(height: 20),
           
-          // Contenido - REACTIVO
+          // Contenido
           Obx(() {
             final currentHistorial = controller.selectedHistorial.value;
             if (currentHistorial == null) {
@@ -78,7 +78,6 @@ class ClinicalDataCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Fila 1: Diagnóstico y Tratamiento
                 Row(
                   children: [
                     Expanded(
@@ -105,7 +104,6 @@ class ClinicalDataCard extends StatelessWidget {
                 
                 const SizedBox(height: 16),
                 
-                // Fila 2: Diente y Alergias
                 Row(
                   children: [
                     Expanded(
@@ -131,8 +129,7 @@ class ClinicalDataCard extends StatelessWidget {
                 ),
                 
                 const SizedBox(height: 16),
-                
-                // Fila 3: Medicamentos y Próxima Cita
+
                 Row(
                   children: [
                     Expanded(
@@ -159,7 +156,6 @@ class ClinicalDataCard extends StatelessWidget {
                 
                 const SizedBox(height: 16),
                 
-                // Fila 4: Observaciones (ancho completo)
                 _buildInfoItem(
                   context,
                   'Observaciones',
@@ -170,7 +166,6 @@ class ClinicalDataCard extends StatelessWidget {
                 
                 const SizedBox(height: 16),
                 
-                // Fila 5: Costo y Motivo
                 Row(
                   children: [
                     Expanded(

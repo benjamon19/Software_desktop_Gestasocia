@@ -1,10 +1,8 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
-/// Configuración específica para aplicaciones desktop con Firebase
 class DesktopSetup {
   
-  /// Configurar el entorno desktop para minimizar warnings de Firebase
   static Future<void> configure() async {
     if (!_isDesktop) return;
 
@@ -16,15 +14,11 @@ class DesktopSetup {
     }
   }
 
-  /// Verificar si estamos en plataforma desktop
   static bool get _isDesktop => 
       Platform.isWindows || Platform.isLinux || Platform.isMacOS;
 
-  /// Configurar variables de entorno específicas para desktop
   static void _setEnvironmentVariables() {
     if (Platform.isWindows) {
-      // No podemos modificar Platform.environment directamente
-      // En su lugar, solo configuramos logging
       if (kDebugMode) {
         debugPrint('Configurando variables de entorno para Windows desktop');
         debugPrint('FIREBASE_DESKTOP_MODE simulado como true');
@@ -33,7 +27,6 @@ class DesktopSetup {
     }
   }
 
-  /// Configurar logging personalizado para desktop
   static void _configureLogging() {
     if (kDebugMode) {
       debugPrint('Configurando logging personalizado para desktop');
@@ -41,7 +34,6 @@ class DesktopSetup {
     }
   }
 
-  /// Validar configuración de Firebase para desktop
   static bool validateFirebaseSetup() {
     try {
       if (_isDesktop) {
@@ -70,7 +62,6 @@ class DesktopSetup {
     }
   }
 
-  /// Mostrar consejos específicos para desktop
   static void showDesktopTips() {
     if (!_isDesktop || !kDebugMode) return;
 

@@ -7,13 +7,13 @@ import 'calendar_appointment_item.dart';
 class CalendarGridMonth extends StatelessWidget {
   final DateTime selectedDate;
   final Function(DateTime) onDateTap;
-  final Function(String) onViewChanged; // <-- NUEVO
+  final Function(String) onViewChanged;
 
   const CalendarGridMonth({
     super.key,
     required this.selectedDate,
     required this.onDateTap,
-    required this.onViewChanged, // <-- NUEVO
+    required this.onViewChanged,
   });
 
   @override
@@ -71,7 +71,6 @@ class CalendarGridMonth extends StatelessWidget {
                     return Material(
                       color: Colors.transparent,
                       child: InkWell(
-                        // Acción al tocar el número del día (solo cambia la fecha, no la vista)
                         onTap: () => onDateTap(day),
                         mouseCursor: SystemMouseCursors.click,
                         child: Container(
@@ -123,9 +122,7 @@ class CalendarGridMonth extends StatelessWidget {
                                       summaryCount: totalCitas, 
                                       viewType: 'month',
                                       onTap: () {
-                                        // 1. Establecer la fecha seleccionada
                                         onDateTap(day); 
-                                        // 2. Cambiar la vista a 'day'
                                         onViewChanged('day'); 
                                       },
                                     ),

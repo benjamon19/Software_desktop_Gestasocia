@@ -46,19 +46,15 @@ class ChartsGridSection extends StatelessWidget {
                 final double width = constraints.maxWidth;
                 final double height = constraints.maxHeight;
                 
-                // Breakpoints más precisos
                 final bool isMobile = width < 768;
                 final bool isTablet = width >= 768 && width < 1350;
                 final bool isDesktop = width >= 1350;
 
-                // Modo "Fit to Screen" solo en desktop con suficiente altura (24"+)
                 final bool isVerticalSpacious = height > 880 && isDesktop;
 
                 if (isVerticalSpacious) {
-                  // === MODO 24" / 27" (Sin scroll, ajuste perfecto) ===
                   return Column(
                     children: [
-                      // Fila 1: Asistencia (40% del espacio vertical)
                       Expanded(
                         flex: 4, 
                         child: ChartCard(
@@ -71,7 +67,6 @@ class ChartsGridSection extends StatelessWidget {
                       
                       const SizedBox(height: 16),
                       
-                      // Fila 2: Crecimiento + Tipos (30%)
                       Expanded(
                         flex: 3,
                         child: Row(
@@ -101,7 +96,6 @@ class ChartsGridSection extends StatelessWidget {
 
                       const SizedBox(height: 16),
 
-                      // Fila 3: Edad + Citas + Urgencias (30%) ← ¡URGENCIAS AQUÍ!
                       Expanded(
                         flex: 3,
                         child: Row(
@@ -124,7 +118,6 @@ class ChartsGridSection extends StatelessWidget {
                     ],
                   );
                 } else {
-                  // === MODO NOTEBOOK / TABLET / MÓVIL (Con scroll) ===
                   final double row1Height = isMobile ? 280 : 320;
                   final double row2Height = isMobile ? 260 : 300;
                   final double row3Height = isMobile ? 360 : 340;
@@ -201,7 +194,6 @@ class ChartsGridSection extends StatelessWidget {
 
                         const SizedBox(height: 16),
 
-                        // Fila 3: Edad + Citas + Urgencias
                         if (isDesktop || isTablet)
                           SizedBox(
                             height: row3Height,
@@ -223,7 +215,6 @@ class ChartsGridSection extends StatelessWidget {
                             ),
                           )
                         else
-                          // Móvil: Edad arriba, luego Citas y Urgencias apiladas o en fila si cabe
                           Column(
                             children: [
                               SizedBox(

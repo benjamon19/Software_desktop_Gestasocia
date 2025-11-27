@@ -24,7 +24,6 @@ class NewAsociadoDialog {
 
     // Función para crear asociado
     Future<void> createAsociadoAction() async {
-      // 1. Validar todos los campos antes de enviar
       if (_validateFields(
         nombreController.text,
         apellidoController.text,
@@ -35,10 +34,7 @@ class NewAsociadoDialog {
         selectedDate.value,
       )) {
         isLoading.value = true;
-        
-        // 2. Enviar datos al controlador
-        // NOTA: La generación del SAP (código de 5 dígitos) debe realizarse
-        // dentro de este método 'createAsociado' en tu AsociadosController.
+      
         final success = await controller.createAsociado(
           nombre: nombreController.text,
           apellido: apellidoController.text,
@@ -65,7 +61,6 @@ class NewAsociadoDialog {
       builder: (context) => Focus(
         autofocus: true,
         onKeyEvent: (node, event) {
-          // Manejar teclas ESC y Enter para mejorar UX
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.escape) {
               if (!isLoading.value) {
@@ -137,7 +132,7 @@ class NewAsociadoDialog {
                         'Nombre', 
                         Icons.person, 
                         nombreController,
-                        hintText: 'Ej: Juan Andrés', // Hint agregado
+                        hintText: 'Ej: Juan Andrés',
                       )),
                       const SizedBox(width: 16),
                       Expanded(child: _buildTextField(
@@ -145,7 +140,7 @@ class NewAsociadoDialog {
                         'Apellido', 
                         Icons.person_outline, 
                         apellidoController,
-                        hintText: 'Ej: Pérez González', // Hint agregado
+                        hintText: 'Ej: Pérez González',
                       )),
                     ],
                   ),
@@ -170,7 +165,6 @@ class NewAsociadoDialog {
                   
                   const SizedBox(height: 24),
                   
-                  // Sección: Información de Contacto
                   Text(
                     'Información de Contacto',
                     style: TextStyle(
@@ -267,7 +261,7 @@ class NewAsociadoDialog {
     );
   }
 
-  // --- VALIDACIONES ROBUSTAS ---
+  // --- VALIDACIONES ---
   static bool _validateFields(
     String nombre,
     String apellido, 
@@ -277,7 +271,6 @@ class NewAsociadoDialog {
     String direccion,
     DateTime? fechaNacimiento,
   ) {
-    // Validar Nombre y Apellido (longitud mínima)
     if (nombre.trim().length < 2) {
       _showSnack('El nombre debe tener al menos 2 caracteres');
       return false;
@@ -288,31 +281,26 @@ class NewAsociadoDialog {
       return false;
     }
     
-    // Validar RUT (longitud mínima antes de formato)
     if (rut.trim().length < 8) {
       _showSnack('El RUT ingresado parece incompleto');
       return false;
     }
     
-    // Validar Email (Regex estricto)
     if (!GetUtils.isEmail(email.trim())) {
       _showSnack('Ingresa un correo electrónico válido');
       return false;
     }
     
-    // Validar Teléfono (Mínimo 8 dígitos)
     if (telefono.trim().length < 8) {
       _showSnack('El teléfono debe tener al menos 8 dígitos');
       return false;
     }
     
-    // Validar Dirección
     if (direccion.trim().length < 5) {
       _showSnack('La dirección debe ser más específica');
       return false;
     }
     
-    // Validar Fecha
     if (fechaNacimiento == null) {
       _showSnack('La fecha de nacimiento es requerida');
       return false;
@@ -343,8 +331,6 @@ class NewAsociadoDialog {
       duration: const Duration(seconds: 3),
     );
   }
-
-  // --- WIDGETS AUXILIARES OPTIMIZADOS ---
 
   static Widget _buildTextField(
     BuildContext context, 
@@ -400,7 +386,7 @@ class NewAsociadoDialog {
       ],
       decoration: InputDecoration(
         labelText: 'RUT',
-        hintText: 'Ej: 12345678-9', // Hint específico para RUT
+        hintText: 'Ej: 12345678-9',
         hintStyle: TextStyle(color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5)),
         prefixIcon: Icon(Icons.badge, color: AppTheme.primaryColor),
         labelStyle: TextStyle(color: AppTheme.getTextSecondary(context)),
@@ -450,7 +436,7 @@ class NewAsociadoDialog {
         }
       },
       child: Container(
-        height: 48, // Altura fija para alinear con los inputs
+        height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           border: Border.all(color: AppTheme.getBorderLight(context)),
@@ -495,7 +481,7 @@ class NewAsociadoDialog {
     return SizedBox(
       width: double.infinity,
       child: DropdownButtonFormField<String>(
-        initialValue: selectedValue.value, // Usar value directo
+        initialValue: selectedValue.value,
         items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
         onChanged: (value) {
           if (value != null) {

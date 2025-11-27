@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/historial_carga_cambio.dart';
 import '../models/carga_familiar.dart';
-import 'usuario_controller.dart';
+import 'auth_controller.dart'; 
 
 class HistorialCargasController extends GetxController {
   RxList<HistorialCargaCambio> historialCambios = <HistorialCargaCambio>[].obs;
@@ -37,7 +37,6 @@ class HistorialCargasController extends GetxController {
     );
   }
 
-  /// Registrar edición de carga familiar (con comparación de cambios)
   Future<void> registrarEdicion({
     required String cargaFamiliarId,
     required String asociadoId,
@@ -152,10 +151,16 @@ class HistorialCargasController extends GetxController {
     Map<String, dynamic>? datosAdicionales,
   }) async {
     try {
-      final usuarioController = Get.find<UsuarioController>();
-      
-      String usuarioId = usuarioController.currentUserId;
-      String usuarioNombre = usuarioController.currentUserName;
+      String usuarioId = 'sistema';
+      String usuarioNombre = 'Sistema';
+
+      if (Get.isRegistered<AuthController>()) {
+        final authController = Get.find<AuthController>();
+        if (authController.currentUser.value != null) {
+          usuarioId = authController.currentUserId ?? 'sistema';
+          usuarioNombre = authController.userDisplayName; 
+        }
+      }
 
       final cambio = HistorialCargaCambio(
         cargaFamiliarId: cargaFamiliarId,
@@ -179,7 +184,6 @@ class HistorialCargasController extends GetxController {
     }
   }
 
-  /// Cargar historial de una carga familiar específica
   Future<void> cargarHistorialCarga(String cargaFamiliarId) async {
     try {
       isLoading.value = true;
@@ -200,7 +204,6 @@ class HistorialCargasController extends GetxController {
         cambiosList.add(cambio);
       }
       
-      // Ordenar de más reciente a más antiguo
       cambiosList.sort((a, b) => b.fechaHora.compareTo(a.fechaHora));
       historialCambios.addAll(cambiosList);
 
@@ -211,7 +214,6 @@ class HistorialCargasController extends GetxController {
     }
   }
 
-  /// Limpiar historial más antiguo que 30 días
   Future<void> _limpiarHistorialAntiguo() async {
     try {
       final fechaLimite = DateTime.now().subtract(Duration(days: diasRetencion));
@@ -234,7 +236,6 @@ class HistorialCargasController extends GetxController {
     }
   }
 
-  /// Limpiar historial de una carga familiar específica
   Future<bool> limpiarHistorialCarga(String cargaFamiliarId) async {
     try {
       final QuerySnapshot snapshot = await FirebaseFirestore.instance

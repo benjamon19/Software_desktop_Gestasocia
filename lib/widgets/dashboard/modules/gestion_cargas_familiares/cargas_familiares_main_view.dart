@@ -18,12 +18,10 @@ class CargasFamiliaresMainView extends StatelessWidget {
 
     return Scaffold(
       body: Obx(() {
-        // Si está cargando, mostrar SOLO el loading centrado
         if (controller.isLoading.value) {
           return const LoadingIndicator(message: 'Cargando cargas familiares...');
         }
 
-        // Si no está cargando, mostrar el contenido principal con padding
         return Container(
           padding: const EdgeInsets.all(20),
           child: _buildMainContent(context, controller),

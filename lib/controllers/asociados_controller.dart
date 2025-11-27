@@ -838,17 +838,11 @@ class AsociadosController extends GetxController {
     final now = DateTime.now();
     List<int> counts = [];
 
-    // Generar datos para los últimos 6 meses (0 = hace 5 meses ... 5 = actual)
     for (int i = 5; i >= 0; i--) {
       // Mes objetivo
       final targetMonth = DateTime(now.year, now.month - i);
-      // Último momento de ese mes para comparación
       final endOfMonth = DateTime(targetMonth.year, targetMonth.month + 1, 0, 23, 59, 59);
-
-      // Contar asociados acumulados hasta ese mes
       final asociadosCount = _allAsociados.where((a) => a.fechaIngreso.isBefore(endOfMonth)).length;
-      
-      // Contar cargas acumuladas hasta ese mes
       final cargasCount = cargasFamiliares.where((c) => c.fechaCreacion.isBefore(endOfMonth)).length;
       
       counts.add(asociadosCount + cargasCount);

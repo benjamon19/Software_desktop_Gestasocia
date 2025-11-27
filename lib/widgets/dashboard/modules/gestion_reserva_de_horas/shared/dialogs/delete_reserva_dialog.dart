@@ -15,7 +15,6 @@ class DeleteReservaDialog {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        // Ícono grande superior como en tu ejemplo de Asociados
         icon: const Icon(
           Icons.warning_amber,
           color: Color(0xFFEF4444),

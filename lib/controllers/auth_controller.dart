@@ -133,7 +133,7 @@ class AuthController extends GetxController {
         rol: rol,
         codigoUnico: codigoUnico,
         fechaCreacion: ahora,
-        fechaActualizacionCodigo: ahora, // Inicializar la fecha de actualización
+        fechaActualizacionCodigo: ahora,
       );
 
       await FirebaseService.saveUser(result.user!.uid, nuevoUsuario);
@@ -238,7 +238,6 @@ class AuthController extends GetxController {
       Get.log('Código ingresado: $codigoIngresado');
       Get.log('Código almacenado: ${usuario.codigoUnico}');
       
-      // Obtener la fecha de actualización del código, si no existe usar fechaCreacion
       DateTime fechaReferencia = usuario.fechaActualizacionCodigo ?? usuario.fechaCreacion;
       Get.log('Fecha de última actualización del código: $fechaReferencia');
       
@@ -265,7 +264,7 @@ class AuthController extends GetxController {
         Get.log('Fecha de actualización guardada: $ahora');
         
         await _loadUserData(uid);
-        return nuevoCodigo; // Retorna el nuevo código
+        return nuevoCodigo;
       }
 
       // Verificar si el código ingresado es correcto
@@ -275,7 +274,7 @@ class AuthController extends GetxController {
       }
       
       Get.log('CÓDIGO INCORRECTO');
-      return null; // Código incorrecto
+      return null;
 
     } catch (e) {
       Get.log('ERROR validando código único: $e');

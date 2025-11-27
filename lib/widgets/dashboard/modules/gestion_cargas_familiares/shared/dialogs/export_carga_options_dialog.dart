@@ -47,7 +47,6 @@ class ExportCargaOptionsDialog {
                 
                 final carga = cargasController.currentCarga!;
                 
-                // Necesitamos obtener el asociado titular de esta carga
                 final asociado = await _obtenerAsociadoTitular(carga.asociadoId);
                 
                 if (asociado == null) {
@@ -95,7 +94,6 @@ class ExportCargaOptionsDialog {
 
                 final carga = cargasController.currentCarga!;
                 
-                // Necesitamos obtener el asociado titular de esta carga
                 final asociado = await _obtenerAsociadoTitular(carga.asociadoId);
                 
                 if (asociado == null) {
@@ -133,7 +131,6 @@ class ExportCargaOptionsDialog {
     );
   }
 
-  // Nuevo método para obtener el asociado titular
   static Future<Asociado?> _obtenerAsociadoTitular(String asociadoId) async {
     try {
       final doc = await FirebaseFirestore.instance

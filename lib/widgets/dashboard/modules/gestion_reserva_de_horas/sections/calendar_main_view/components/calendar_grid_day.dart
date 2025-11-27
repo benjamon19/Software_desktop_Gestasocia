@@ -32,7 +32,6 @@ class CalendarGridDay extends StatelessWidget {
           const hoursToShow = endHour - startHour;
           const double borderWidth = 0.6;
 
-          // CORRECCIÓN DE ALTURA: No restar bordes para evitar el desfase de píxeles
           final double cellHeight = constraints.maxHeight / hoursToShow;
 
           return Obx(() {
@@ -87,7 +86,6 @@ class CalendarGridDay extends StatelessWidget {
                     children: List.generate(hoursToShow, (index) {
                       final currentHour = startHour + index;
                       
-                      // Buscar TODAS las reservas en esta hora
                       final reservasEnEstaHora = reservasDelDia.where((r) {
                         final parts = r.hora.split(':');
                         final horaReserva = int.tryParse(parts[0]);
@@ -101,11 +99,9 @@ class CalendarGridDay extends StatelessWidget {
                         currentHour,
                       );
 
-                      // Decidir qué widget mostrar
                       Widget contentWidget;
                       
                       if (reservasEnEstaHora.isEmpty) {
-                        // Caso 0: Vacío -> Botón transparente
                         contentWidget = Material(
                           color: Colors.transparent,
                           child: InkWell(
@@ -115,7 +111,6 @@ class CalendarGridDay extends StatelessWidget {
                           ),
                         );
                       } else if (reservasEnEstaHora.length == 1) {
-                        // Caso 1: Una sola reserva -> Detalle normal
                         final reserva = reservasEnEstaHora.first;
                         contentWidget = CalendarAppointmentItem(
                           reserva: reserva,
@@ -125,7 +120,6 @@ class CalendarGridDay extends StatelessWidget {
                           },
                         );
                       } else {
-                        // Caso 2+: Múltiples reservas -> Grupo
                         contentWidget = CalendarGroupItem(
                           reservas: reservasEnEstaHora,
                           onTap: () {

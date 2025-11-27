@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../models/usuario.dart';
 
 class FirebaseService {
-  // Instancias singleton (una sola para toda la app)
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -151,7 +150,7 @@ class FirebaseService {
     }
   }
   
-  /// Eliminar usuario (marcar como inactivo)
+  /// Eliminar usuario
   static Future<void> deactivateUser(String uid) async {
     try {
       await _firestore
@@ -163,7 +162,7 @@ class FirebaseService {
     }
   }
 
-  // ========== FIRESTORE - GENÉRICO ==========
+  // ========== FIRESTORE ==========
   
   /// Crear documento en cualquier colección
   static Future<DocumentReference> createDocument({
@@ -202,8 +201,6 @@ class FirebaseService {
   static Stream<QuerySnapshot> streamCollection(String collection) {
     return _firestore.collection(collection).snapshots();
   }
-
-  // ========== MANEJO DE ERRORES CORREGIDO ==========
   
   /// Convertir errores de Firebase a mensajes amigables
   static Exception _handleAuthException(dynamic e) {

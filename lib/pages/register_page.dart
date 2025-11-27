@@ -17,7 +17,6 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // --- VARIABLES Y CONTROLADORES (Lógica robusta del Código 1) ---
   final nombreController = TextEditingController();
   final apellidoController = TextEditingController();
   final rutController = TextEditingController();
@@ -75,7 +74,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    // --- ESTÉTICA VISUAL (Layout limpio del Código 2) ---
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final bool isSmallScreen = screenWidth < 600;
@@ -282,9 +280,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
 
                       const SizedBox(height: 32),
-
-                      // --- BOTÓN CON ESTILO DEL CÓDIGO 2 ---
-                      // Sin overrides de color 'disabled'. Se verá sutil/transparente.
                       Obx(() => ElevatedButton(
                             onPressed: authController.isLoading.value || !acceptTerms
                                 ? null
@@ -292,8 +287,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.primaryColor,
                               foregroundColor: Colors.white,
-                              // NOTA: Se eliminaron las líneas disabledBackgroundColor
-                              // para usar el estilo nativo (sutil) del Código 2.
+
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8)),
@@ -331,9 +325,7 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  // --- LÓGICA DE REGISTRO (Validaciones Robustas del Código 1) ---
   Future<void> _handleRegister() async {
-    // 1. Validaciones Anti-tontos locales (estrictas)
     if (nombreController.text.trim().length < 2) {
       _snackError('El nombre es muy corto');
       return;
@@ -403,7 +395,6 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  // Snackbar personalizado (Más bonito que el default de Get)
   void _snackError(String msg) {
     Get.snackbar(
       'Atención',

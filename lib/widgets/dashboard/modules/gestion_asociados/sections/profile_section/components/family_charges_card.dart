@@ -351,7 +351,6 @@ class _FamilyChargesCardState extends State<FamilyChargesCard> {
       
       cargasController.selectCarga(cargaMap);
       
-      // Cambiar al módulo de Cargas Familiares (índice 2)
       Get.find<DashboardPageController>().changeModule(2);
       
     } catch (e) {

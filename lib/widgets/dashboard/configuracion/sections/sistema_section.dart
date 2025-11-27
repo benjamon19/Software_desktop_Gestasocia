@@ -13,7 +13,6 @@ class SistemaSection extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
     final bool isSmallScreen = screenWidth < 600;
     final bool isMediumScreen = screenWidth >= 600 && screenWidth < 1000;
-    // Removida variable isShortScreen no utilizada
     final bool isVeryShortScreen = screenHeight < 600;
     
     return SingleChildScrollView(
@@ -157,7 +156,6 @@ class SistemaSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Información de la aplicación
         Obx(() => _buildAdaptiveInfoCard(
           context,
           isSmallScreen ? 'Información de App' : 'Información de la Aplicación',
@@ -193,7 +191,6 @@ class SistemaSection extends StatelessWidget {
         ),
         SizedBox(height: isVeryShortScreen ? 12 : 16),
         
-        // Siempre usar layout de filas (como en la imagen), nunca grid
         Row(
           children: [
             Expanded(

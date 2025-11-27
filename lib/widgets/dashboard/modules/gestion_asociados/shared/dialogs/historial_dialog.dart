@@ -231,7 +231,6 @@ class HistorialDialog {
 
                   // ========== SECCIÓN DE CAMBIOS DETALLADOS ==========
                   
-                  // Mostrar valores anteriores vs nuevos (para ediciones)
                   if (cambio.valoresAnteriores != null &&
                       cambio.valoresNuevos != null &&
                       cambio.valoresAnteriores!.isNotEmpty) ...[
@@ -381,7 +380,6 @@ class HistorialDialog {
                     ),
                   ],
 
-                  // Mostrar datos adicionales (para creación, cargas, etc.)
                   if (cambio.datosAdicionales != null &&
                       cambio.datosAdicionales!.isNotEmpty) ...[
                     const SizedBox(height: 12),

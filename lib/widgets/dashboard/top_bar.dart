@@ -61,7 +61,6 @@ class TopBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Menu Button - Ahora controla el colapso del sidebar
           IconButton(
             icon: Icon(
               isSidebarCollapsed ? Icons.menu : Icons.menu_open,
@@ -87,7 +86,6 @@ class TopBar extends StatelessWidget {
             ),
           ),
           
-          // Date Display - Solo mostrar en pantallas no muy pequeñas
           if (!isSmallScreen) ...[
             Container(
               padding: EdgeInsets.symmetric(
@@ -120,11 +118,9 @@ class TopBar extends StatelessWidget {
             ),
             SizedBox(width: isMediumScreen ? 12 : 20),
           ] else ...[
-            // Para pantallas pequeñas, solo un pequeño espacio
             const SizedBox(width: 8),
           ],
           
-          // User Menu - Adaptativo
           _buildUserMenu(context, isSmallScreen, isVeryShortScreen),
         ],
       ),
@@ -171,7 +167,6 @@ class TopBar extends StatelessWidget {
                     : null,
               );
             }),
-            // En pantallas pequeñas, ocultar el texto del usuario
             if (!isSmallScreen) ...[
               SizedBox(width: isVeryShortScreen ? 8 : 10),
               Obx(() {

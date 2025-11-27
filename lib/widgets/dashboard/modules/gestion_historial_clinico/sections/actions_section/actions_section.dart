@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
-import '../../../../../../models/historial_clinico.dart'; // ← Agrega esto
+import '../../../../../../models/historial_clinico.dart';
 import 'components/quick_actions.dart';
 
 class ActionsSection extends StatefulWidget {
-  final Map<String, dynamic> historial; // seguimos recibiendo Map (temporal)
+  final Map<String, dynamic> historial;
   final HistorialClinicoController controller;
 
   const ActionsSection({
@@ -47,7 +47,7 @@ class _ActionsSectionState extends State<ActionsSection> {
       estado: map['estado']?.toString().toLowerCase() ?? 'pendiente',
       costoTratamiento: map['costoTratamiento'] is num ? (map['costoTratamiento'] as num).toDouble() : null,
       imagenUrl: map['imagenUrl'] as String?,
-      imagenLocalPath: null, // no se guarda en Firestore
+      imagenLocalPath: null,
       fechaCreacion: _parseDate(map['fechaCreacion']) ?? DateTime.now(),
       fechaActualizacion: _parseDate(map['fechaActualizacion']),
     );
@@ -68,7 +68,6 @@ class _ActionsSectionState extends State<ActionsSection> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Reconstruimos el objeto
     final historialObj = _reconstructHistorial(widget.historial);
 
     return Container(

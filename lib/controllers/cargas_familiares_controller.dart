@@ -111,7 +111,6 @@ class CargasFamiliaresController extends GetxController {
 
       if (asociadoIds.isEmpty) return;
 
-      // Buscar asociados en Firestore (máximo 10 por consulta debido a limitación de whereIn)
       for (int i = 0; i < asociadoIds.length; i += 10) {
         final batch = asociadoIds.skip(i).take(10).toList();
         
@@ -265,16 +264,13 @@ class CargasFamiliaresController extends GetxController {
     try {
       final cleanSearchTerm = searchTerm.trim();
       
-      // Detectar si es SAP (5 dígitos)
       final bool isSAP = RegExp(r'^[0-9]{5}$').hasMatch(cleanSearchTerm);
       
       if (isSAP) {
         await _searchCargasBySAP(cleanSearchTerm);
       } else {
-        // 1. Intentar buscar por RUT de la carga
         await _searchCargaByRut(cleanSearchTerm);
         
-        // 2. Si no se encontró, buscar por código de barras
         if (selectedCarga.value == null) {
           await _searchCargaByBarcode(cleanSearchTerm);
         }
@@ -295,7 +291,6 @@ class CargasFamiliaresController extends GetxController {
   Future<void> _searchCargaByRut(String rut) async {
     final rutSinGuion = rut.replaceAll('-', '');
     
-    // Buscar en memoria local
     final carga = _allCargasFamiliares.firstWhereOrNull((c) {
       if (c.rut == rut) return true;
       if (c.rutFormateado == rut) return true;
@@ -381,7 +376,6 @@ class CargasFamiliaresController extends GetxController {
   }
 
   Future<void> _searchCargasBySAP(String sap) async {
-    // 1. Buscar el asociado con ese SAP
     final asociadoSnapshot = await FirebaseFirestore.instance
         .collection('asociados')
         .where('sap', isEqualTo: sap)
@@ -399,22 +393,18 @@ class CargasFamiliaresController extends GetxController {
       asociadoId,
     );
     
-    // 2. Buscar todas las cargas de ese asociado
     await _filterCargasByAsociadoId(asociadoId, asociadoData.nombreCompleto);
   }
 
   Future<void> _filterCargasByAsociadoId(String asociadoId, String nombreAsociado) async {
-    // Buscar en memoria local
     final cargasDelAsociado = _allCargasFamiliares
         .where((c) => c.asociadoId == asociadoId)
         .toList();
 
     if (cargasDelAsociado.isNotEmpty) {
-      // Filtrar la lista visual
       final cargasMapeadas = cargasDelAsociado.map((c) => _cargaToMap(c)).toList();
       filteredCargas.value = cargasMapeadas;
       
-      // Seleccionar la primera carga
       selectedCarga.value = cargasDelAsociado.first;
       searchText.value = '';
       
@@ -538,7 +528,6 @@ class CargasFamiliaresController extends GetxController {
     try {
       isLoading.value = true;
 
-      // 1. Actualizar la carga con el nuevo asociado
       final carga = _allCargasFamiliares.firstWhereOrNull((c) => c.id == solicitud.cargaId);
       if (carga == null) {
         _showErrorSnackbar('Error', 'No se encontró la carga familiar');
@@ -555,7 +544,6 @@ class CargasFamiliaresController extends GetxController {
           .doc(solicitud.cargaId)
           .update(cargaActualizada.toMap());
 
-      // 2. Actualizar el estado de la solicitud
       await FirebaseFirestore.instance
           .collection('solicitudes_transferencia')
           .doc(solicitud.id)
@@ -564,7 +552,6 @@ class CargasFamiliaresController extends GetxController {
         'fechaRespuesta': DateTime.now(),
       });
 
-      // 3. Actualizar listas locales
       final index = _allCargasFamiliares.indexWhere((c) => c.id == cargaActualizada.id);
       if (index != -1) {
         _allCargasFamiliares[index] = cargaActualizada;
@@ -824,7 +811,6 @@ class CargasFamiliaresController extends GetxController {
 
     final context = Get.context;
     if (context != null) {
-      // Obtener el SAP del asociado desde el cache
       final asociadoSap = _asociadosSapCache[selectedCarga.value!.asociadoId] ?? 'Sin SAP';
       
       GenerarCodigoBarrasCargaDialog.show(

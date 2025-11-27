@@ -286,7 +286,6 @@ class AddHistorialDialog {
                   const SizedBox(height: 24),
                   _sectionTitle(context, 'Seguimiento y Costos'),
                   
-                  // AQUÍ ESTÁ EL CAMBIO DEL CALENDARIO
                   _buildDatePicker(context, selectedProximaCita, 'Próxima Cita'),
                   
                   const SizedBox(height: 16),
@@ -410,7 +409,6 @@ class AddHistorialDialog {
           initialDate: selectedDate.value ?? DateTime.now(),
           firstDate: DateTime.now(),
           lastDate: DateTime.now().add(const Duration(days: 365)),
-          // AGREGADO: Locale y Builder para asegurar idioma y tema
           builder: (context, child) {
             return Theme(
               data: Theme.of(context).copyWith(

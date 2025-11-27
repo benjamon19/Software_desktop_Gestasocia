@@ -21,7 +21,6 @@ class AsociadosMainView extends StatelessWidget {
       body: Container(
         padding: const EdgeInsets.all(20),
         child: Obx(() {
-          // Si está cargando, mostrar pantalla completa de carga
           if (controller.isLoading.value) {
             return const LoadingIndicator(message: 'Cargando asociados...');
           }
@@ -29,7 +28,6 @@ class AsociadosMainView extends StatelessWidget {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Solo mostrar SearchSection cuando NO hay asociado seleccionado
               if (!controller.hasSelectedAsociado)
                 Column(
                   children: [

@@ -41,7 +41,6 @@ class CalendarGridWeek extends StatelessWidget {
               const double border = 0.6;
               final double scale = (constraints.maxWidth / 900).clamp(0.75, 1.0);
               
-              // Altura exacta sin restar bordes para evitar desfases
               final double cellHeight = constraints.maxHeight / hoursToShow;
               
               final double fontSmall = 10 * scale;
@@ -121,11 +120,9 @@ class CalendarGridWeek extends StatelessWidget {
                                     currentHour,
                                   );
 
-                                  // Decidir qué widget mostrar
                                   Widget contentWidget;
 
                                   if (reservasEnEstaHora.isEmpty) {
-                                    // Caso 0: Vacío -> Botón transparente para crear cita
                                     contentWidget = Material(
                                       color: Colors.transparent,
                                       child: InkWell(
@@ -135,7 +132,7 @@ class CalendarGridWeek extends StatelessWidget {
                                       ),
                                     );
                                   } else if (reservasEnEstaHora.length == 1) {
-                                    // Caso 1: Una sola reserva -> Detalle normal
+
                                     final reserva = reservasEnEstaHora.first;
                                     contentWidget = CalendarAppointmentItem(
                                       reserva: reserva,
@@ -143,7 +140,6 @@ class CalendarGridWeek extends StatelessWidget {
                                       onTap: () => ReservaDetailDialog.show(context, reserva),
                                     );
                                   } else {
-                                    // Caso 2+: Múltiples reservas -> Grupo
                                     contentWidget = CalendarGroupItem(
                                       reservas: reservasEnEstaHora,
                                       onTap: () {

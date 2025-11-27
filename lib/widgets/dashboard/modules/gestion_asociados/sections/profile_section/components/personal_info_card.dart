@@ -65,7 +65,6 @@ class PersonalInfoCard extends StatelessWidget {
   Widget _buildInfoGrid(BuildContext context, dynamic currentAsociado) {
     return Column(
       children: [
-        // Primera fila: Nombre Completo y RUT
         Row(
           children: [
             Expanded(
@@ -92,7 +91,6 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Segunda fila: Email y Teléfono
         Row(
           children: [
             Expanded(
@@ -119,7 +117,6 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Tercera fila: Fecha de Nacimiento y Estado Civil
         Row(
           children: [
             Expanded(
@@ -146,7 +143,6 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Cuarta fila: Plan y Fecha de Ingreso
         Row(
           children: [
             Expanded(
@@ -173,7 +169,6 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Quinta fila: Dirección (ancho completo)
         _buildInfoItem(
           context,
           'Dirección',

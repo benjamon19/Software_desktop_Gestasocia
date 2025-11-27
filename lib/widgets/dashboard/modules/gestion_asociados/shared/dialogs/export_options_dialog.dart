@@ -7,7 +7,6 @@ import '../../../../../../services/export_service.dart';
 
 class ExportOptionsDialog {
   static void show(BuildContext context) {
-    // Obtenemos el controller aquí
     final AsociadosController asociadosController = Get.find<AsociadosController>();
 
     showModalBottomSheet(
@@ -37,10 +36,8 @@ class ExportOptionsDialog {
               title: const Text('Exportar a PDF'),
               subtitle: const Text('Informe completo en formato PDF'),
               onTap: () async {
-                // 1. Cerrar el modal
                 Navigator.pop(modalContext);
 
-                // 2. Validar selección
                 if (!asociadosController.hasSelectedAsociado) {
                   _showErrorSnackbar('Debes seleccionar un asociado para exportar');
                   return;
@@ -48,7 +45,6 @@ class ExportOptionsDialog {
                 
                 final asociado = asociadosController.currentAsociado!;
                 
-                // 3. Pedir al usuario dónde guardar
                 String? filePath = await FilePicker.platform.saveFile(
                   dialogTitle: 'Guardar PDF como...',
                   fileName: 'asociado_${asociado.rut}.pdf',
@@ -56,7 +52,6 @@ class ExportOptionsDialog {
                   type: FileType.custom,
                 );
 
-                // 4. Si el usuario seleccionó una ruta, exportar
                 if (filePath != null) {
                   try {
                     final cargas = asociadosController.cargasFamiliares
@@ -68,7 +63,6 @@ class ExportOptionsDialog {
                     if (success) {
                       _showSuccessSnackbar('PDF guardado en: $filePath');
                     } else {
-                      // El error específico se imprimirá desde el ExportService
                       throw Exception('Error desconocido al guardar PDF');
                     }
                   } catch (e) {
@@ -84,10 +78,8 @@ class ExportOptionsDialog {
               title: const Text('Exportar a Excel'),
               subtitle: const Text('Datos en formato de hoja de cálculo'),
               onTap: () async {
-                // 1. Cerrar el modal
                 Navigator.pop(modalContext);
 
-                // 2. Validar selección
                 if (!asociadosController.hasSelectedAsociado) {
                   _showErrorSnackbar('Debes seleccionar un asociado para exportar');
                   return;
@@ -95,7 +87,6 @@ class ExportOptionsDialog {
 
                 final asociado = asociadosController.currentAsociado!;
 
-                // 3. Pedir al usuario dónde guardar
                 String? filePath = await FilePicker.platform.saveFile(
                   dialogTitle: 'Guardar Excel como...',
                   fileName: 'asociado_${asociado.rut}.xlsx',
@@ -103,7 +94,6 @@ class ExportOptionsDialog {
                   type: FileType.custom,
                 );
 
-                // 4. Si el usuario seleccionó una ruta, exportar
                 if (filePath != null) {
                   try {
                     final cargas = asociadosController.cargasFamiliares
@@ -136,7 +126,7 @@ class ExportOptionsDialog {
       'Éxito',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: const Color(0xFF059669).withValues(alpha: 204), // 0.8 opacidad
+      backgroundColor: const Color(0xFF059669).withValues(alpha: 204),
       colorText: Colors.white,
       duration: const Duration(seconds: 4),
     );
@@ -147,7 +137,7 @@ class ExportOptionsDialog {
       'Error',
       message,
       snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.withValues(alpha: 204), // 0.8 opacidad
+      backgroundColor: Colors.red.withValues(alpha: 204),
       colorText: Colors.white,
       duration: const Duration(seconds: 4),
     );

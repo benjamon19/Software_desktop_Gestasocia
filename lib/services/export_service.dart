@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart'; // Para kDebugMode
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -146,7 +146,6 @@ class ExportService {
     }
   }
 
-  /// Exportar asociado a Excel (usa la hoja predeterminada "Sheet1")
   static Future<bool> exportToExcel(
     Asociado asociado,
     List<CargaFamiliar> cargas,
@@ -154,8 +153,8 @@ class ExportService {
   ) async {
     try {
       var excel = Excel.createExcel();
-      Sheet sheet = excel['Sheet1']; // Usar hoja por defecto
-      excel.setDefaultSheet('Sheet1'); // Asegurar que sea la activa
+      Sheet sheet = excel['Sheet1'];
+      excel.setDefaultSheet('Sheet1');
 
       // Estilo para headers
       CellStyle headerStyle = CellStyle(
@@ -246,9 +245,7 @@ class ExportService {
 
   // ========== HELPERS ==========
 
-  /// Formatea un RUT chileno limpiando primero cualquier formato previo
   static String _formatearRut(String rut) {
-    // Limpiar el RUT de puntos y guiones
     String rutLimpio = rut.replaceAll(RegExp(r'[.-]'), '');
     
     if (rutLimpio.length < 2) return rut;
@@ -256,7 +253,6 @@ class ExportService {
     String cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
     String dv = rutLimpio.substring(rutLimpio.length - 1);
     
-    // Formatear con puntos de miles
     String cuerpoFormateado = '';
     for (int i = cuerpo.length - 1, count = 0; i >= 0; i--, count++) {
       if (count > 0 && count % 3 == 0) {

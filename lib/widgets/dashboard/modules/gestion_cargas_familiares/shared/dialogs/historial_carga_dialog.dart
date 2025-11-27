@@ -231,7 +231,6 @@ class HistorialCargaDialog {
 
                   // ========== SECCIÓN DE CAMBIOS DETALLADOS ==========
                   
-                  // Mostrar valores anteriores vs nuevos (para ediciones)
                   if (cambio.valoresAnteriores != null &&
                       cambio.valoresNuevos != null &&
                       cambio.valoresAnteriores!.isNotEmpty) ...[

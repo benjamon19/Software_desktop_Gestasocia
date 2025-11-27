@@ -174,7 +174,7 @@ class HistorialListSection extends StatelessWidget {
       (hover) => InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          onBeforeSelect?.call(); // ← Limpia antes de seleccionar
+          onBeforeSelect?.call();
           onHistorialSelected(historial);
         },
         onHover: (value) => hover.value = value,

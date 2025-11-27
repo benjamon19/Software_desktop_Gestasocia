@@ -29,7 +29,6 @@ class _CargaFamiliarSearchFieldState extends State<CargaFamiliarSearchField> {
     super.dispose();
   }
 
-  // Método público para limpiar el campo
   void clearField() {
     _searchController.clear();
     setState(() {});
@@ -39,7 +38,6 @@ class _CargaFamiliarSearchFieldState extends State<CargaFamiliarSearchField> {
   Widget build(BuildContext context) {
     return Focus(
       onKeyEvent: (node, event) {
-        // Manejar tecla ESC para limpiar el campo
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
           if (_searchController.text.isNotEmpty) {
             _searchController.clear();
@@ -157,12 +155,10 @@ class _CargaFamiliarSearchFieldState extends State<CargaFamiliarSearchField> {
       return null;
     }
     
-    // Si es SAP (5 dígitos), es válido
     if (_isSAP(value)) {
       return null;
     }
     
-    // Si no es SAP, validar como RUT
     if (!_isValidRutFormat(value)) {
       return 'Formato inválido. Use SAP (5 dígitos) o RUT (12345678-9)';
     }
@@ -171,19 +167,16 @@ class _CargaFamiliarSearchFieldState extends State<CargaFamiliarSearchField> {
   }
 
   bool _isSAP(String input) {
-    // SAP es exactamente 5 dígitos
     return RegExp(r'^[0-9]{5}$').hasMatch(input);
   }
 
   bool _isValidRutFormat(String rut) {
-    // Acepta RUT con guión o sin guión (para cuando está escribiendo)
     final rutWithDash = RegExp(r'^\d{7,8}-[0-9kK]$');
     final rutWithoutDash = RegExp(r'^\d{8,9}$');
     return rutWithDash.hasMatch(rut) || rutWithoutDash.hasMatch(rut);
   }
 }
 
-// Formatter que SOLO formatea cuando ya escribiste 8-9 dígitos
 class _DelayedRutFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -192,12 +185,10 @@ class _DelayedRutFormatter extends TextInputFormatter {
   ) {
     String text = newValue.text.replaceAll('-', '');
     
-    // Si tiene menos de 8 caracteres, NO formatear
     if (text.length < 8) {
       return newValue;
     }
     
-    // Si tiene 8 o 9 caracteres (RUT completo), formatear con guión
     if (text.length >= 8 && text.length <= 9) {
       String body = text.substring(0, text.length - 1);
       String dv = text.substring(text.length - 1);

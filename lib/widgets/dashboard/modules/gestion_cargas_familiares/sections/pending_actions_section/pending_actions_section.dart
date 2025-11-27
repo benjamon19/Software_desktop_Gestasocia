@@ -87,7 +87,6 @@ class PendingActionsSection extends StatelessWidget {
             color: AppTheme.getTextSecondary(context).withValues(alpha: 0.1),
           ),
 
-          // Lista de solicitudes de transferencia
           Obx(() {
             if (controller.solicitudesTransferencia.isEmpty) {
               return Expanded(

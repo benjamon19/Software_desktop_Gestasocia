@@ -33,7 +33,6 @@ class CalendarSidebarSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // === BOTÓN "CREAR NUEVA CITA" en estilo ElevatedButton.icon ===
                   ElevatedButton.icon(
                     onPressed: () {
                       NewReservaDialog.show(context, preSelectedDate: selectedDate);

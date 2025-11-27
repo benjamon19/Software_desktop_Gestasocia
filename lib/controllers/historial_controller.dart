@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../models/historial_cambio.dart';
 import '../models/asociado.dart';
 import '../models/carga_familiar.dart';
-import 'usuario_controller.dart';
+import 'auth_controller.dart'; 
 
 class HistorialController extends GetxController {
   RxList<HistorialCambio> historialCambios = <HistorialCambio>[].obs;
@@ -36,7 +36,6 @@ class HistorialController extends GetxController {
     );
   }
 
-  /// Registrar edición de asociado (con comparación de cambios)
   Future<void> registrarEdicion({
     required String asociadoId,
     required Asociado asociadoAnterior,
@@ -247,10 +246,19 @@ class HistorialController extends GetxController {
     Map<String, dynamic>? datosAdicionales,
   }) async {
     try {
-      final usuarioController = Get.find<UsuarioController>();
-      
-      String usuarioId = usuarioController.currentUserId;
-      String usuarioNombre = usuarioController.currentUserName;
+      // === CORRECCIÓN DE USUARIO: Usar AuthController ===
+      String usuarioId = 'sistema';
+      String usuarioNombre = 'Sistema';
+
+      if (Get.isRegistered<AuthController>()) {
+        final authController = Get.find<AuthController>();
+        // Verificamos si hay usuario logueado en la sesión activa
+        if (authController.currentUser.value != null) {
+          usuarioId = authController.currentUserId ?? 'sistema';
+          // Esto obtiene el nombre real del usuario logueado
+          usuarioNombre = authController.userDisplayName; 
+        }
+      }
 
       final cambio = HistorialCambio(
         asociadoId: asociadoId,

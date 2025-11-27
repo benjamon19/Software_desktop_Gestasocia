@@ -24,12 +24,12 @@ class CalendarGroupItem extends StatelessWidget {
         child: Container(
           width: double.infinity,
           margin: const EdgeInsets.only(bottom: 1, right: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1), // aún más compacto
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(4),
             border: Border(
-              left: BorderSide(color: color, width: 3), // reducido de 4 a 3 para menos peso visual
+              left: BorderSide(color: color, width: 3),
             ),
           ),
           child: Row(
@@ -52,7 +52,6 @@ class CalendarGroupItem extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               
-              // Solo "Múltiples Citas", sin odontólogo
               Expanded(
                 child: Text(
                   'Múltiples Citas',
