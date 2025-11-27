@@ -5,7 +5,7 @@ import '../../../../utils/app_theme.dart';
 import '../../../../controllers/reserva_horas_controller.dart';
 
 class WeeklyAttendanceChart extends StatelessWidget {
-  final bool isCompact; // Permite forzar modo compacto desde ChartsGridSection
+  final bool isCompact;
 
   const WeeklyAttendanceChart({super.key, this.isCompact = false});
 

@@ -54,7 +54,6 @@ class _ProfileSectionState extends State<ProfileSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header del perfil - AHORA COMPLETAMENTE REACTIVO
           Obx(() {
             final currentAsociado = controller.selectedAsociado.value;
             if (currentAsociado == null) {
@@ -66,7 +65,6 @@ class _ProfileSectionState extends State<ProfileSection> {
             );
           }),
           
-          // Contenido scrolleable - TAMBIÉN REACTIVO
           Expanded(
             child: Scrollbar(
               controller: _scrollController,
@@ -91,7 +89,6 @@ class _ProfileSectionState extends State<ProfileSection> {
                       // Cargas familiares
                       FamilyChargesCard(asociado: currentAsociado),
 
-                      // === NUEVO: Historial clínico del asociado ===
                       ClinicalHistoryCard(
                         pacienteId: pacienteId,
                         pacienteTipo: 'asociado',

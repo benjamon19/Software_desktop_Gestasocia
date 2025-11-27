@@ -8,7 +8,7 @@ import '../../../../controllers/dashboard_page_controller.dart';
 import '../../../../models/historial_clinico.dart';
 
 class TreatmentAlertCard extends StatelessWidget {
-  final bool isCompact; // 👈 Permite forzar modo compacto desde ChartsGridSection
+  final bool isCompact;
 
   const TreatmentAlertCard({super.key, this.isCompact = false});
 
@@ -123,7 +123,7 @@ class TreatmentAlertCard extends StatelessWidget {
           Container(
             padding: EdgeInsets.symmetric(horizontal: compact ? 5 : 6, vertical: compact ? 1 : 2),
             decoration: BoxDecoration(
-              color: Color(0xFFEF4444).withValues(alpha: 0.1), // ✅ sin const
+              color: Color(0xFFEF4444).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -314,7 +314,7 @@ class TreatmentAlertCard extends StatelessWidget {
                   leading: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Color(0xFFEF4444).withValues(alpha: 0.1), // ✅
+                      color: Color(0xFFEF4444).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(

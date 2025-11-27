@@ -9,14 +9,12 @@ class EditAsociadoDialog {
   static void show(BuildContext context, Asociado asociado) {
     final AsociadosController controller = Get.find<AsociadosController>();
     
-    // Controladores de texto pre-poblados con los datos actuales
     final nombreController = TextEditingController(text: asociado.nombre);
     final apellidoController = TextEditingController(text: asociado.apellido);
     final emailController = TextEditingController(text: asociado.email);
     final telefonoController = TextEditingController(text: asociado.telefono);
     final direccionController = TextEditingController(text: asociado.direccion);
     
-    // Variables reactivas con valores actuales
     final selectedEstadoCivil = asociado.estadoCivil.obs;
     final selectedPlan = asociado.plan.obs;
     final selectedDate = Rxn<DateTime>(asociado.fechaNacimiento);
@@ -24,7 +22,6 @@ class EditAsociadoDialog {
 
     // Función para actualizar asociado
     Future<void> updateAsociadoAction() async {
-      // Validar campos antes de enviar
       if (_validateFields(
         nombreController.text,
         apellidoController.text,
@@ -52,7 +49,6 @@ class EditAsociadoDialog {
         isLoading.value = false;
         
         if (success && context.mounted) {
-          // Forzar actualización inmediata del UI
           controller.selectedAsociado.refresh();
           controller.searchQuery.refresh();
           Navigator.of(context).pop();
@@ -202,7 +198,7 @@ class EditAsociadoDialog {
                       Expanded(child: Obx(() => _buildDropdown(
                         context, 
                         'Estado Civil', 
-                        ['Soltero', 'Casado', 'Viudo', 'Divorciado', 'Conviviente Civil'], 
+                        ['Soltero', 'Casado', 'Viudo'], 
                         Icons.favorite,
                         selectedEstadoCivil,
                       ))),
@@ -254,7 +250,7 @@ class EditAsociadoDialog {
                   Obx(() => _buildDropdown(
                     context, 
                     'Plan', 
-                    ['Asociado', 'VIP'], 
+                    ['Socio', 'VIP'], 
                     Icons.card_membership,
                     selectedPlan,
                   )),
@@ -285,7 +281,7 @@ class EditAsociadoDialog {
     );
   }
 
-  // --- VALIDACIONES ROBUSTAS ---
+  // --- VALIDACIONES ---
   static bool _validateFields(
     String nombre,
     String apellido, 

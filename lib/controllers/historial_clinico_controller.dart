@@ -73,21 +73,15 @@ class HistorialClinicoController extends GetxController {
     }).length;
   }
 
-  /// LISTA: Urgencias Pendientes (Para la tarjeta "TreatmentAlertCard")
-  /// Retorna una lista de historiales clínicos que son urgencias y están pendientes.
   List<HistorialClinico> get urgenciasPendientes {
     return _allHistoriales.where((h) {
       final isUrgencia = h.tipoConsulta.toLowerCase() == 'urgencia';
-      // Consideramos pendiente si no está completado ni cancelado
-      // Ajusta estos estados según tu lógica de negocio
       final isPendiente = ['pendiente', 'requiere_seguimiento', 'en_proceso'].contains(h.estado.toLowerCase());
       return isUrgencia && isPendiente;
     }).toList()
-    // Ordenar por fecha (las más antiguas primero, ya que son urgencias pendientes)
     ..sort((a, b) => a.fecha.compareTo(b.fecha));
   }
 
-  /// GRÁFICO: Estadísticas de Tratamientos (Agrupados por nombre)
   Map<String, int> get tratamientosPorTipo {
     final Map<String, int> counts = {};
     for (var h in _allHistoriales) {
@@ -102,10 +96,6 @@ class HistorialClinicoController extends GetxController {
     }
     return counts;
   }
-  // =========================================================================
-
-
-  // ========== CARGAR DESDE FIREBASE CON REFERENCIAS ==========
 
   Future<void> loadHistorialesFromFirebase() async {
     try {
@@ -179,7 +169,6 @@ class HistorialClinicoController extends GetxController {
     return null;
   }
 
-  /// Obtener información del paciente para mostrar en la UI
   Map<String, dynamic> getPacienteInfoForDisplay(HistorialClinico historial) {
     final info = _getPacienteInfo(historial);
     return info ?? {
@@ -192,49 +181,42 @@ class HistorialClinicoController extends GetxController {
     };
   }
 
-  // ========== BÚSQUEDA Y FILTROS MEJORADOS ==========
+  // ========== BÚSQUEDA Y FILTROS ==========
 
   void _applyFilters() {
     List<HistorialClinico> filtered = List.from(_allHistoriales);
 
-    // Filtro por búsqueda (SAP del asociado o RUT del asociado/carga)
     if (searchQuery.value.isNotEmpty) {
       final query = searchQuery.value.trim();
       final querySinFormato = query.replaceAll(RegExp(r'[^0-9kK]'), '');
 
       filtered = filtered.where((historial) {
         try {
-          // Caso 1: Historial de asociado
           if (historial.pacienteTipo == 'asociado') {
             final asociadosController = Get.find<AsociadosController>();
             final asociado = asociadosController.getAsociadoById(historial.pacienteId);
 
             if (asociado != null) {
-              // Buscar por SAP del asociado
               if (asociado.sap != null && 
                   asociado.sap!.contains(querySinFormato)) {
                 return true;
               }
-              // Buscar por RUT del asociado
               final rutSinFormato = asociado.rut.replaceAll(RegExp(r'[^0-9kK]'), '');
               if (rutSinFormato.contains(querySinFormato)) {
                 return true;
               }
             }
           }
-          // Caso 2: Historial de carga familiar
           else if (historial.pacienteTipo == 'carga') {
             final cargasController = Get.find<CargasFamiliaresController>();
             final carga = cargasController.getCargaById(historial.pacienteId);
 
             if (carga != null) {
-              // Buscar por RUT de la carga
               final rutCargaSinFormato = carga.rut.replaceAll(RegExp(r'[^0-9kK]'), '');
               if (rutCargaSinFormato.contains(querySinFormato)) {
                 return true;
               }
 
-              // Buscar por SAP del asociado titular
               final asociadosController = Get.find<AsociadosController>();
               final asociadoTitular = asociadosController.getAsociadoById(carga.asociadoId);
               if (asociadoTitular != null &&

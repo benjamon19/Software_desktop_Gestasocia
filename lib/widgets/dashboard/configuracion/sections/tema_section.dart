@@ -28,9 +28,7 @@ class TemaSection extends StatelessWidget {
             SizedBox(height: isVeryShortScreen ? 16 : 24),
             _buildAdaptiveThemeOptions(context, themeController, isSmallScreen, isVeryShortScreen),
             SizedBox(height: isVeryShortScreen ? 12 : (isShortScreen ? 16 : 20)),
-            // Vista previa SIEMPRE visible
             _buildAdaptivePreviewCard(context, isSmallScreen, isVeryShortScreen),
-            // Espacio adicional al final para scroll completo
             const SizedBox(height: 20),
           ],
         ),
@@ -301,8 +299,7 @@ class TemaSection extends StatelessWidget {
         ),
       );
     }
-
-    // Versión vertical normal
+    
     return Material(
       color: Colors.transparent,
       child: InkWell(

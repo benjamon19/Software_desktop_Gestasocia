@@ -32,7 +32,6 @@ class EditHistorialDialog {
     final selectedEstado = historial.estado.toLowerCase().obs;
     final selectedProximaCita = Rxn<DateTime>(historial.proximaCita);
     
-    // Lógica Odontólogos (Igual que en referencia)
     final RxString selectedOdontologo = (historial.odontologo).obs;
     final RxList<Map<String, String>> listaOdontologos = <Map<String, String>>[].obs;
     final RxBool loadingOdontologos = true.obs;
@@ -59,8 +58,6 @@ class EditHistorialDialog {
         }
         listaOdontologos.value = odontologos;
 
-        // Asegurar que el odontólogo actual esté en la lista para no romper el dropdown
-        // Si no está (ej: usuario borrado), lo agregamos manualmente para que se vea
         if (selectedOdontologo.value.isNotEmpty) {
           final exists = odontologos.any((item) => item['value'] == selectedOdontologo.value);
           if (!exists) {

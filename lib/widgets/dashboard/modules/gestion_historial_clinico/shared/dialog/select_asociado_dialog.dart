@@ -30,13 +30,12 @@ class SelectPacienteDialog {
           'edad': asociado.edad,
           'telefono': asociado.telefono,
           'data': asociado,
-          'asociadoId': asociado.id, // Para ordenamiento
+          'asociadoId': asociado.id,
         });
       }
       
       // Agregar cargas familiares
       for (var carga in cargasController.cargasFamiliares) {
-        // Obtener nombre del asociado titular
         final asociado = asociadosController.getAsociadoById(carga.asociadoId);
         final titularNombre = asociado?.nombreCompleto ?? 'Desconocido';
         
@@ -49,7 +48,7 @@ class SelectPacienteDialog {
           'parentesco': carga.parentesco,
           'titularNombre': titularNombre,
           'data': carga,
-          'asociadoId': carga.asociadoId, // Para ordenamiento
+          'asociadoId': carga.asociadoId,
         });
       }
       
@@ -139,7 +138,6 @@ class SelectPacienteDialog {
         }
       }
       
-      // Si se encontraron asociados por SAP, agregar sus cargas familiares
       if (asociadosEncontrados.isNotEmpty) {
         for (var paciente in allPacientes) {
           if (paciente['tipo'] == 'carga' && 
@@ -149,18 +147,14 @@ class SelectPacienteDialog {
           }
         }
       }
-      
-      // Ordenar: primero asociados, luego cargas, agrupados por asociadoId
+
       resultados.sort((a, b) {
-        // Comparar por asociadoId primero
+
         int asociadoCompare = a['asociadoId'].compareTo(b['asociadoId']);
         if (asociadoCompare != 0) return asociadoCompare;
-        
-        // Dentro del mismo asociado, primero el asociado, luego las cargas
         if (a['tipo'] == 'asociado' && b['tipo'] == 'carga') return -1;
         if (a['tipo'] == 'carga' && b['tipo'] == 'asociado') return 1;
         
-        // Si ambos son cargas, ordenar por nombre
         return a['nombre'].toString().compareTo(b['nombre'].toString());
       });
       

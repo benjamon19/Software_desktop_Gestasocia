@@ -31,7 +31,5 @@ class DashboardBinding extends Bindings {
     Get.put<HistorialController>(HistorialController(), permanent: true);
     Get.put<HistorialCargasController>(HistorialCargasController(), permanent: true);
     Get.put<UsuarioController>(UsuarioController(), permanent: true);
-    
-    // NOTA: El MockDataController fue eliminado de aquí.
   }
 }

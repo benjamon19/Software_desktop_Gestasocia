@@ -44,7 +44,6 @@ class SearchSection extends StatelessWidget {
   Widget _buildSearchControls(BuildContext context) {
     return Obx(() => Row(
       children: [
-        // Campo principal de búsqueda (más ancho)
         Expanded(
           flex: 5,
           child: RutSearchField(

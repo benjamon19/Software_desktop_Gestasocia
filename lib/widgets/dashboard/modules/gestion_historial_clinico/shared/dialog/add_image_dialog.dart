@@ -66,7 +66,6 @@ class AddImageDialog {
       }
     }
 
-    // ✅ Función LOCAL para subir (no se pasa context)
     Future<void> uploadImage(BuildContext innerContext) async {
       if (selectedImage.value == null) {
         Get.snackbar(
@@ -79,7 +78,6 @@ class AddImageDialog {
         return;
       }
 
-      // Guardar mounted ANTES de cualquier await
       final bool wasMounted = innerContext.mounted;
       if (!wasMounted) return;
 
@@ -92,7 +90,6 @@ class AddImageDialog {
         );
 
         if (success) {
-          // ✅ Refrescar sin depender del contexto
           if (controller.selectedHistorial.value?.id == historialId) {
             try {
               final doc = await FirebaseFirestore.instance
@@ -108,7 +105,6 @@ class AddImageDialog {
             }
           }
 
-          // ✅ Solo usar context si sigue montado
           if (wasMounted && innerContext.mounted) {
             Navigator.of(innerContext).pop();
           }

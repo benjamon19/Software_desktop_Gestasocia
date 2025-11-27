@@ -33,7 +33,6 @@ class HistorialHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Botón volver + Título "Historial Clínico"
           Row(
             children: [
               if (onBack != null) ...[
@@ -75,7 +74,6 @@ class HistorialHeader extends StatelessWidget {
           
           const SizedBox(height: 20),
           
-          // Información del paciente y consulta - REACTIVA
           Obx(() {
             final currentHistorial = controller.selectedHistorial.value;
             final pacienteNombre = controller.selectedPacienteNombre.value;
@@ -87,7 +85,6 @@ class HistorialHeader extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Información del paciente y tipo
                 Row(
                   children: [
                     Expanded(

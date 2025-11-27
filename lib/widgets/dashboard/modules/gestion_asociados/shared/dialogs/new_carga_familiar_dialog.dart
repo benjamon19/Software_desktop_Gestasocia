@@ -20,7 +20,6 @@ class NewCargaFamiliarDialog {
 
     // Función para crear carga familiar
     Future<void> createCargaFamiliarAction() async {
-      // 1. Validar campos antes de enviar
       if (_validateFields(
         nombreController.text,
         apellidoController.text,
@@ -28,15 +27,13 @@ class NewCargaFamiliarDialog {
         selectedDate.value,
       )) {
         isLoading.value = true;
-        
-        // 2. Crear la carga vinculada al ID del asociado (comparte su SAP internamente)
+      
         final success = await controller.createCargaFamiliar(
           nombre: nombreController.text.trim(),
           apellido: apellidoController.text.trim(),
           rut: rutController.text.trim(),
           parentesco: selectedParentesco.value,
           fechaNacimiento: selectedDate.value!,
-          // No generamos SAP ni código de barras aquí, hereda la entidad del titular
         );
         
         isLoading.value = false;
@@ -87,7 +84,7 @@ class NewCargaFamiliarDialog {
                       ),
                     ),
                     Text(
-                      'Titular: $titularNombre', // Feedback visual del vínculo
+                      'Titular: $titularNombre',
                       style: TextStyle(
                         color: AppTheme.getTextSecondary(context),
                         fontSize: 12,
@@ -446,7 +443,6 @@ class NewCargaFamiliarDialog {
   }
 }
 
-// Formateador de RUT (Sin cambios, solo incluido para integridad)
 class _RutFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

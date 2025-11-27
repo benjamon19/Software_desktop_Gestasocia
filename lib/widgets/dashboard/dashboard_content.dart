@@ -62,7 +62,6 @@ class DashboardContent extends StatelessWidget {
           
           SizedBox(height: sectionSpacing),
           
-          // Sección de gráficos (se adapta al espacio restante)
           const Expanded(
             child: ChartsGridSection(),
           ),
@@ -90,7 +89,6 @@ class DashboardContent extends StatelessWidget {
           ),
         ),
         
-        // Información adicional en pantallas grandes
         if (!isSmallScreen) ...[
           Container(
             padding: const EdgeInsets.symmetric(

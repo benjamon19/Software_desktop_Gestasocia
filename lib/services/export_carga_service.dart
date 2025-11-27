@@ -60,13 +60,12 @@ class ExportCargasService {
             pw.Divider(thickness: 2),
             pw.SizedBox(height: 20),
             
-            // INFORMACIÓN DE LA CARGA FAMILIAR (ARRIBA)
             pw.Text(
               'Carga Familiar',
               style: pw.TextStyle(
                 fontSize: 20,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromInt(0xFF10B981), // Verde
+                color: PdfColor.fromInt(0xFF10B981),
               ),
             ),
             pw.SizedBox(height: 20),
@@ -81,7 +80,6 @@ class ExportCargasService {
               _buildInfoRow('Estado', carga.estado),
             ]),
             
-            // Sección Contacto de la Carga (si tiene datos)
             if (carga.email != null && carga.email!.isNotEmpty || 
                 carga.telefono != null && carga.telefono!.isNotEmpty ||
                 carga.direccion != null && carga.direccion!.isNotEmpty) ...[
@@ -96,7 +94,6 @@ class ExportCargasService {
               ]),
             ],
             
-            // Sección Información Adicional de la Carga
             pw.SizedBox(height: 20),
             _buildInfoSection('Información Adicional', PdfColor.fromInt(0xFF10B981), [
               _buildInfoRow('Fecha de Creación', carga.fechaCreacionFormateada),
@@ -115,7 +112,6 @@ class ExportCargasService {
                 _buildInfoRow('Código de Barras', carga.codigoBarras!),
             ]),
             
-            // Sección Alertas de la Carga (si existen)
             if (carga.alertas != null && carga.alertas!.isNotEmpty) ...[
               pw.SizedBox(height: 20),
               _buildInfoSection('Alertas', PdfColor.fromInt(0xFF10B981), [
@@ -126,13 +122,12 @@ class ExportCargasService {
             
             pw.SizedBox(height: 30),
             
-            // INFORMACIÓN DEL ASOCIADO TITULAR (ABAJO)
             pw.Text(
               'Asociado Titular',
               style: pw.TextStyle(
                 fontSize: 18,
                 fontWeight: pw.FontWeight.bold,
-                color: PdfColor.fromInt(0xFF10B981), // Verde
+                color: PdfColor.fromInt(0xFF10B981),
               ),
             ),
             pw.SizedBox(height: 15),
@@ -172,14 +167,12 @@ class ExportCargasService {
       Sheet sheet = excel['Sheet1'];
       excel.setDefaultSheet('Sheet1');
 
-      // Estilo para headers - Verde
       CellStyle headerStyle = CellStyle(
         bold: true,
-        backgroundColorHex: ExcelColor.fromHexString('#10B981'), // Verde
+        backgroundColorHex: ExcelColor.fromHexString('#10B981'),
         fontColorHex: ExcelColor.fromHexString('#FFFFFF'),
       );
 
-      // CARGA FAMILIAR (ARRIBA)
       sheet.cell(CellIndex.indexByString('A1')).value = TextCellValue('CARGA FAMILIAR');
       sheet.cell(CellIndex.indexByString('B1')).value = TextCellValue('');
       sheet.cell(CellIndex.indexByString('A1')).cellStyle = headerStyle;
@@ -193,7 +186,6 @@ class ExportCargasService {
       _addExcelRow(sheet, row++, 'Edad', '${carga.edad} años');
       _addExcelRow(sheet, row++, 'Estado', carga.estado);
 
-      // Información de contacto de la carga
       if (carga.email != null && carga.email!.isNotEmpty || 
           carga.telefono != null && carga.telefono!.isNotEmpty) {
         row++;
@@ -204,7 +196,6 @@ class ExportCargasService {
         }
       }
 
-      // Información adicional de la carga
       row++;
       _addExcelRow(sheet, row++, 'Fecha de Creación', carga.fechaCreacionFormateada);
       if (carga.ultimaActividad != null) {
@@ -224,7 +215,6 @@ class ExportCargasService {
         _addExcelRow(sheet, row++, 'Código de Barras', carga.codigoBarras!);
       }
 
-      // Alertas de la carga
       if (carga.alertas != null && carga.alertas!.isNotEmpty) {
         row++;
         for (final alerta in carga.alertas!) {
@@ -232,10 +222,8 @@ class ExportCargasService {
         }
       }
 
-      // Espacio entre secciones
       row += 2;
 
-      // ASOCIADO TITULAR (ABAJO)
       sheet.cell(CellIndex.indexByString('A$row')).value = TextCellValue('ASOCIADO TITULAR');
       sheet.cell(CellIndex.indexByString('B$row')).value = TextCellValue('');
       sheet.cell(CellIndex.indexByString('A$row')).cellStyle = headerStyle;
@@ -275,7 +263,7 @@ class ExportCargasService {
           style: pw.TextStyle(
             fontSize: 16,
             fontWeight: pw.FontWeight.bold,
-            color: titleColor, // Usar el color pasado como parámetro
+            color: titleColor,
           ),
         ),
         pw.SizedBox(height: 10),
@@ -340,7 +328,6 @@ class ExportCargasService {
         asociadoId: asociadoId,
         formato: formato,
         nombreArchivo: fileName,
-        // cargaId: cargaId, // Comentado si no existe en el método
       );
     } catch (e) {
       if (kDebugMode) print('Error al registrar exportación: $e');

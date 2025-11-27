@@ -43,23 +43,29 @@ class CargaFamiliar {
 
   String get nombreCompleto => '$nombre $apellido';
   
+  // === FORMATO RUT ===
   String get rutFormateado {
-    final rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
+    final rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '').toUpperCase();
     
     if (rutLimpio.length < 2) return rutLimpio;
     
-    String cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
-    String dv = rutLimpio.substring(rutLimpio.length - 1);
-    
-    String cuerpoFormateado = '';
+    final cuerpo = rutLimpio.substring(0, rutLimpio.length - 1);
+    final dv = rutLimpio.substring(rutLimpio.length - 1);
+
+    String cuerpoFormateado = "";
+    int contador = 0;
+
     for (int i = cuerpo.length - 1; i >= 0; i--) {
-      if ((cuerpo.length - i) % 3 == 1 && i != cuerpo.length - 1) {
-        cuerpoFormateado = '.$cuerpoFormateado';
+      cuerpoFormateado = cuerpo[i] + cuerpoFormateado;
+      contador++;
+
+      if (contador == 3 && i > 0) {
+        cuerpoFormateado = ".$cuerpoFormateado";
+        contador = 0;
       }
-      cuerpoFormateado = '${cuerpo[i]}$cuerpoFormateado';
     }
-    
-    return '$cuerpoFormateado-$dv';
+
+    return "$cuerpoFormateado-$dv";
   }
 
   String get fechaNacimientoFormateada {

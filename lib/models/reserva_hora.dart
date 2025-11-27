@@ -29,7 +29,6 @@ class ReservaHora {
     required this.fechaCreacion,
   });
 
-  // Getter útil para mostrar fecha en formato String
   String get fechaFormateada {
     return '${fecha.day.toString().padLeft(2, '0')}/${fecha.month.toString().padLeft(2, '0')}/${fecha.year}';
   }

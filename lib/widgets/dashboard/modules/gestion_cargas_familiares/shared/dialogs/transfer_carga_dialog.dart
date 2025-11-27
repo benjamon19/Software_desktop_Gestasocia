@@ -193,7 +193,6 @@ class TransferCargaDialog {
 
                 const SizedBox(height: 16),
 
-                // 🟡 Aviso movido aquí
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -385,7 +384,6 @@ class TransferCargaDialog {
 
                 const SizedBox(height: 12),
 
-                // Información del asociado seleccionado
                 Obx(() {
                   if (selectedAsociado.value == null) {
                     return Container(

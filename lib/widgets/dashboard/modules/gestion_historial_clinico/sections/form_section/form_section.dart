@@ -31,7 +31,6 @@ class _FormSectionState extends State<FormSection> {
   final _alergiasController = TextEditingController();
   final _medicamentosController = TextEditingController();
   final _costoController = TextEditingController();
-  // final _odontologoController = TextEditingController(); // YA NO SE USA
 
   // Variables para Odontólogo Dinámico
   String? _selectedOdontologo;
@@ -45,7 +44,7 @@ class _FormSectionState extends State<FormSection> {
   @override
   void initState() {
     super.initState();
-    _loadOdontologos(); // Cargar lista al iniciar
+    _loadOdontologos();
   }
 
   @override
@@ -59,7 +58,6 @@ class _FormSectionState extends State<FormSection> {
     _alergiasController.dispose();
     _medicamentosController.dispose();
     _costoController.dispose();
-    // _odontologoController.dispose();
     super.dispose();
   }
 
@@ -86,7 +84,6 @@ class _FormSectionState extends State<FormSection> {
       if (mounted) {
         setState(() {
           _listaOdontologos = loaded;
-          // Si solo hay un odontólogo, preseleccionarlo por comodidad
           if (loaded.length == 1) {
             _selectedOdontologo = loaded.first['nombreCompleto'];
           }
@@ -859,7 +856,7 @@ class _FormSectionState extends State<FormSection> {
         border: Border.all(color: AppTheme.getBorderLight(context)),
       ),
       child: DropdownButtonFormField<String>(
-        initialValue: value, // Usar value (nullable) en lugar de initialValue
+        initialValue: value,
         items: items.map((item) {
           return DropdownMenuItem<String>(
             value: item['value'],
@@ -910,14 +907,12 @@ class _FormSectionState extends State<FormSection> {
     _alergiasController.clear();
     _medicamentosController.clear();
     _costoController.clear();
-    // _odontologoController.clear(); // Ya no se usa
     
     setState(() {
       _selectedPaciente = null;
       _tipoConsulta = 'consulta';
       _estado = 'pendiente';
       _proximaCita = null;
-      // No reseteamos _selectedOdontologo si hay una lista, para mantener la comodidad
       if (_listaOdontologos.length == 1) {
         _selectedOdontologo = _listaOdontologos.first['nombreCompleto'];
       } else {

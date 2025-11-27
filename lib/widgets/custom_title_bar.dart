@@ -26,10 +26,9 @@ class CustomTitleBar extends StatelessWidget {
           (themeController.themeMode == ThemeMode.system &&
               MediaQuery.of(context).platformBrightness == Brightness.dark);
       
-      // Usar colores exactos de tu AppTheme
       final bgColor = isDark 
-          ? AppTheme.darkSurfaceColor  // Negro/gris oscuro en modo oscuro
-          : Colors.white;               // Blanco en modo claro
+          ? AppTheme.darkSurfaceColor
+          : Colors.white;
       final fgColor = isDark 
           ? AppTheme.darkTextPrimary 
           : AppTheme.textPrimary;
@@ -39,7 +38,6 @@ class CustomTitleBar extends StatelessWidget {
         color: bgColor,
         child: Row(
           children: [
-            // Área arrastrable (toda la barra)
             Expanded(
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
@@ -52,11 +50,10 @@ class CustomTitleBar extends StatelessWidget {
                     windowManager.maximize();
                   }
                 },
-                child: Container(), // Espacio vacío arrastrable
+                child: Container(),
               ),
             ),
 
-            // Botones de control de ventana
             _WindowButton(
               icon: Icons.remove,
               onPressed: () => windowManager.minimize(),

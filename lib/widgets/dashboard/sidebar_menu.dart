@@ -138,14 +138,7 @@ class _SidebarMenuState extends State<SidebarMenu>
               // === BOTÓN SOLO PARA ADMIN ===
               Obx(() {
                 final user = _authController.currentUser.value;
-                
-                // LÓGICA CORREGIDA:
-                // 1. Obtenemos el rol y lo pasamos a minúsculas y quitamos espacios.
                 final String userRole = user?.rol.trim().toLowerCase() ?? '';
-                
-                // 2. Comparamos EXACTAMENTE con 'admin'.
-                // Esto acepta: 'Admin', 'ADMIN', 'admin'.
-                // Esto RECHAZA: 'administrativo', 'odontologo'.
                 final bool isAdmin = userRole == 'admin';
 
                 if (!isAdmin) return const SizedBox.shrink();
@@ -153,10 +146,9 @@ class _SidebarMenuState extends State<SidebarMenu>
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Divisor sutil para separar las acciones de admin
                     Divider(height: 1, color: AppTheme.getBorderLight(context).withValues(alpha: 0.5)),
                     Padding(
-                      padding: _getAdaptivePadding(context), // Mismo padding que la lista
+                      padding: _getAdaptivePadding(context),
                       child: _buildAdminRegisterButton(context),
                     ),
                     const SizedBox(height: 8),
@@ -298,7 +290,6 @@ class _SidebarMenuState extends State<SidebarMenu>
   }
 
   Widget _buildAdminRegisterButton(BuildContext context) {
-    // Usamos EXACTAMENTE las mismas variables de dimensión que _buildMenuItem
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final bool isSmallScreen = screenWidth < 600;
@@ -316,14 +307,13 @@ class _SidebarMenuState extends State<SidebarMenu>
     return Container(
       margin: EdgeInsets.symmetric(horizontal: horizontalMargin, vertical: verticalMargin),
       decoration: BoxDecoration(
-        color: Colors.transparent, // Fondo transparente (Igual que ítems no seleccionados)
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
-          // AQUÍ ESTÁ EL CAMBIO CLAVE: Efectos de interacción en Morado Suave
           splashColor: Colors.purple.withValues(alpha: 0.15),
           highlightColor: Colors.purple.withValues(alpha: 0.1),
           hoverColor: Colors.purple.withValues(alpha: 0.05),
@@ -336,8 +326,7 @@ class _SidebarMenuState extends State<SidebarMenu>
             child: Row(
               children: [
                 Icon(
-                  Icons.person_add_alt_1_outlined, // Ícono similar al estilo outline de los demás
-                  // Color gris del tema (Igual que ítems no seleccionados)
+                  Icons.person_add_alt_1_outlined,
                   color: AppTheme.getTextSecondary(context),
                   size: iconSize,
                 ),
@@ -350,7 +339,6 @@ class _SidebarMenuState extends State<SidebarMenu>
                         child: Text(
                           'Agregar Usuario',
                           style: TextStyle(
-                            // Color de texto principal del tema (Igual que ítems no seleccionados)
                             color: AppTheme.getTextPrimary(context),
                             fontWeight: FontWeight.normal,
                             fontSize: fontSize,

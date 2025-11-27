@@ -9,14 +9,12 @@ class EditCargaDialog {
   static void show(BuildContext context, CargaFamiliar carga) {
     final CargasFamiliaresController controller = Get.find<CargasFamiliaresController>();
     
-    // Controladores de texto pre-poblados con los datos actuales
     final nombreController = TextEditingController(text: carga.nombre);
     final apellidoController = TextEditingController(text: carga.apellido);
     final emailController = TextEditingController(text: carga.email ?? '');
     final telefonoController = TextEditingController(text: carga.telefono ?? '');
     final direccionController = TextEditingController(text: carga.direccion ?? '');
     
-    // Variables reactivas con valores actuales
     final selectedParentesco = carga.parentesco.obs;
     final selectedDate = Rxn<DateTime>(carga.fechaNacimiento);
     final isLoading = false.obs;
@@ -183,7 +181,7 @@ class EditCargaDialog {
                       Expanded(child: Obx(() => _buildDropdown(
                         context, 
                         'Parentesco', 
-                        ['Hijo', 'Hija', 'Cónyuge', 'Padre', 'Madre'], 
+                        ['Hijo', 'Hija', 'Cónyuge'], 
                         Icons.family_restroom,
                         selectedParentesco,
                       ))),
@@ -194,7 +192,6 @@ class EditCargaDialog {
                   
                   const SizedBox(height: 24),
                   
-                  // Información de Contacto (Opcional)
                   Text(
                     'Información de Contacto',
                     style: TextStyle(
@@ -261,7 +258,7 @@ class EditCargaDialog {
     );
   }
 
-  // --- VALIDACIONES ROBUSTAS ---
+  // --- VALIDACIONES ---
   static bool _validateFields(
     String nombre, 
     String apellido,
@@ -280,7 +277,6 @@ class EditCargaDialog {
       return false;
     }
 
-    // Validaciones opcionales solo si se ingresó texto
     if (email.trim().isNotEmpty && !GetUtils.isEmail(email.trim())) {
       _showSnack('El formato del email no es válido');
       return false;
@@ -296,7 +292,6 @@ class EditCargaDialog {
       return false;
     }
 
-    // Validación de Fecha
     if (fechaNacimiento == null) {
       _showSnack('La fecha de nacimiento es requerida');
       return false;

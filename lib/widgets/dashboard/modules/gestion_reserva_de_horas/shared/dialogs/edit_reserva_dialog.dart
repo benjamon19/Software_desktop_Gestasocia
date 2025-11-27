@@ -12,10 +12,8 @@ class EditReservaDialog {
     required ReservaHora reserva,
     required Future<void> Function(ReservaHora) onSave,
   }) {
-    // 1. Obtener controlador para validar disponibilidad
     final ReservaHorasController controller = Get.find<ReservaHorasController>();
 
-    // 2. Parsear hora inicial (String "HH:mm" -> TimeOfDay)
     TimeOfDay initialTime;
     try {
       final parts = reserva.hora.split(':');
@@ -24,7 +22,6 @@ class EditReservaDialog {
       initialTime = TimeOfDay.now();
     }
 
-    // 3. Controladores y Variables
     final motivoController = TextEditingController(text: reserva.motivo);
     final observacionesController = TextEditingController(text: reserva.observaciones ?? "");
     
@@ -33,7 +30,6 @@ class EditReservaDialog {
     final selectedTime = Rx<TimeOfDay>(initialTime);
     final isLoading = false.obs;
 
-    // 4. Acción de Actualizar
     Future<void> updateAction() async {
       // Validación básica
       if (motivoController.text.trim().length < 3) {
@@ -44,8 +40,6 @@ class EditReservaDialog {
       // Formatear nueva hora
       final horaFormat = '${selectedTime.value.hour.toString().padLeft(2, '0')}:${selectedTime.value.minute.toString().padLeft(2, '0')}';
 
-      // VALIDACIÓN DE CONFLICTOS (Solo si cambió la fecha o la hora)
-      // Si es la misma hora original, no validamos para evitar conflicto con "uno mismo"
       bool horarioCambio = (reserva.fecha.year != selectedDate.value.year || 
                             reserva.fecha.month != selectedDate.value.month ||
                             reserva.fecha.day != selectedDate.value.day ||
@@ -53,7 +47,7 @@ class EditReservaDialog {
 
       if (horarioCambio) {
         final error = controller.validarReserva(
-          reserva.odontologo, // Mantenemos el mismo odontólogo
+          reserva.odontologo,
           selectedDate.value,
           horaFormat
         );
@@ -382,7 +376,6 @@ class EditReservaDialog {
   static Widget _buildDropdown(BuildContext context, String label, List<String> items, IconData icon, RxString selected) {
     // Asegurar valor válido
     if (!items.contains(selected.value)) {
-      // Intento inteligente de coincidencia (ej: "pendiente" vs "Pendiente")
       final match = items.firstWhereOrNull((i) => i.toLowerCase() == selected.value.toLowerCase());
       if (match != null) {
         selected.value = match;
@@ -419,7 +412,7 @@ class EditReservaDialog {
 
   static Widget _buildFakeInput(BuildContext context, {required String label, required String value, required IconData icon}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16), // Altura consistente con TextFields
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       decoration: BoxDecoration(
         border: Border.all(color: AppTheme.getBorderLight(context)),
         borderRadius: BorderRadius.circular(8),
@@ -427,7 +420,7 @@ class EditReservaDialog {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 24, color: AppTheme.primaryColor), // Tamaño ajustado al prefixIcon por defecto
+          Icon(icon, size: 24, color: AppTheme.primaryColor),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

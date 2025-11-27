@@ -17,11 +17,10 @@ class GenerarCodigoBarrasCargaDialog {
     required String asociadoSap,
     String? codigoExistente,
   }) {
-    // Verificar correctamente si existe código de barras
+
     final bool tieneCodigoBarras = codigoExistente != null && codigoExistente.trim().isNotEmpty;
     
     if (tieneCodigoBarras) {
-      // Si ya tiene código, mostrar directamente el visor
       _showBarcodeViewer(
         context,
         nombreCompleto: nombreCompleto,
@@ -30,7 +29,6 @@ class GenerarCodigoBarrasCargaDialog {
         codigoBarras: codigoExistente,
       );
     } else {
-      // Si no tiene código, preguntar si quiere generar
       _showConfirmationDialog(
         context,
         cargaId: cargaId,
@@ -41,7 +39,6 @@ class GenerarCodigoBarrasCargaDialog {
     }
   }
 
-  // Diálogo de confirmación (solo cuando NO existe código)
   static void _showConfirmationDialog(
     BuildContext context, {
     required String cargaId,
@@ -180,7 +177,6 @@ class GenerarCodigoBarrasCargaDialog {
     );
   }
 
-  // Visualizador del código de barras (cuando ya existe o después de generar)
   static void _showBarcodeViewer(
     BuildContext context, {
     required String nombreCompleto,

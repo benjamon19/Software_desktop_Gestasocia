@@ -9,9 +9,8 @@ class BarcodeSearchDialog {
     final AsociadosController controller = Get.find<AsociadosController>();
     final barcodeController = TextEditingController();
     final isSearching = false.obs;
-    final focusNode = FocusNode(); // ← NUEVO: FocusNode dedicado
+    final focusNode = FocusNode();
 
-    // Función para buscar por código de barras
     Future<void> searchByBarcode() async {
       if (barcodeController.text.trim().isEmpty) {
         Get.snackbar(
@@ -26,7 +25,6 @@ class BarcodeSearchDialog {
 
       isSearching.value = true;
       
-      // Buscar el asociado por código de barras (RUT)
       await controller.searchAsociado(barcodeController.text.trim());
       
       isSearching.value = false;
@@ -36,7 +34,6 @@ class BarcodeSearchDialog {
       }
     }
 
-    // ← NUEVO: Forzar el foco después de construir el diálogo
     WidgetsBinding.instance.addPostFrameCallback((_) {
       focusNode.requestFocus();
     });
@@ -51,7 +48,7 @@ class BarcodeSearchDialog {
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.escape) {
               if (!isSearching.value) {
-                focusNode.dispose(); // ← NUEVO: Limpiar FocusNode
+                focusNode.dispose();
                 Navigator.of(context).pop();
               }
               return KeyEventResult.handled;
@@ -96,10 +93,9 @@ class BarcodeSearchDialog {
                 ),
                 const SizedBox(height: 20),
                 
-                // Campo de texto para el código de barras
                 TextField(
                   controller: barcodeController,
-                  focusNode: focusNode, // ← MODIFICADO: Usar FocusNode dedicado
+                  focusNode: focusNode,
                   autofocus: true,
                   style: TextStyle(
                     color: AppTheme.getTextPrimary(context),
@@ -132,7 +128,6 @@ class BarcodeSearchDialog {
                     ),
                   ),
                   onSubmitted: (_) {
-                    // La pistola envía Enter automáticamente, buscar inmediatamente
                     if (!isSearching.value) {
                       searchByBarcode();
                     }
@@ -183,7 +178,7 @@ class BarcodeSearchDialog {
           actions: [
             TextButton(
               onPressed: isSearching.value ? null : () {
-                focusNode.dispose(); // ← NUEVO: Limpiar FocusNode
+                focusNode.dispose();
                 Navigator.of(context).pop();
               },
               child: Text(

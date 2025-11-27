@@ -10,7 +10,6 @@ class CodigoInputDialog {
     final codigoController = TextEditingController();
     final focusNode = FocusNode();
 
-    // Auto-focus al campo cuando se abre el diálogo
     WidgetsBinding.instance.addPostFrameCallback((_) {
       focusNode.requestFocus();
     });
@@ -52,7 +51,7 @@ class CodigoInputDialog {
                 controller: codigoController,
                 focusNode: focusNode,
                 keyboardType: TextInputType.number,
-                obscureText: true, // <-- convierte el texto en ****
+                obscureText: true,
                 maxLength: 4,
                 style: const TextStyle(
                   fontSize: 22,

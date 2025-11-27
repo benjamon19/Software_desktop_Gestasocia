@@ -329,8 +329,6 @@ class ClinicalHistoryCard extends StatelessWidget {
     }
   }
 
-  // === Íconos y colores reutilizados de tu código existente ===
-
   IconData _getTipoConsultaIcon(String? tipo) {
     if (tipo == null) return Icons.medical_information_outlined;
     switch (tipo.toLowerCase()) {

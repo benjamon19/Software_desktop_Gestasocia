@@ -81,7 +81,6 @@ class _CargaDetailSectionState extends State<CargaDetailSection> {
                     children: [
                       PersonalInfoCard(carga: _cargaToMap(currentCarga)),
 
-                      // === NUEVO: Historial clínico de la CARGA FAMILIAR ===
                       ClinicalHistoryCard(
                         pacienteId: currentCarga.id!,
                         pacienteTipo: 'carga',

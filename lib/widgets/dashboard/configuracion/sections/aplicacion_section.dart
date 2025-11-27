@@ -13,7 +13,6 @@ class AplicacionSection extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
     final bool isSmallScreen = screenWidth < 600;
     final bool isMediumScreen = screenWidth >= 600 && screenWidth < 1000;
-    // Removida variable isShortScreen no utilizada
     final bool isVeryShortScreen = screenHeight < 600;
     
     return SingleChildScrollView(
@@ -185,7 +184,6 @@ class AplicacionSection extends StatelessWidget {
         
         SizedBox(height: settingsSpacing),
         
-        // Formato de fecha - Corregido: removido el parámetro isVeryShortScreen extra
         _buildAdaptiveDateFormatTile(context, controller, isSmallScreen),
       ],
     );

@@ -48,7 +48,7 @@ class Usuario {
     return '$cuerpoFormateado-$dv';
   }
 
-  // Validación de RUT chileno
+  // Validación de RUT
   static bool validarRUT(String rut) {
     try {
       String rutLimpio = rut.replaceAll(RegExp(r'[^0-9kK]'), '');
@@ -109,7 +109,7 @@ class Usuario {
       fechaCreacion: _parseDateTime(map['fechaCreacion']),
       fechaActualizacionCodigo: map['fechaActualizacionCodigo'] != null 
           ? _parseDateTime(map['fechaActualizacionCodigo']) 
-          : null, // ← NUEVO: puede ser null para usuarios antiguos
+          : null,
       isActive: map['isActive'] ?? true,
     );
   }
@@ -145,7 +145,7 @@ class Usuario {
     String? codigoUnico,
     String? photoUrl,
     DateTime? fechaCreacion,
-    DateTime? fechaActualizacionCodigo, // ← NUEVO
+    DateTime? fechaActualizacionCodigo,
     bool? isActive,
   }) {
     return Usuario(
@@ -159,7 +159,7 @@ class Usuario {
       codigoUnico: codigoUnico ?? this.codigoUnico,
       photoUrl: photoUrl ?? this.photoUrl,
       fechaCreacion: fechaCreacion ?? this.fechaCreacion,
-      fechaActualizacionCodigo: fechaActualizacionCodigo ?? this.fechaActualizacionCodigo, // ← NUEVO
+      fechaActualizacionCodigo: fechaActualizacionCodigo ?? this.fechaActualizacionCodigo,
       isActive: isActive ?? this.isActive,
     );
   }

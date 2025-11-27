@@ -242,7 +242,6 @@ class NewReservaDialog {
 
                   const SizedBox(height: 20),
 
-                  // Fecha y Hora (YA LIMPIOS, HEREDAN IDIOMA GLOBAL)
                   Row(
                     children: [
                       Expanded(

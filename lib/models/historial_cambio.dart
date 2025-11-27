@@ -82,7 +82,6 @@ class HistorialCambio {
     }
   }
 
-  // Formato de fecha legible
   String get fechaFormateada {
     return '${fechaHora.day.toString().padLeft(2, '0')}/'
            '${fechaHora.month.toString().padLeft(2, '0')}/'
@@ -109,7 +108,6 @@ class HistorialCambio {
     return campos;
   }
 
-  // Obtener nombre legible del campo
   static String getNombreCampo(String campo) {
     const Map<String, String> nombres = {
       'nombre': 'Nombre',

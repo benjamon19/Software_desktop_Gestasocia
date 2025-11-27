@@ -70,7 +70,6 @@ class PersonalInfoCard extends StatelessWidget {
 
     return Column(
       children: [
-        // Primera fila: Nombre Completo y RUT
         Row(
           children: [
             Expanded(
@@ -96,8 +95,7 @@ class PersonalInfoCard extends StatelessWidget {
         ),
         
         const SizedBox(height: 16),
-        
-        // Segunda fila: Email y Teléfono
+      
         Row(
           children: [
             Expanded(
@@ -126,7 +124,6 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Tercera fila: Fecha de Nacimiento y Edad
         Row(
           children: [
             Expanded(
@@ -153,7 +150,6 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Cuarta fila: Parentesco y Asociado Titular
         Row(
           children: [
             Expanded(
@@ -180,7 +176,6 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Quinta fila: Dirección (ocupa toda la fila)
         _buildInfoItem(
           context,
           'Dirección',
@@ -192,7 +187,6 @@ class PersonalInfoCard extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Sexta fila: Fecha de Registro
         _buildInfoItem(
           context,
           'Fecha de Registro',

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../utils/app_theme.dart';
-// import '../../utils/app_routes.dart'; // Ya no es necesario para ir al registro
 import '../../widgets/shared_widgets.dart';
 import '../../widgets/theme_toggle_button.dart';
 import '../../dialog/codigo_input_dialog.dart';
@@ -141,7 +140,6 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 const SizedBox(height: 32),
                                 
-                                // AQUI ESTÁ EL CAMBIO: Texto estático sin acción de click
                                 Center(
                                   child: Text.rich(
                                     TextSpan(
@@ -151,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                                         TextSpan(
                                           text: 'Contacta a administración',
                                           style: TextStyle(
-                                            color: AppTheme.primaryColor, // Mantiene el color visual
+                                            color: AppTheme.primaryColor,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -209,7 +207,6 @@ class _LoginPageState extends State<LoginPage> {
         String? resultado = await authController.validateCodigoUnico(userId, codigo);
         
         if (resultado == '') {
-          // Código válido - Mostrar snackbar de éxito
           Get.snackbar(
             'Éxito',
             'Sesión iniciada correctamente',
@@ -222,10 +219,8 @@ class _LoginPageState extends State<LoginPage> {
           );
           Get.offAllNamed('/dashboard');
         } else if (resultado != null) {
-          // Código expirado, mostrar nuevo código
           _showNuevoCodigoDialog(resultado);
         } else {
-          // Código incorrecto - Con estética correcta
           Get.snackbar(
             'Error',
             'Código incorrecto. Verifica e intenta nuevamente.',
@@ -240,7 +235,6 @@ class _LoginPageState extends State<LoginPage> {
         }
       },
       onCancel: () {
-        // Si cancela, hacer logout
         authController.logout();
       },
     );
@@ -251,7 +245,6 @@ class _LoginPageState extends State<LoginPage> {
       context,
       nuevoCodigo,
       onClose: () {
-        // Después de ver el nuevo código, mostrar snackbar y ir al dashboard
         Get.snackbar(
           'Éxito',
           'Sesión iniciada correctamente',

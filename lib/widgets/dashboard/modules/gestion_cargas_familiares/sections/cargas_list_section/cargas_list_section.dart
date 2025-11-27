@@ -205,7 +205,6 @@ class CargasListSection extends StatelessWidget {
     final iconSize = isVerySmall ? 16.0 : (isSmallScreen ? 20.0 : 24.0);
     final indicatorSize = isVerySmall ? 8.0 : (isSmallScreen ? 10.0 : 12.0);
 
-    // Obtener el estado activo de la carga
     final cargaModel = controller.cargasFamiliares.firstWhereOrNull(
       (c) => c.id == carga['id'],
     );

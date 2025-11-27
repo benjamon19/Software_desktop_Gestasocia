@@ -57,7 +57,7 @@ class CalendarAppointmentItem extends StatelessWidget {
     );
   }
 
-  // === VISTA DÍA (Hora | Nombre | RUT | Odontólogo | Ícono) – Alineación precisa ===
+  // === VISTA DÍA (Hora | Nombre | RUT | Odontólogo | Ícono) ===
   Widget _buildDayItem(BuildContext context, Color color) {
     final bool isAsociado = reserva?.pacienteTipo.toLowerCase() == 'asociado';
     final Color typeColor = isAsociado 
@@ -76,7 +76,7 @@ class CalendarAppointmentItem extends StatelessWidget {
         ),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center, // Alineación vertical perfecta
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Hora
           Text(
@@ -167,7 +167,6 @@ class CalendarAppointmentItem extends StatelessWidget {
     );
   }
 
-  // === VISTA SEMANA (Hora + Nombre, sin RUT, compacto y centrado) ===
   Widget _buildWeekItem(BuildContext context, Color color) {
     final String nombre = reserva?.pacienteNombre ?? '';
     final bool isAsociado = reserva?.pacienteTipo.toLowerCase() == 'asociado';
@@ -201,7 +200,7 @@ class CalendarAppointmentItem extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: AppTheme.getTextPrimary(context),
-                    height: 1.0, // ⬅️ Controla el interlineado
+                    height: 1.0,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -212,7 +211,7 @@ class CalendarAppointmentItem extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                     color: AppTheme.getTextPrimary(context),
-                    height: 1.0, // ⬅️ Igual aquí
+                    height: 1.0,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -231,7 +230,6 @@ class CalendarAppointmentItem extends StatelessWidget {
     );
   }
 
-  // === VISTA MES (Texto en una sola línea: "3 Citas") ===
   Widget _buildMonthBlockItem(BuildContext context) {
     if (summaryCount == null || summaryCount == 0) return const SizedBox();
 

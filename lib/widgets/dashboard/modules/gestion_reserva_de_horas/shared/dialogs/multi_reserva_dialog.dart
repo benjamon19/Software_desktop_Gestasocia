@@ -5,8 +5,6 @@ import '../../../../../../models/reserva_hora.dart';
 import 'reserva_detail_dialog.dart';
 
 class MultiReservaDialog {
-  // Recibimos el 'parentContext' que viene de la pantalla principal (Grid)
-  // Este contexto seguirá vivo después de cerrar este diálogo.
   static void show(BuildContext parentContext, List<ReservaHora> reservas, String hora) {
     showDialog(
       context: parentContext,
@@ -42,7 +40,6 @@ class MultiReservaDialog {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const SizedBox(height: 8),
-                // Pasamos 'parentContext' a cada item
                 ...reservas.asMap().entries.map((entry) {
                   final index = entry.key;
                   final reserva = entry.value;
@@ -77,11 +74,8 @@ class MultiReservaDialog {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () {
-            // 1. Cerramos el diálogo actual usando su propio contexto
             Navigator.pop(dialogContext); 
             
-            // 2. Abrimos el detalle usando el 'parentContext' (que sigue vivo en la pantalla de atrás)
-            // Esto evita el error "BuildContext is no longer valid"
             ReservaDetailDialog.show(parentContext, reserva);
           },
           onHover: (value) => hover.value = value,

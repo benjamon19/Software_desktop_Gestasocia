@@ -17,13 +17,10 @@ class MiniCalendarWidget extends StatelessWidget {
     final displayMonth = selectedDate.month;
     final now = DateTime.now();
     
-    // FIX ERRORES: Declaramos firstDayOfMonth para que sea accesible.
     final DateTime firstDayOfMonth = DateTime(displayYear, displayMonth, 1); 
 
     // Cálculo de días visibles
     final int totalRows = 6; 
-    // Cálculo de offset (Sunday=0, Monday=1, ..., Saturday=6).
-    // Si es domingo (7), 7 % 7 = 0. Si es lunes (1), 1 % 7 = 1.
     final int weekdayOffset = firstDayOfMonth.weekday % 7; 
     final DateTime firstVisibleDate = firstDayOfMonth.subtract(Duration(days: weekdayOffset)); 
     final List<DateTime> visibleDays = List.generate(
@@ -39,7 +36,6 @@ class MiniCalendarWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // === Encabezado (mes y año) ===
           Container(
             padding: const EdgeInsets.symmetric(vertical: 6),
             alignment: Alignment.center,
@@ -53,11 +49,9 @@ class MiniCalendarWidget extends StatelessWidget {
             ),
           ),
           
-          // === Días de la semana (D, L, M, X...) ===
           Wrap(
             spacing: 0,
             runSpacing: 0,
-            // Empieza en Domingo (D) para la estética de Google Calendar
             children: ['D', 'L', 'M', 'X', 'J', 'V', 'S'].map((day) { 
               return SizedBox(
                 width: 28, 
@@ -76,7 +70,6 @@ class MiniCalendarWidget extends StatelessWidget {
             }).toList(),
           ),
           
-          // === Días del mes (ENVUELTO EN ANIMATED SWITCHER) ===
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             transitionBuilder: (Widget child, Animation<double> animation) {
@@ -96,7 +89,6 @@ class MiniCalendarWidget extends StatelessWidget {
                   final bool isSelected = _isSameDay(day, selectedDate);
                   final bool isCurrentMonth = day.month == displayMonth;
 
-                  // Ocultar los días de relleno al final si no son del mes
                   if (index >= 35 && day.month != displayMonth) {
                       return const SizedBox(width: 28, height: 28);
                   }
@@ -112,7 +104,6 @@ class MiniCalendarWidget extends StatelessWidget {
                           width: 24, 
                           height: 24, 
                           decoration: BoxDecoration(
-                            // Fondo sólido para el seleccionado
                             color: isSelected
                                 ? AppTheme.primaryColor
                                 : isToday
@@ -130,7 +121,7 @@ class MiniCalendarWidget extends StatelessWidget {
                                     ? Colors.white
                                     : (isCurrentMonth
                                         ? AppTheme.getTextPrimary(context)
-                                        : AppTheme.getTextSecondary(context).withValues(alpha: 0.35)), // Opacidad para días fuera del mes actual
+                                        : AppTheme.getTextSecondary(context).withValues(alpha: 0.35)),
                               ),
                             ),
                           ),

@@ -11,7 +11,6 @@ class BarcodeSearchDialog {
     final isSearching = false.obs;
     final focusNode = FocusNode();
 
-    // Función para buscar por código de barras
     Future<void> searchByBarcode() async {
       if (barcodeController.text.trim().isEmpty) {
         Get.snackbar(
@@ -26,7 +25,6 @@ class BarcodeSearchDialog {
 
       isSearching.value = true;
       
-      // Buscar la carga familiar por código de barras
       await controller.searchCargas(barcodeController.text.trim());
       
       isSearching.value = false;
@@ -36,7 +34,6 @@ class BarcodeSearchDialog {
       }
     }
 
-    // Forzar el foco después de construir el diálogo
     WidgetsBinding.instance.addPostFrameCallback((_) {
       focusNode.requestFocus();
     });
@@ -47,7 +44,6 @@ class BarcodeSearchDialog {
       builder: (context) => Focus(
         autofocus: true,
         onKeyEvent: (node, event) {
-          // Manejar tecla ESC para cerrar
           if (event is KeyDownEvent) {
             if (event.logicalKey == LogicalKeyboardKey.escape) {
               if (!isSearching.value) {
@@ -132,7 +128,6 @@ class BarcodeSearchDialog {
                     ),
                   ),
                   onSubmitted: (_) {
-                    // La pistola envía Enter automáticamente, buscar inmediatamente
                     if (!isSearching.value) {
                       searchByBarcode();
                     }

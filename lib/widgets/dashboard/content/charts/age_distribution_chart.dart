@@ -5,7 +5,7 @@ import '../../../../../../../models/carga_familiar.dart';
 import '../../../../../../../utils/app_theme.dart';
 
 class AgeDistributionChart extends StatefulWidget {
-  final bool isCompact; // Permite modo compacto desde ChartsGridSection
+  final bool isCompact;
 
   const AgeDistributionChart({super.key, this.isCompact = false});
 
@@ -94,7 +94,6 @@ class _AgeDistributionChartState extends State<AgeDistributionChart> {
     final bool isSmallScreen = screenWidth < 600;
     final bool isVeryShortScreen = screenHeight < 600;
 
-    // Altura adaptable: más pequeña en modo compacto o pantallas cortas
     double chartHeight;
     if (widget.isCompact) {
       chartHeight = isSmallScreen ? 160 : 200;

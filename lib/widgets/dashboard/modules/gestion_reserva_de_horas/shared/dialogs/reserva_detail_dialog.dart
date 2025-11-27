@@ -28,11 +28,9 @@ class ReservaDetailDialog {
         final asociado = asociadosController.getAsociadoById(reserva.pacienteId);
         tel = asociado?.telefono;
       } else {
-        // Si es carga, intentamos buscar su teléfono
         final carga = cargasController.getCargaById(reserva.pacienteId);
         tel = carga?.telefono;
         
-        // Si la carga no tiene teléfono o está vacío, usamos el del asociado titular (padre/madre/cónyuge)
         if ((tel == null || tel.isEmpty) && carga != null) {
            final titular = asociadosController.getAsociadoById(carga.asociadoId);
            tel = titular?.telefono;
@@ -50,10 +48,8 @@ class ReservaDetailDialog {
         return;
       }
 
-      // Limpiamos el número (sacamos espacios, guiones, etc.)
       String phone = telefonoPaciente.replaceAll(RegExp(r'[^0-9]'), '');
       
-      // Asumimos Chile (56) si no tiene código de país y tiene 9 dígitos
       if (phone.length == 9 && !phone.startsWith('56')) {
         phone = '56$phone';
       }
@@ -189,17 +185,16 @@ class ReservaDetailDialog {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- BOTÓN WHATSAPP (Solo si está pendiente y tiene teléfono) ---
                   if (reserva.estado == 'pendiente' && telefonoPaciente != null) ...[
                     Container(
                       width: double.infinity,
                       margin: const EdgeInsets.only(bottom: 24),
                       child: ElevatedButton.icon(
                         onPressed: enviarWhatsAppConfirmacion,
-                        icon: const Icon(Icons.chat_bubble_outline, size: 18), // Icono genérico o de mensaje
+                        icon: const Icon(Icons.chat_bubble_outline, size: 18),
                         label: const Text('Solicitar confirmación por WhatsApp'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF25D366), // Color oficial WhatsApp
+                          backgroundColor: const Color(0xFF25D366),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

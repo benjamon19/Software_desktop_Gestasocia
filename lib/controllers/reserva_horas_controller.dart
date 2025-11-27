@@ -3,9 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/reserva_hora.dart';
 
-// Modelo simple para los datos del gráfico
 class AttendanceData {
-  final String label; // Ej: "Sem 1"
+  final String label;
   final int attended;
   final int missed;
 
@@ -47,26 +46,23 @@ class ReservaHorasController extends GetxController {
   // GRÁFICO: Asistencia Mensual (Últimas 4 semanas)
   List<AttendanceData> get attendanceStatsLast4Weeks {
     final now = DateTime.now();
-    // Inicializamos contadores: [Semana-3, Semana-2, Semana-1, Actual]
     List<int> attendedCounts = [0, 0, 0, 0];
     List<int> missedCounts = [0, 0, 0, 0];
 
     for (var r in reservas) {
       final differenceInDays = now.difference(r.fecha).inDays;
       
-      // Filtramos solo lo que está dentro de los últimos 28 días
       if (differenceInDays >= 0 && differenceInDays < 28) {
         int weekIndex;
         
-        // FIX LINTER: Agregadas llaves {} a los bloques if/else
         if (differenceInDays < 7) {
-          weekIndex = 3;       // Semana Actual
+          weekIndex = 3;
         } else if (differenceInDays < 14) {
-          weekIndex = 2;       // Semana Anterior
+          weekIndex = 2;  
         } else if (differenceInDays < 21) {
-          weekIndex = 1;       // Hace 2 semanas
+          weekIndex = 1;
         } else {
-          weekIndex = 0;       // Hace 3 semanas
+          weekIndex = 0;
         }
 
         if (r.estado.toLowerCase() == 'realizada') {
@@ -95,7 +91,6 @@ class ReservaHorasController extends GetxController {
       return 'La clínica está cerrada a esa hora. Horario: $horaApertura:00 - $horaCierre:00';
     }
 
-    // 2. Validar Colisión
     final conflicto = reservas.firstWhereOrNull((reserva) {
       if (reserva.estado.toLowerCase() == 'cancelada') return false;
       if (reserva.odontologo != odontologoNombre) return false;

@@ -10,10 +10,10 @@ import '../../../shared/dialog/add_historial_dialog.dart';
 import '../../../shared/dialog/add_image_dialog.dart'; 
 import '../../../shared/dialog/delete_confirmation_dialog.dart';
 import 'patient_link.dart';
-import '../../../../../../../models/historial_clinico.dart'; // ← Importa el modelo
+import '../../../../../../../models/historial_clinico.dart';
 
 class QuickActions extends StatelessWidget {
-  final HistorialClinico historial; // ← Ahora es el objeto completo
+  final HistorialClinico historial;
   final HistorialClinicoController controller;
   final VoidCallback onDeleteHistorial;
 
@@ -26,7 +26,6 @@ class QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obtenemos el nombre del paciente usando el controlador (como ya haces en otras partes)
     final pacienteInfo = controller.getPacienteInfoForDisplay(historial);
     final String pacienteNombre = pacienteInfo['nombre'] ?? 'Paciente no encontrado';
 
@@ -43,7 +42,6 @@ class QuickActions extends StatelessWidget {
           subtitle: 'Modificar datos clínicos',
           color: const Color(0xFF3B82F6),
           onPressed: () {
-            // Convertimos el historial a Map para el diálogo (si aún lo requiere)
             final historialMap = controller.toDisplayMap(historial);
             EditHistorialDialog.show(context, historialMap);
           },
@@ -64,7 +62,7 @@ class QuickActions extends StatelessWidget {
 
         const SizedBox(height: 20),
 
-        // --- ACCIONES RÁPIDAS ---
+        // --- ACCIONES ---
         const SectionTitle(title: 'Acciones Rápidas'),
         const SizedBox(height: 12),
 

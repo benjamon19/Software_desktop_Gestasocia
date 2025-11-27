@@ -7,7 +7,7 @@ import '../../../../models/reserva_hora.dart';
 import '../../modules/gestion_reserva_de_horas/shared/dialogs/reserva_detail_dialog.dart';
 
 class NextAppointmentsCard extends StatelessWidget {
-  final bool isCompact; // 👈 Nuevo: permite forzar modo compacto desde ChartsGridSection
+  final bool isCompact;
 
   const NextAppointmentsCard({super.key, this.isCompact = false});
 
@@ -22,7 +22,6 @@ class NextAppointmentsCard extends StatelessWidget {
     final bool isVeryShortScreen = screenHeight < 600;
     final bool useCompactMode = isCompact || isVeryShortScreen;
 
-    // Padding adaptativo (más pequeño si es compacto o pantalla corta)
     double cardPadding = useCompactMode ? 8 : (isSmallScreen ? 10 : 16);
 
     return Container(
@@ -56,9 +55,8 @@ class NextAppointmentsCard extends StatelessWidget {
           children: [
             _buildHeader(context, upcomingAppointments.length, isSmallScreen),
             
-            SizedBox(height: useCompactMode ? 8 : 12), // ✅ sin const
+            SizedBox(height: useCompactMode ? 8 : 12),
             
-            // Lista (mantiene scroll en notebook/móvil, pero en compacto se ve más apretada)
             Expanded(
               child: upcomingAppointments.isEmpty 
                 ? _buildEmptyState(context, useCompactMode)
@@ -78,7 +76,7 @@ class NextAppointmentsCard extends StatelessWidget {
             ),
             
             if (!isVeryShortScreen && upcomingAppointments.isNotEmpty) ...[
-              SizedBox(height: useCompactMode ? 6 : 8), // ✅ sin const
+              SizedBox(height: useCompactMode ? 6 : 8),
               _buildFooter(context, controller, isSmallScreen),
             ]
           ],
@@ -171,7 +169,7 @@ class NextAppointmentsCard extends StatelessWidget {
     bool compact,
   ) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: compact ? 3 : 4), // ✅ más compacto si es necesario
+      padding: EdgeInsets.symmetric(vertical: compact ? 3 : 4),
       child: Material(
         color: Colors.transparent,
         child: InkWell(

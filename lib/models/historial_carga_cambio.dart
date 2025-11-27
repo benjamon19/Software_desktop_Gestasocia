@@ -141,7 +141,7 @@ class HistorialCargaCambio {
         return Icons.check_circle;
       case 'desactivacion':
         return Icons.cancel;
-      case 'exportacion':  // ← AGREGAR
+      case 'exportacion':
         return Icons.download;
       default:
         return Icons.history;
@@ -162,7 +162,7 @@ class HistorialCargaCambio {
       case 'desactivacion':
         return const Color(0xFFF59E0B);
       case 'exportacion':  // ← AGREGAR
-        return const Color(0xFF6366F1); // Índigo
+        return const Color(0xFF6366F1);
       default:
         return const Color(0xFF6B7280);
     }
