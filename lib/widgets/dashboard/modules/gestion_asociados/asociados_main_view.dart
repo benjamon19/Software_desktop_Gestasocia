@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../utils/app_theme.dart';
 import '../../../../controllers/asociados_controller.dart';
+import '../../../../controllers/auth_controller.dart';
 import '../../../../models/asociado.dart';
 import 'sections/search_section/search_section.dart';
 import 'sections/profile_section/profile_section.dart';
@@ -51,7 +52,24 @@ class AsociadosMainView extends StatelessWidget {
   Widget _buildFloatingActionButton(AsociadosController controller) {
     if (!controller.hasSelectedAsociado) {
       return FloatingActionButton(
-        onPressed: controller.newAsociado,
+        onPressed: () {
+          // --- PROTECCIÓN DE SEGURIDAD ---
+          final authController = Get.find<AuthController>();
+          if (authController.currentUser.value?.rol == 'odontologo') {
+            Get.snackbar(
+              'Acceso Restringido',
+              'No tienes permisos para agregar asociados.',
+              snackPosition: SnackPosition.BOTTOM,
+              backgroundColor: Colors.orange.withValues(alpha: 0.9),
+              colorText: Colors.white,
+              margin: const EdgeInsets.all(16),
+              borderRadius: 8,
+              duration: const Duration(seconds: 3),
+            );
+            return;
+          }
+          controller.newAsociado();
+        },
         backgroundColor: AppTheme.primaryColor,
         foregroundColor: Colors.white,
         elevation: 8,

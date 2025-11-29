@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/reserva_horas_controller.dart';
+import '../../../../../../controllers/auth_controller.dart';
 import '../../../../../../models/reserva_hora.dart';
 import '../../../gestion_historial_clinico/shared/dialog/select_asociado_dialog.dart';
 
@@ -15,27 +16,41 @@ class NewReservaDialog {
         ? Get.find<ReservaHorasController>()
         : Get.put(ReservaHorasController());
 
-    // Variables reactivas
     final selectedPaciente = Rxn<Map<String, dynamic>>();
     final RxString selectedOdontologo = ''.obs; 
     final RxList<Map<String, String>> listaOdontologos = <Map<String, String>>[].obs;
     final RxBool loadingOdontologos = true.obs;
+    
+    bool isUsuarioOdontologo = false;
 
     final motivoController = TextEditingController();
     final isLoading = false.obs;
     
-    // Fecha y hora inicial
     final DateTime initialDate = preSelectedDate ?? DateTime.now();
     final selectedDate = Rx<DateTime>(initialDate);
     final selectedTime = Rx<TimeOfDay>(TimeOfDay.fromDateTime(initialDate));
 
-    // Cargar odontólogos
     Future<void> loadOdontologos() async {
+      final authController = Get.find<AuthController>();
+      final currentUser = authController.currentUser.value;
+
+      if (currentUser != null && currentUser.rol == 'odontologo') {
+        isUsuarioOdontologo = true;
+        selectedOdontologo.value = currentUser.nombreCompleto;
+        listaOdontologos.value = [{
+          'id': currentUser.id!,
+          'nombreCompleto': currentUser.nombreCompleto,
+        }];
+        loadingOdontologos.value = false;
+        return;
+      }
+
       try {
         loadingOdontologos.value = true;
         final snapshot = await FirebaseFirestore.instance
             .collection('usuarios')
             .where('rol', isEqualTo: 'odontologo')
+            .where('isActive', isEqualTo: true)
             .get();
 
         final List<Map<String, String>> odontologos = [];
@@ -77,10 +92,8 @@ class NewReservaDialog {
         return;
       }
 
-      // Formatear hora (HH:mm)
       final horaFormat = '${selectedTime.value.hour.toString().padLeft(2, '0')}:${selectedTime.value.minute.toString().padLeft(2, '0')}';
 
-      // Validación de disponibilidad
       final error = controller.validarReserva(
         selectedOdontologo.value,
         selectedDate.value,
@@ -111,12 +124,22 @@ class NewReservaDialog {
         selectedTime.value.minute,
       );
 
+      String? odontologoIdToSave;
+      if (isUsuarioOdontologo) {
+        final authController = Get.find<AuthController>();
+        odontologoIdToSave = authController.currentUser.value?.id;
+      } else {
+        final selectedObj = listaOdontologos.firstWhereOrNull((o) => o['nombreCompleto'] == selectedOdontologo.value);
+        odontologoIdToSave = selectedObj?['id'];
+      }
+
       final nuevaReserva = ReservaHora(
         pacienteId: selectedPaciente.value!['id'],
         pacienteNombre: selectedPaciente.value!['nombre'],
         pacienteTipo: selectedPaciente.value!['tipo'],
         pacienteRut: selectedPaciente.value!['rut'],
         odontologo: selectedOdontologo.value,
+        odontologoId: odontologoIdToSave,
         fecha: fechaCompleta,
         hora: horaFormat,
         motivo: motivoController.text.trim(),
@@ -324,8 +347,47 @@ class NewReservaDialog {
 
                   const SizedBox(height: 20),
 
-                  // Odontólogo
                   Obx(() {
+                    if (isUsuarioOdontologo) {
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.getInputBackground(context).withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: AppTheme.getBorderLight(context).withValues(alpha: 0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.person, color: AppTheme.primaryColor.withValues(alpha: 0.7), size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Odontólogo (Tú)',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: AppTheme.getTextSecondary(context),
+                                    ),
+                                  ),
+                                  Text(
+                                    selectedOdontologo.value,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme.getTextPrimary(context).withValues(alpha: 0.8),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(Icons.lock_outline, size: 16, color: AppTheme.getTextSecondary(context)),
+                          ],
+                        ),
+                      );
+                    }
+
                     if (loadingOdontologos.value) {
                       return Container(
                         padding: const EdgeInsets.all(16),

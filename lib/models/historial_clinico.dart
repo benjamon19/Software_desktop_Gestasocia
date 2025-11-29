@@ -6,6 +6,7 @@ class HistorialClinico {
   String pacienteTipo;
   String tipoConsulta;
   String odontologo;
+  String? odontologoId;
   DateTime fecha;
   String hora;
   String motivoPrincipal;
@@ -29,6 +30,7 @@ class HistorialClinico {
     required this.pacienteTipo,
     required this.tipoConsulta,
     required this.odontologo,
+    this.odontologoId,
     required this.fecha,
     required this.hora,
     required this.motivoPrincipal,
@@ -97,6 +99,7 @@ class HistorialClinico {
       'pacienteTipo': pacienteTipo,
       'tipoConsulta': tipoConsulta,
       'odontologo': odontologo,
+      'odontologoId': odontologoId,
       'fecha': fecha,
       'hora': hora,
       'motivoPrincipal': motivoPrincipal,
@@ -122,6 +125,7 @@ class HistorialClinico {
       pacienteTipo: map['pacienteTipo'] ?? 'asociado',
       tipoConsulta: map['tipoConsulta'] ?? 'consulta',
       odontologo: map['odontologo'] ?? '',
+      odontologoId: map['odontologoId'],
       fecha: _parseDateTime(map['fecha']),
       hora: map['hora'] ?? '00:00',
       motivoPrincipal: map['motivoPrincipal'] ?? '',
@@ -157,6 +161,7 @@ class HistorialClinico {
     String? pacienteTipo,
     String? tipoConsulta,
     String? odontologo,
+    String? odontologoId,
     DateTime? fecha,
     String? hora,
     String? motivoPrincipal,
@@ -180,6 +185,7 @@ class HistorialClinico {
       pacienteTipo: pacienteTipo ?? this.pacienteTipo,
       tipoConsulta: tipoConsulta ?? this.tipoConsulta,
       odontologo: odontologo ?? this.odontologo,
+      odontologoId: odontologoId ?? this.odontologoId,
       fecha: fecha ?? this.fecha,
       hora: hora ?? this.hora,
       motivoPrincipal: motivoPrincipal ?? this.motivoPrincipal,
@@ -201,7 +207,7 @@ class HistorialClinico {
 
   @override
   String toString() {
-    return 'HistorialClinico{id: $id, pacienteId: $pacienteId, pacienteTipo: $pacienteTipo, tipoConsulta: $tipoConsulta, fecha: $fechaFormateada, estado: $estado}';
+    return 'HistorialClinico{id: $id, pacienteId: $pacienteId, pacienteTipo: $pacienteTipo, tipoConsulta: $tipoConsulta, fecha: $fechaFormateada, estado: $estado, odontologoId: $odontologoId}';
   }
 
   @override

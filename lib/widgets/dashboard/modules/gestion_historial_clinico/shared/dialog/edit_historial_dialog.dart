@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
+import '../../../../../../controllers/auth_controller.dart';
 
 class EditHistorialDialog {
   static void show(BuildContext context, Map<String, dynamic> historialData) {
@@ -36,10 +37,21 @@ class EditHistorialDialog {
     final RxList<Map<String, String>> listaOdontologos = <Map<String, String>>[].obs;
     final RxBool loadingOdontologos = true.obs;
     final isLoading = false.obs;
+    
+    bool isUsuarioOdontologo = false;
 
     // --- CARGAR ODONTÓLOGOS ---
     Future<void> loadOdontologos() async {
       try {
+        final authController = Get.find<AuthController>();
+        final currentUser = authController.currentUser.value;
+
+        if (currentUser != null && currentUser.rol == 'odontologo') {
+          isUsuarioOdontologo = true;
+          loadingOdontologos.value = false;
+          return;
+        }
+
         loadingOdontologos.value = true;
         final snapshot = await FirebaseFirestore.instance
             .collection('usuarios')
@@ -161,7 +173,6 @@ class EditHistorialDialog {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Info Paciente (Solo lectura)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -207,8 +218,40 @@ class EditHistorialDialog {
                       ))),
                       const SizedBox(width: 16),
                       
-                      // Dropdown Odontólogo
                       Expanded(child: Obx(() {
+                        if (isUsuarioOdontologo) {
+                          return Container(
+                            height: 56,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.getInputBackground(context).withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppTheme.getBorderLight(context).withValues(alpha: 0.5)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.person, color: AppTheme.primaryColor.withValues(alpha: 0.7), size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Odontólogo (Bloqueado)', style: TextStyle(fontSize: 11, color: AppTheme.getTextSecondary(context))),
+                                      Text(
+                                        selectedOdontologo.value,
+                                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.getTextPrimary(context).withValues(alpha: 0.8)),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.lock_outline, size: 16, color: AppTheme.getTextSecondary(context)),
+                              ],
+                            ),
+                          );
+                        }
+
                         if (loadingOdontologos.value) {
                           return Container(
                             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),

@@ -7,6 +7,7 @@ class ReservaHora {
   String pacienteTipo; // 'asociado' o 'carga'
   String pacienteRut;
   String odontologo;
+  String? odontologoId;
   DateTime fecha;
   String hora; // Formato HH:mm
   String motivo;
@@ -21,6 +22,7 @@ class ReservaHora {
     required this.pacienteTipo,
     required this.pacienteRut,
     required this.odontologo,
+    this.odontologoId,
     required this.fecha,
     required this.hora,
     required this.motivo,
@@ -41,6 +43,7 @@ class ReservaHora {
       'pacienteTipo': pacienteTipo,
       'pacienteRut': pacienteRut,
       'odontologo': odontologo,
+      'odontologoId': odontologoId,
       'fecha': Timestamp.fromDate(fecha),
       'hora': hora,
       'motivo': motivo,
@@ -59,6 +62,7 @@ class ReservaHora {
       pacienteTipo: map['pacienteTipo'] ?? 'asociado',
       pacienteRut: map['pacienteRut'] ?? '',
       odontologo: map['odontologo'] ?? '',
+      odontologoId: map['odontologoId'],
       fecha: _parseDateTime(map['fecha']),
       hora: map['hora'] ?? '',
       motivo: map['motivo'] ?? '',
@@ -84,6 +88,7 @@ class ReservaHora {
     String? pacienteTipo,
     String? pacienteRut,
     String? odontologo,
+    String? odontologoId,
     DateTime? fecha,
     String? hora,
     String? motivo,
@@ -98,6 +103,7 @@ class ReservaHora {
       pacienteTipo: pacienteTipo ?? this.pacienteTipo,
       pacienteRut: pacienteRut ?? this.pacienteRut,
       odontologo: odontologo ?? this.odontologo,
+      odontologoId: odontologoId ?? this.odontologoId,
       fecha: fecha ?? this.fecha,
       hora: hora ?? this.hora,
       motivo: motivo ?? this.motivo,

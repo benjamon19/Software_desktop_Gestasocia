@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Import necesario
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
+import '../../../../../../controllers/auth_controller.dart';
 import '../../shared/dialog/select_asociado_dialog.dart';
 
 class FormSection extends StatefulWidget {
@@ -36,6 +37,7 @@ class _FormSectionState extends State<FormSection> {
   String? _selectedOdontologo;
   List<Map<String, String>> _listaOdontologos = [];
   bool _loadingOdontologos = false;
+  bool _isUsuarioOdontologo = false;
 
   String _tipoConsulta = 'consulta';
   String _estado = 'pendiente';
@@ -61,13 +63,30 @@ class _FormSectionState extends State<FormSection> {
     super.dispose();
   }
 
-  // Cargar odontólogos desde Firebase
   Future<void> _loadOdontologos() async {
+    final authController = Get.find<AuthController>();
+    final currentUser = authController.currentUser.value;
+
+    if (currentUser != null && currentUser.rol == 'odontologo') {
+      if (mounted) {
+        setState(() {
+          _isUsuarioOdontologo = true;
+          _selectedOdontologo = currentUser.nombreCompleto;
+          _listaOdontologos = [{
+            'id': currentUser.id!,
+            'nombreCompleto': currentUser.nombreCompleto,
+          }];
+        });
+      }
+      return;
+    }
+
     setState(() => _loadingOdontologos = true);
     try {
       final snapshot = await FirebaseFirestore.instance
           .collection('usuarios')
           .where('rol', isEqualTo: 'odontologo')
+          .where('isActive', isEqualTo: true)
           .get();
 
       final List<Map<String, String>> loaded = [];
@@ -156,7 +175,7 @@ class _FormSectionState extends State<FormSection> {
       ),
       child: Column(
         children: [
-          // Header compacto y profesional
+          // Header
           Padding(
             padding: EdgeInsets.all(isSmallScreen ? 14 : 16),
             child: Row(
@@ -196,7 +215,6 @@ class _FormSectionState extends State<FormSection> {
             ),
           ),
           
-          // Línea divisoria sutil
           Container(
             height: 1,
             margin: EdgeInsets.symmetric(horizontal: isSmallScreen ? 12 : 16),
@@ -212,22 +230,15 @@ class _FormSectionState extends State<FormSection> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Sección: Datos del Paciente
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSectionHeader(
-                            context,
-                            'Datos del asociado o carga',
-                            Icons.person_outline,
-                            isSmallScreen,
-                          ),
-                        ),
-                      ],
+                    // --- SECCIÓN PACIENTE ---
+                    _buildSectionHeader(
+                      context,
+                      'Datos del asociado o carga',
+                      Icons.person_outline,
+                      isSmallScreen,
                     ),
                     const SizedBox(height: 12),
                     
-                    // Botón para seleccionar paciente
                     InkWell(
                       onTap: _selectPaciente,
                       borderRadius: BorderRadius.circular(8),
@@ -248,11 +259,7 @@ class _FormSectionState extends State<FormSection> {
                         child: _selectedPaciente == null
                             ? Row(
                                 children: [
-                                  Icon(
-                                    Icons.person_search,
-                                    color: AppTheme.primaryColor,
-                                    size: 24,
-                                  ),
+                                  Icon(Icons.person_search, color: AppTheme.primaryColor, size: 24),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
@@ -277,10 +284,7 @@ class _FormSectionState extends State<FormSection> {
                                       ],
                                     ),
                                   ),
-                                  Icon(
-                                    Icons.chevron_right,
-                                    color: AppTheme.getTextSecondary(context),
-                                  ),
+                                  Icon(Icons.chevron_right, color: AppTheme.getTextSecondary(context)),
                                 ],
                               )
                             : Row(
@@ -304,39 +308,14 @@ class _FormSectionState extends State<FormSection> {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                _selectedPaciente!['nombre'],
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: AppTheme.getTextPrimary(context),
-                                                ),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: _selectedPaciente!['tipo'] == 'asociado'
-                                                    ? const Color(0xFF3B82F6).withValues(alpha: 0.1)
-                                                    : const Color(0xFF10B981).withValues(alpha: 0.1),
-                                                borderRadius: BorderRadius.circular(4),
-                                              ),
-                                              child: Text(
-                                                _selectedPaciente!['tipo'] == 'asociado' ? 'Asociado' : 'Carga',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: _selectedPaciente!['tipo'] == 'asociado'
-                                                      ? const Color(0xFF3B82F6)
-                                                      : const Color(0xFF10B981),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                        Text(
+                                          _selectedPaciente!['nombre'],
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppTheme.getTextPrimary(context),
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
@@ -356,11 +335,7 @@ class _FormSectionState extends State<FormSection> {
                                         _selectedPaciente = null;
                                       });
                                     },
-                                    icon: Icon(
-                                      Icons.close,
-                                      color: AppTheme.getTextSecondary(context),
-                                      size: 20,
-                                    ),
+                                    icon: Icon(Icons.close, color: AppTheme.getTextSecondary(context), size: 20),
                                     tooltip: 'Quitar selección',
                                   ),
                                 ],
@@ -370,7 +345,7 @@ class _FormSectionState extends State<FormSection> {
                     
                     const SizedBox(height: 20),
                     
-                    // Sección: Información de la Consulta
+                    // --- SECCIÓN CONSULTA ---
                     _buildSectionHeader(
                       context,
                       'Información de la Consulta',
@@ -401,40 +376,83 @@ class _FormSectionState extends State<FormSection> {
                           ),
                         ),
                         const SizedBox(width: 10),
+                        
                         Expanded(
-                          child: _loadingOdontologos
-                            ? Container(
-                                height: 56, // Altura aproximada del input
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.getInputBackground(context),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppTheme.getBorderLight(context)),
-                                ),
-                                child: const Row(
-                                  children: [
-                                    SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                                    SizedBox(width: 12),
-                                    Text('Cargando...', style: TextStyle(fontSize: 13)),
-                                  ],
-                                ),
-                              )
-                            : _buildDropdown(
-                                context: context,
-                                label: 'Odontólogo',
-                                value: _selectedOdontologo,
-                                items: _listaOdontologos.map((o) => {
-                                  'value': o['nombreCompleto']!,
-                                  'label': o['nombreCompleto']!
-                                }).toList(),
-                                icon: Icons.person_outline,
-                                onChanged: (value) {
-                                  if (!mounted) return;
-                                  setState(() => _selectedOdontologo = value);
-                                },
-                                isSmallScreen: isSmallScreen,
-                              ),
+                          child: _isUsuarioOdontologo
+                              ? Container(
+                                  height: 56,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.getInputBackground(context).withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: AppTheme.getBorderLight(context).withValues(alpha: 0.5)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.person, color: AppTheme.primaryColor.withValues(alpha: 0.7), size: isSmallScreen ? 18 : 20),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Odontólogo (Tú)',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: AppTheme.getTextSecondary(context),
+                                              ),
+                                            ),
+                                            Text(
+                                              _selectedOdontologo ?? 'Cargando...',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: AppTheme.getTextPrimary(context).withValues(alpha: 0.8),
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Icon(Icons.lock_outline, size: 16, color: AppTheme.getTextSecondary(context)),
+                                    ],
+                                  ),
+                                )
+                              : _loadingOdontologos
+                                  ? Container(
+                                      height: 56,
+                                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.getInputBackground(context),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: AppTheme.getBorderLight(context)),
+                                      ),
+                                      child: const Row(
+                                        children: [
+                                          SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                          SizedBox(width: 12),
+                                          Text('Cargando...', style: TextStyle(fontSize: 13)),
+                                        ],
+                                      ),
+                                    )
+                                  : _buildDropdown(
+                                      context: context,
+                                      label: 'Odontólogo',
+                                      value: _selectedOdontologo,
+                                      items: _listaOdontologos.map((o) => {
+                                        'value': o['nombreCompleto']!,
+                                        'label': o['nombreCompleto']!
+                                      }).toList(),
+                                      icon: Icons.person_outline,
+                                      onChanged: (value) {
+                                        if (!mounted) return;
+                                        setState(() => _selectedOdontologo = value);
+                                      },
+                                      isSmallScreen: isSmallScreen,
+                                    ),
                         ),
+                        // ----------------------------------------
                       ],
                     ),
                     
@@ -452,7 +470,7 @@ class _FormSectionState extends State<FormSection> {
                     
                     const SizedBox(height: 20),
                     
-                    // Sección: Diagnóstico y Tratamiento
+                    // --- SECCIÓN DIAGNÓSTICO ---
                     _buildSectionHeader(
                       context,
                       'Diagnóstico y Tratamiento',
@@ -509,7 +527,7 @@ class _FormSectionState extends State<FormSection> {
                     
                     const SizedBox(height: 20),
                     
-                    // Sección: Información Médica
+                    // --- SECCIÓN INFO MÉDICA ---
                     _buildSectionHeader(
                       context,
                       'Información Médica Importante',
@@ -542,7 +560,7 @@ class _FormSectionState extends State<FormSection> {
                     
                     const SizedBox(height: 20),
                     
-                    // Sección: Seguimiento y Costos
+                    // --- SECCIÓN COSTOS ---
                     _buildSectionHeader(
                       context,
                       'Seguimiento y Costos',
@@ -551,7 +569,6 @@ class _FormSectionState extends State<FormSection> {
                     ),
                     const SizedBox(height: 12),
                     
-                    // Próxima cita
                     InkWell(
                       onTap: _selectProximaCita,
                       borderRadius: BorderRadius.circular(8),
@@ -661,7 +678,7 @@ class _FormSectionState extends State<FormSection> {
                     
                     const SizedBox(height: 20),
                     
-                    // Sección: Observaciones
+                    // --- SECCIÓN OBSERVACIONES ---
                     _buildSectionHeader(
                       context,
                       'Observaciones Adicionales',
@@ -682,7 +699,7 @@ class _FormSectionState extends State<FormSection> {
                     
                     const SizedBox(height: 20),
                     
-                    // Botones de acción
+                    // --- BOTONES ---
                     Row(
                       children: [
                         Expanded(
@@ -789,6 +806,10 @@ class _FormSectionState extends State<FormSection> {
       decoration: InputDecoration(
         labelText: isRequired ? '$label *' : label,
         hintText: hint,
+        hintStyle: TextStyle(
+          color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5),
+          fontSize: isSmallScreen ? 12 : 13,
+        ),
         prefixIcon: Icon(
           icon,
           size: isSmallScreen ? 18 : 20,
@@ -818,10 +839,6 @@ class _FormSectionState extends State<FormSection> {
         ),
         labelStyle: TextStyle(
           color: AppTheme.getTextSecondary(context),
-          fontSize: isSmallScreen ? 12 : 13,
-        ),
-        hintStyle: TextStyle(
-          color: AppTheme.getTextSecondary(context).withValues(alpha: 0.5),
           fontSize: isSmallScreen ? 12 : 13,
         ),
         contentPadding: EdgeInsets.symmetric(
@@ -913,9 +930,9 @@ class _FormSectionState extends State<FormSection> {
       _tipoConsulta = 'consulta';
       _estado = 'pendiente';
       _proximaCita = null;
-      if (_listaOdontologos.length == 1) {
+      if (!_isUsuarioOdontologo && _listaOdontologos.length == 1) {
         _selectedOdontologo = _listaOdontologos.first['nombreCompleto'];
-      } else {
+      } else if (!_isUsuarioOdontologo) {
         _selectedOdontologo = null;
       }
     });
@@ -940,7 +957,6 @@ class _FormSectionState extends State<FormSection> {
         return;
       }
       
-      // Validar que se haya seleccionado un odontólogo
       if (_selectedOdontologo == null || _selectedOdontologo!.isEmpty) {
         Get.snackbar(
           'Error',
@@ -954,6 +970,12 @@ class _FormSectionState extends State<FormSection> {
           icon: const Icon(Icons.error_outline, color: Colors.red),
         );
         return;
+      }
+
+      String? odontologoIdToSave;
+      if (_isUsuarioOdontologo) {
+        final authController = Get.find<AuthController>();
+        odontologoIdToSave = authController.currentUser.value?.id;
       }
 
       if (!mounted) return;
@@ -972,7 +994,8 @@ class _FormSectionState extends State<FormSection> {
         'pacienteTelefono': _selectedPaciente!['telefono'] ?? '',
         
         'tipoConsulta': _tipoConsulta,
-        'odontologo': _selectedOdontologo, // Usar valor seleccionado
+        'odontologo': _selectedOdontologo, 
+        'odontologoId': odontologoIdToSave,
         'fecha': DateTime.now(),
         'hora': '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
         'motivoPrincipal': _motivoController.text.trim(),

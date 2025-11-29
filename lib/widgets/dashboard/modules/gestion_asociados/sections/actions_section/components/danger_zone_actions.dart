@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../../../../../../controllers/auth_controller.dart';
 import '../../../../../../../utils/app_theme.dart';
 import '../../../shared/widgets/section_title.dart';
 import '../../../shared/dialogs/delete_confirmation_dialog.dart';
@@ -12,6 +14,30 @@ class DangerZoneActions extends StatelessWidget {
     required this.asociado,
     required this.onDelete,
   });
+
+  void _showDeleteConfirmation(BuildContext context) {
+    // --- VERIFICACIÓN DE SEGURIDAD ---
+    final authController = Get.find<AuthController>();
+    if (authController.currentUser.value?.rol == 'odontologo') {
+      Get.snackbar(
+        'Acceso Denegado',
+        'No tienes permisos para eliminar registros.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withValues(alpha: 0.9),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    DeleteConfirmationDialog.show(
+      context,
+      asociado: asociado,
+      onConfirm: onDelete,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,14 +115,6 @@ class DangerZoneActions extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  void _showDeleteConfirmation(BuildContext context) {
-    DeleteConfirmationDialog.show(
-      context,
-      asociado: asociado,
-      onConfirm: onDelete,
     );
   }
 }

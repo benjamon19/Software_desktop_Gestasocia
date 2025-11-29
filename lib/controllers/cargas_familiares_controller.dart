@@ -456,6 +456,62 @@ class CargasFamiliaresController extends GetxController {
     searchText.value = '';
   }
 
+  // ==================== ASIGNACIÓN DE ODONTÓLOGO ====================
+
+  Future<bool> cambiarOdontologo({
+    required String cargaId,
+    required String nuevoOdontologoId,
+    required String nuevoOdontologoNombre,
+  }) async {
+    try {
+      isLoading.value = true;
+
+      await FirebaseFirestore.instance
+          .collection('cargas_familiares')
+          .doc(cargaId)
+          .update({
+        'odontologoAsignadoId': nuevoOdontologoId,
+        'odontologoAsignadoNombre': nuevoOdontologoNombre,
+        'ultimaActividad': DateTime.now(),
+      });
+
+      final index = _allCargasFamiliares.indexWhere((c) => c.id == cargaId);
+      if (index != -1) {
+        final cargaActualizada = _allCargasFamiliares[index].copyWith(
+          odontologoAsignadoId: nuevoOdontologoId,
+          odontologoAsignadoNombre: nuevoOdontologoNombre,
+          ultimaActividad: DateTime.now(),
+        );
+        
+        _allCargasFamiliares[index] = cargaActualizada;
+        
+        // Si está en la lista filtrada también
+        final filteredIndex = cargasFamiliares.indexWhere((c) => c.id == cargaId);
+        if (filteredIndex != -1) {
+          cargasFamiliares[filteredIndex] = cargaActualizada;
+          cargasFamiliares.refresh();
+        }
+        
+        // Actualizar selección si es la misma
+        if (selectedCarga.value?.id == cargaId) {
+          selectedCarga.value = cargaActualizada;
+        }
+      }
+
+      _updateCargasLists();
+
+      _showSuccessSnackbar('Asignación Exitosa', 'Paciente asignado a $nuevoOdontologoNombre');
+      return true;
+
+    } catch (e) {
+      Get.log('Error cambiando odontólogo de carga: $e');
+      _showErrorSnackbar('Error', 'No se pudo asignar el odontólogo');
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // ==================== SOLICITUDES DE TRANSFERENCIA ====================
   Future<void> loadSolicitudesTransferencia() async {
     try {

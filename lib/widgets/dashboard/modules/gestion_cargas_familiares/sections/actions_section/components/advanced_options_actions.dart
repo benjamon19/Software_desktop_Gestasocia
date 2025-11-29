@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../../../../../../controllers/auth_controller.dart';
 import '../../../shared/widgets/section_title.dart';
 import '../../../shared/widgets/action_button.dart';
 import '../../../shared/dialogs/export_carga_options_dialog.dart';
@@ -6,6 +8,25 @@ import '../../../shared/dialogs/backup_options_dialog.dart';
 
 class AdvancedOptionsActions extends StatelessWidget {
   const AdvancedOptionsActions({super.key});
+
+  // --- MÉTODO DE PROTECCIÓN ---
+  void _executeProtected(VoidCallback action) {
+    final authController = Get.find<AuthController>();
+    if (authController.currentUser.value?.rol == 'odontologo') {
+      Get.snackbar(
+        'Acceso Restringido',
+        'No tienes permisos para realizar esta acción.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange.withValues(alpha: 0.9),
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+        duration: const Duration(seconds: 3),
+      );
+    } else {
+      action();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +41,7 @@ class AdvancedOptionsActions extends StatelessWidget {
           title: 'Exportar Datos',
           subtitle: 'Descargar información en PDF',
           color: const Color(0xFF059669),
-          onPressed: () => _showExportOptions(context),
+          onPressed: () => _executeProtected(() => _showExportOptions(context)),
         ),
         
         const SizedBox(height: 10),
@@ -30,7 +51,7 @@ class AdvancedOptionsActions extends StatelessWidget {
           title: 'Backup de Datos',
           subtitle: 'Crear copia de seguridad',
           color: const Color(0xFF0EA5E9),
-          onPressed: () => _showBackupOptions(context),
+          onPressed: () => _executeProtected(() => _showBackupOptions(context)),
         ),
       ],
     );

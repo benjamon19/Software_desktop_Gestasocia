@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/reserva_hora.dart';
+import '../controllers/auth_controller.dart';
 
 class AttendanceData {
   final String label;
@@ -24,6 +25,16 @@ class ReservaHorasController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    
+    try {
+      final authController = Get.find<AuthController>();
+      ever(authController.currentUser, (_) {
+        loadReservas();
+      });
+    } catch (e) {
+      debugPrint('Error vinculando AuthController: $e');
+    }
+
     loadReservas();
   }
 
@@ -31,7 +42,7 @@ class ReservaHorasController extends GetxController {
   // === GETTERS PARA DASHBOARD Y GRÁFICOS ===
   // =========================================================
 
-  // KPI: Total de citas activas hoy
+  // KPI: Total de citas activas hoy (FILTRADO AUTOMÁTICAMENTE POR loadReservas)
   int get totalCitasHoy {
     final today = DateTime.now();
     return reservas.where((r) {
@@ -43,7 +54,7 @@ class ReservaHorasController extends GetxController {
     }).length;
   }
 
-  // GRÁFICO: Asistencia Mensual (Últimas 4 semanas)
+  // GRÁFICO: Asistencia Mensual
   List<AttendanceData> get attendanceStatsLast4Weeks {
     final now = DateTime.now();
     List<int> attendedCounts = [0, 0, 0, 0];
@@ -51,14 +62,14 @@ class ReservaHorasController extends GetxController {
 
     for (var r in reservas) {
       final differenceInDays = now.difference(r.fecha).inDays;
-      
+
       if (differenceInDays >= 0 && differenceInDays < 28) {
         int weekIndex;
-        
+
         if (differenceInDays < 7) {
           weekIndex = 3;
         } else if (differenceInDays < 14) {
-          weekIndex = 2;  
+          weekIndex = 2;
         } else if (differenceInDays < 21) {
           weekIndex = 1;
         } else {
@@ -67,7 +78,8 @@ class ReservaHorasController extends GetxController {
 
         if (r.estado.toLowerCase() == 'realizada') {
           attendedCounts[weekIndex]++;
-        } else if (r.estado.toLowerCase() == 'cancelada' || r.estado.toLowerCase() == 'no_asistio') {
+        } else if (r.estado.toLowerCase() == 'cancelada' ||
+                  r.estado.toLowerCase() == 'no_asistio') {
           missedCounts[weekIndex]++;
         }
       }
@@ -80,7 +92,6 @@ class ReservaHorasController extends GetxController {
       AttendanceData(label: "Actual", attended: attendedCounts[3], missed: missedCounts[3]),
     ];
   }
-  // =========================================================
 
   // === VALIDACIÓN DE DISPONIBILIDAD ===
   String? validarReserva(String odontologoNombre, DateTime fecha, String horaStr) {
@@ -119,11 +130,32 @@ class ReservaHorasController extends GetxController {
           .orderBy('fecha')
           .get();
 
-      reservas.assignAll(
-        snapshot.docs.map((d) => ReservaHora.fromMap(d.data(), d.id)).toList(),
-      );
+      List<ReservaHora> loadedReservas = snapshot.docs
+          .map((d) => ReservaHora.fromMap(d.data(), d.id))
+          .toList();
+
+      // --- FILTRO DE SEGURIDAD POR ROL ---
+      try {
+        final authController = Get.find<AuthController>();
+        final currentUser = authController.currentUser.value;
+
+        if (currentUser != null && currentUser.rol == 'odontologo') {
+          loadedReservas = loadedReservas.where((r) {
+            if (r.odontologoId != null && r.odontologoId == currentUser.id) {
+              return true;
+            }
+            if (r.odontologoId == null && r.odontologo == currentUser.nombreCompleto) {
+              return true;
+            }
+            return false;
+          }).toList();
+        }
+      } catch (e) {
+        debugPrint('Error filtrando reservas por rol: $e');
+      }
+
+      reservas.assignAll(loadedReservas);
     } catch (e) {
-      debugPrint('Error cargando reservas: $e');
       _showSnackbar('Error', 'No se pudieron cargar las reservas', isError: true);
     } finally {
       isLoading.value = false;
@@ -134,15 +166,32 @@ class ReservaHorasController extends GetxController {
   Future<bool> createReserva(ReservaHora reserva) async {
     try {
       isLoading.value = true;
+      
+      ReservaHora reservaAGuardar = reserva;
+      try {
+        final authController = Get.find<AuthController>();
+        final currentUser = authController.currentUser.value;
+        
+        if (currentUser != null && currentUser.rol == 'odontologo') {
+          reservaAGuardar = reserva.copyWith(
+            odontologoId: currentUser.id,
+            odontologo: currentUser.nombreCompleto
+          );
+        }
+      } catch (e) {
+        // Ignorar
+      }
+
       final docRef = await FirebaseFirestore.instance
           .collection('reservas_horas')
-          .add(reserva.toMap());
+          .add(reservaAGuardar.toMap());
 
-      reservas.add(reserva.copyWith(id: docRef.id));
+      reservas.add(reservaAGuardar.copyWith(id: docRef.id));
+      loadReservas(); 
+      
       _showSnackbar('Éxito', 'Reserva agendada correctamente');
       return true;
     } catch (e) {
-      debugPrint('Error creando reserva: $e');
       _showSnackbar('Error', 'No se pudo crear la reserva', isError: true);
       return false;
     } finally {
@@ -154,7 +203,7 @@ class ReservaHorasController extends GetxController {
   Future<bool> updateReserva(ReservaHora reservaActualizada) async {
     try {
       isLoading.value = true;
-      if (reservaActualizada.id == null) throw Exception('ID de reserva no válido');
+      if (reservaActualizada.id == null) throw Exception('ID inválido');
 
       await FirebaseFirestore.instance
           .collection('reservas_horas')
@@ -166,12 +215,10 @@ class ReservaHorasController extends GetxController {
         reservas[index] = reservaActualizada;
         reservas.refresh();
       }
-
       _showSnackbar('Éxito', 'Reserva actualizada');
       return true;
     } catch (e) {
-      debugPrint('Error actualizando reserva: $e');
-      _showSnackbar('Error', 'No se pudo actualizar la reserva', isError: true);
+      _showSnackbar('Error', 'No se pudo actualizar', isError: true);
       return false;
     } finally {
       isLoading.value = false;
@@ -193,8 +240,7 @@ class ReservaHorasController extends GetxController {
       _showSnackbar('Éxito', 'Reserva eliminada');
       return true;
     } catch (e) {
-      debugPrint('Error eliminando reserva: $e');
-      _showSnackbar('Error', 'No se pudo eliminar la reserva', isError: true);
+      _showSnackbar('Error', 'No se pudo eliminar', isError: true);
       return false;
     } finally {
       isLoading.value = false;

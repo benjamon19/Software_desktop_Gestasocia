@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'dart:math'; 
 import '../../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/asociados_controller.dart';
 import '../../../../../../../models/asociado.dart';
@@ -9,7 +10,11 @@ class AsociadosListSection extends StatelessWidget {
   final Function(Asociado) onAsociadoSelected;
   final AsociadosController controller;
 
-  const AsociadosListSection({
+  // Variables para paginación local
+  final RxInt _currentPage = 0.obs;
+  final int _itemsPerPage = 20;
+
+  AsociadosListSection({
     super.key,
     required this.asociados,
     required this.onAsociadoSelected,
@@ -43,6 +48,8 @@ class AsociadosListSection extends StatelessWidget {
           Expanded(
             child: _buildList(context, isSmallScreen, isVerySmall),
           ),
+          // Footer de paginación
+          _buildPaginationFooter(context, isSmallScreen),
         ],
       ),
     );
@@ -88,7 +95,10 @@ class AsociadosListSection extends StatelessWidget {
 
   Widget _buildRefreshButton(bool isSmallScreen) {
     return IconButton(
-      onPressed: () => controller.loadAsociados(),
+      onPressed: () {
+        controller.loadAsociados();
+        _currentPage.value = 0;
+      },
       icon: Icon(
         Icons.refresh,
         color: AppTheme.primaryColor,
@@ -140,22 +150,132 @@ class AsociadosListSection extends StatelessWidget {
 
   Widget _buildList(BuildContext context, bool isSmallScreen, bool isVerySmall) {
     return Obx(() {
-      final listaFiltrada = asociados;
+      final listaCompleta = asociados;
 
-      if (listaFiltrada.isEmpty) {
+      if (listaCompleta.isEmpty) {
         return _buildEmptyState(context, isVerySmall);
       }
 
+      // --- LOGICA PAGINACIÓN ---
+      final totalItems = listaCompleta.length;
+      final totalPages = (totalItems / _itemsPerPage).ceil();
+
+      if (_currentPage.value >= totalPages && totalPages > 0) {
+        _currentPage.value = 0;
+      }
+
+      final startIndex = _currentPage.value * _itemsPerPage;
+      final endIndex = min(startIndex + _itemsPerPage, totalItems);
+
+      if (startIndex > totalItems) {
+        return _buildEmptyState(context, isVerySmall);
+      }
+
+      final listaPaginada = listaCompleta.sublist(startIndex, endIndex);
+      // -------------------------
+
       return ListView.separated(
-        key: ValueKey(listaFiltrada.length),
+        key: ValueKey('list_${_currentPage.value}_${listaCompleta.length}'), 
         padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 12 : 16)),
-        itemCount: listaFiltrada.length,
+        itemCount: listaPaginada.length,
         separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 4 : 6),
         itemBuilder: (context, index) {
-          if (index >= listaFiltrada.length) return const SizedBox.shrink();
-          final asociado = listaFiltrada[index];
+          final asociado = listaPaginada[index];
           return _buildAsociadoListItem(context, asociado, isSmallScreen, isVerySmall);
         },
+      );
+    });
+  }
+
+  // === FOOTER DE PAGINACIÓN ARREGLADO ===
+  Widget _buildPaginationFooter(BuildContext context, bool isSmallScreen) {
+    return Obx(() {
+      final totalItems = asociados.length;
+      if (totalItems <= _itemsPerPage) return const SizedBox.shrink();
+
+      final totalPages = (totalItems / _itemsPerPage).ceil();
+      final currentPageIndex = _currentPage.value;
+
+      final startItem = (currentPageIndex * _itemsPerPage) + 1;
+      final endItem = min((currentPageIndex + 1) * _itemsPerPage, totalItems);
+
+      return Container(
+        width: double.infinity, 
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: AppTheme.getBorderLight(context).withValues(alpha: 0.5),
+              width: 1,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            
+            Expanded(
+              child: isSmallScreen 
+                  ? const SizedBox.shrink()
+                  : Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Mostrando $startItem-$endItem de $totalItems',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getTextSecondary(context),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+            ),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: currentPageIndex > 0
+                      ? () => _currentPage.value--
+                      : null,
+                  icon: const Icon(Icons.chevron_left),
+                  color: AppTheme.getTextPrimary(context),
+                  disabledColor: Colors.grey.withValues(alpha: 0.3),
+                  tooltip: 'Anterior',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    '${currentPageIndex + 1} / $totalPages',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: currentPageIndex < totalPages - 1
+                      ? () => _currentPage.value++
+                      : null,
+                  icon: const Icon(Icons.chevron_right),
+                  color: AppTheme.getTextPrimary(context),
+                  disabledColor: Colors.grey.withValues(alpha: 0.3),
+                  tooltip: 'Siguiente',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+
+            Expanded(
+              child: const SizedBox.shrink(),
+            ),
+          ],
+        ),
       );
     });
   }

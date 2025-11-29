@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'dart:math';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
 
@@ -11,7 +12,12 @@ class HistorialListSection extends StatelessWidget {
   final String selectedFilter;
   final String selectedStatus;
   final VoidCallback? onBeforeSelect;
-  const HistorialListSection({
+
+  // Variables para paginación local
+  final RxInt _currentPage = 0.obs;
+  final int _itemsPerPage = 20;
+
+  HistorialListSection({
     super.key,
     required this.historiales,
     required this.onHistorialSelected,
@@ -49,6 +55,8 @@ class HistorialListSection extends StatelessWidget {
           Expanded(
             child: _buildList(context, isSmallScreen, isVerySmall),
           ),
+          // Footer de paginación
+          _buildPaginationFooter(context, isSmallScreen),
         ],
       ),
     );
@@ -97,6 +105,7 @@ class HistorialListSection extends StatelessWidget {
       onPressed: () {
         final controller = Get.find<HistorialClinicoController>();
         controller.loadHistorialesFromFirebase();
+        _currentPage.value = 0;
       },
       icon: Icon(
         Icons.refresh,
@@ -146,19 +155,166 @@ class HistorialListSection extends StatelessWidget {
   }
 
   Widget _buildList(BuildContext context, bool isSmallScreen, bool isVerySmall) {
-    if (historiales.isEmpty) {
-      return _buildEmptyState(context, isVerySmall);
-    }
+    return Obx(() {
+      if (historiales.isEmpty) {
+        return _buildEmptyState(context, isVerySmall);
+      }
 
-    return ListView.separated(
-      key: ValueKey(historiales.length),
-      padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 12 : 16)),
-      itemCount: historiales.length,
-      separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 4 : 6),
-      itemBuilder: (context, index) {
-        final historial = historiales[index];
-        return _buildHistorialCard(context, historial, isSmallScreen, isVerySmall);
-      },
+      // --- LOGICA DE PAGINACIÓN ---
+      final totalItems = historiales.length;
+      final totalPages = (totalItems / _itemsPerPage).ceil();
+
+      if (_currentPage.value >= totalPages && totalPages > 0) {
+        _currentPage.value = 0;
+      }
+
+      final startIndex = _currentPage.value * _itemsPerPage;
+      final endIndex = min(startIndex + _itemsPerPage, totalItems);
+
+      if (startIndex > totalItems) {
+        return _buildEmptyState(context, isVerySmall);
+      }
+
+      final listaPaginada = historiales.sublist(startIndex, endIndex);
+      // ----------------------------
+
+      return ListView.separated(
+        key: ValueKey('historial_list_${_currentPage.value}_${historiales.length}'),
+        padding: EdgeInsets.all(isVerySmall ? 8 : (isSmallScreen ? 12 : 16)),
+        itemCount: listaPaginada.length,
+        separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 4 : 6),
+        itemBuilder: (context, index) {
+          final historial = listaPaginada[index];
+          return _buildHistorialCard(context, historial, isSmallScreen, isVerySmall);
+        },
+      );
+    });
+  }
+
+  // === FOOTER DE PAGINACIÓN CENTRADO ===
+  Widget _buildPaginationFooter(BuildContext context, bool isSmallScreen) {
+    return Obx(() {
+      final totalItems = historiales.length;
+      if (totalItems <= _itemsPerPage) return const SizedBox.shrink();
+
+      final totalPages = (totalItems / _itemsPerPage).ceil();
+      final currentPageIndex = _currentPage.value;
+
+      final startItem = (currentPageIndex * _itemsPerPage) + 1;
+      final endItem = min((currentPageIndex + 1) * _itemsPerPage, totalItems);
+
+      return Container(
+        width: double.infinity,
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: AppTheme.getBorderLight(context).withValues(alpha: 0.5),
+              width: 1,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+
+            Expanded(
+              child: isSmallScreen
+                  ? const SizedBox.shrink()
+                  : Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Mostrando $startItem-$endItem de $totalItems',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.getTextSecondary(context),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+            ),
+
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: currentPageIndex > 0
+                      ? () => _currentPage.value--
+                      : null,
+                  icon: const Icon(Icons.chevron_left),
+                  color: AppTheme.getTextPrimary(context),
+                  disabledColor: Colors.grey.withValues(alpha: 0.3),
+                  tooltip: 'Anterior',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    '${currentPageIndex + 1} / $totalPages',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.getTextPrimary(context),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: currentPageIndex < totalPages - 1
+                      ? () => _currentPage.value++
+                      : null,
+                  icon: const Icon(Icons.chevron_right),
+                  color: AppTheme.getTextPrimary(context),
+                  disabledColor: Colors.grey.withValues(alpha: 0.3),
+                  tooltip: 'Siguiente',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+
+            Expanded(
+              child: const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+  
+  Widget _buildEmptyState(BuildContext context, bool isVerySmall) {
+    final controller = Get.find<HistorialClinicoController>();
+    final hayBusqueda = controller.searchQuery.value.isNotEmpty;
+    final hayFiltros = controller.selectedFilter.value != 'todos' ||
+                       controller.selectedStatus.value != 'todos';
+    
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            hayBusqueda || hayFiltros 
+                ? Icons.search_off_outlined
+                : Icons.folder_open_outlined,
+            size: isVerySmall ? 40 : 48,
+            color: AppTheme.getTextSecondary(context).withValues(alpha: 0.3),
+          ),
+          SizedBox(height: isVerySmall ? 8 : 12),
+          Text(
+            hayBusqueda || hayFiltros
+                ? (isVerySmall ? 'Sin resultados' : 'No se encontraron historiales')
+                : (isVerySmall ? 'Sin historiales' : 'No hay historiales registrados'),
+            style: TextStyle(
+              fontSize: isVerySmall ? 12 : 14,
+              color: AppTheme.getTextSecondary(context),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -394,39 +550,6 @@ class HistorialListSection extends StatelessWidget {
             ],
           ),
       ],
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, bool isVerySmall) {
-    final controller = Get.find<HistorialClinicoController>();
-    final hayBusqueda = controller.searchQuery.value.isNotEmpty;
-    final hayFiltros = controller.selectedFilter.value != 'todos' ||
-                       controller.selectedStatus.value != 'todos';
-    
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            hayBusqueda || hayFiltros 
-                ? Icons.search_off_outlined
-                : Icons.folder_open_outlined,
-            size: isVerySmall ? 40 : 48,
-            color: AppTheme.getTextSecondary(context).withValues(alpha: 0.3),
-          ),
-          SizedBox(height: isVerySmall ? 8 : 12),
-          Text(
-            hayBusqueda || hayFiltros
-                ? (isVerySmall ? 'Sin resultados' : 'No se encontraron historiales')
-                : (isVerySmall ? 'Sin historiales' : 'No hay historiales registrados'),
-            style: TextStyle(
-              fontSize: isVerySmall ? 12 : 14,
-              color: AppTheme.getTextSecondary(context),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 
