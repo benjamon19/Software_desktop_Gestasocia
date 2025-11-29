@@ -3,7 +3,7 @@
 ; Non-commercial use only
 
 #define MyAppName "GestAsocia"
-#define MyAppVersion "1.0.1"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "GestAsocia"
 #define MyAppURL "https://gestasocia.web.app/"
 #define MyAppExeName "gestasocia.exe"
@@ -33,7 +33,7 @@ DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 OutputDir=C:\Users\benja\Documents\GitHub\Software_desktop_Gestasocia\installer
-OutputBaseFilename=GestAsociaSetup-v1.0.1
+OutputBaseFilename=GestAsociaSetup-v1.1.0
 SetupIconFile=C:\Users\benja\Documents\GitHub\Software_desktop_Gestasocia\windows\runner\resources\app_icon.ico
 SolidCompression=yes
 WizardStyle=modern dynamic windows11
