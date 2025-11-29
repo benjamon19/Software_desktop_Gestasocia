@@ -15,11 +15,11 @@ class CargaFamiliar {
   String? ultimaVisita;
   String? proximaCita;
   List<String>? alertas;
-  
-  // Información de contacto de la carga
   String? email;
   String? telefono;
   String? direccion;
+  String? odontologoAsignadoId;
+  String? odontologoAsignadoNombre;
 
   CargaFamiliar({
     this.id,
@@ -39,6 +39,8 @@ class CargaFamiliar {
     this.email,
     this.telefono,
     this.direccion,
+    this.odontologoAsignadoId,
+    this.odontologoAsignadoNombre,
   });
 
   String get nombreCompleto => '$nombre $apellido';
@@ -162,6 +164,8 @@ class CargaFamiliar {
       'email': email,
       'telefono': telefono,
       'direccion': direccion,
+      'odontologoAsignadoId': odontologoAsignadoId,
+      'odontologoAsignadoNombre': odontologoAsignadoNombre,
     };
   }
 
@@ -192,6 +196,8 @@ class CargaFamiliar {
       email: map['email'],
       telefono: map['telefono'],
       direccion: map['direccion'],
+      odontologoAsignadoId: map['odontologoAsignadoId'],
+      odontologoAsignadoNombre: map['odontologoAsignadoNombre'],
     );
   }
 
@@ -231,6 +237,8 @@ class CargaFamiliar {
     String? email,
     String? telefono,
     String? direccion,
+    String? odontologoAsignadoId,
+    String? odontologoAsignadoNombre,
   }) {
     return CargaFamiliar(
       id: id ?? this.id,
@@ -250,6 +258,8 @@ class CargaFamiliar {
       email: email ?? this.email,
       telefono: telefono ?? this.telefono,
       direccion: direccion ?? this.direccion,
+      odontologoAsignadoId: odontologoAsignadoId ?? this.odontologoAsignadoId,
+      odontologoAsignadoNombre: odontologoAsignadoNombre ?? this.odontologoAsignadoNombre,
     );
   }
 

@@ -51,10 +51,9 @@ class StatsCardsSection extends StatelessWidget {
         ),
         SizedBox(width: isSmallScreen ? 8 : 12),
 
-        // 3. Nuevos Historiales
         Expanded(
           child: Obx(() => StatCard(
-            title: 'Nuevos Historiales (Último Mes)',
+            title: 'Nuevos Historiales (Último Año)',
             value: historialController.totalNuevosHistorialesMes.toString(), 
             icon: Icons.person_add_outlined,
             iconColor: const Color(0xFF9F7AEA),
@@ -80,7 +79,7 @@ class StatsCardsSection extends StatelessWidget {
       ],
     );
   }
-}  
+}
 
 class StatCard extends StatelessWidget {
   final String title;

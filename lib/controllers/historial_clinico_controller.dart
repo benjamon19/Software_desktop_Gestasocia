@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import '../models/historial_clinico.dart';
 import '../controllers/asociados_controller.dart';
 import '../controllers/cargas_familiares_controller.dart';
+import '../controllers/auth_controller.dart'; 
 
 class HistorialClinicoController extends GetxController {
   // Estados de vista
@@ -45,6 +46,16 @@ class HistorialClinicoController extends GetxController {
       }
     });
 
+    // Escuchar cambios en el usuario para recargar filtros
+    try {
+      final authController = Get.find<AuthController>();
+      ever(authController.currentUser, (_) {
+        _applyFilters();
+      });
+    } catch (e) {
+      Get.log('Error vinculando AuthController: $e');
+    }
+
     loadHistorialesFromFirebase();
   }
 
@@ -58,36 +69,31 @@ class HistorialClinicoController extends GetxController {
   // === GETTERS DINÁMICOS PARA DASHBOARD (KPIs y Listas) ===
   // =========================================================================
 
-  /// KPI: Nuevos Historiales (Creados en los últimos 30 días)
   int get totalNuevosHistorialesMes {
-    final DateTime fechaLimite = DateTime.now().subtract(const Duration(days: 30));
-    return _allHistoriales.where((historial) {
+    final DateTime fechaLimite = DateTime.now().subtract(const Duration(days: 365));
+    
+    return historiales.where((historial) {
       return historial.fechaCreacion.isAfter(fechaLimite);
     }).length;
   }
 
-  /// KPI: Urgencias (Registros donde el tipo es 'urgencia')
   int get totalUrgencias {
-    return _allHistoriales.where((historial) {
-      return historial.tipoConsulta.toLowerCase() == 'urgencia';
-    }).length;
+    return urgenciasPendientes.length;
   }
 
   List<HistorialClinico> get urgenciasPendientes {
-    return _allHistoriales.where((h) {
+    return historiales.where((h) {
       final isUrgencia = h.tipoConsulta.toLowerCase() == 'urgencia';
-      final isPendiente = ['pendiente', 'requiere_seguimiento', 'en_proceso'].contains(h.estado.toLowerCase());
-      return isUrgencia && isPendiente;
+      return isUrgencia;
     }).toList()
     ..sort((a, b) => a.fecha.compareTo(b.fecha));
   }
 
   Map<String, int> get tratamientosPorTipo {
     final Map<String, int> counts = {};
-    for (var h in _allHistoriales) {
+    for (var h in historiales) { 
       final t = h.tratamientoRealizado?.trim();
       if (t != null && t.isNotEmpty) {
-        // Normalización: Primera mayúscula
         final formatted = t.length > 1 
             ? t[0].toUpperCase() + t.substring(1).toLowerCase() 
             : t.toUpperCase();
@@ -127,7 +133,6 @@ class HistorialClinicoController extends GetxController {
   }
 
   // ========== OBTENER INFO DEL PACIENTE ==========
-
   Map<String, dynamic>? _getPacienteInfo(HistorialClinico historial) {
     try {
       if (historial.pacienteTipo == 'asociado') {
@@ -186,47 +191,44 @@ class HistorialClinicoController extends GetxController {
   void _applyFilters() {
     List<HistorialClinico> filtered = List.from(_allHistoriales);
 
+    // --- LOGICA DE SEGURIDAD PARA ODONTÓLOGOS ---
+    try {
+      final authController = Get.find<AuthController>();
+      final currentUser = authController.currentUser.value;
+
+      if (currentUser != null && currentUser.rol == 'odontologo') {
+        filtered = filtered.where((h) {
+          if (h.tipoConsulta.toLowerCase() == 'urgencia' && 
+              ['pendiente', 'requiere_seguimiento'].contains(h.estado.toLowerCase())) {
+            return true;
+          }
+
+          if (h.odontologoId != null && h.odontologoId == currentUser.id) {
+            return true;
+          }
+
+          if (h.odontologoId == null && h.odontologo == currentUser.nombreCompleto) {
+            return true;
+          }
+          return false;
+        }).toList();
+      }
+    } catch (e) {
+      // Error silencioso
+    }
+
     if (searchQuery.value.isNotEmpty) {
       final query = searchQuery.value.trim();
       final querySinFormato = query.replaceAll(RegExp(r'[^0-9kK]'), '');
 
       filtered = filtered.where((historial) {
         try {
-          if (historial.pacienteTipo == 'asociado') {
-            final asociadosController = Get.find<AsociadosController>();
-            final asociado = asociadosController.getAsociadoById(historial.pacienteId);
-
-            if (asociado != null) {
-              if (asociado.sap != null && 
-                  asociado.sap!.contains(querySinFormato)) {
-                return true;
-              }
-              final rutSinFormato = asociado.rut.replaceAll(RegExp(r'[^0-9kK]'), '');
-              if (rutSinFormato.contains(querySinFormato)) {
-                return true;
-              }
-            }
+          final info = _getPacienteInfo(historial);
+          if (info != null) {
+             final nombre = info['nombre'].toString().toLowerCase();
+             final rut = info['rut'].toString().replaceAll(RegExp(r'[^0-9kK]'), '');
+             return nombre.contains(query.toLowerCase()) || rut.contains(querySinFormato);
           }
-          else if (historial.pacienteTipo == 'carga') {
-            final cargasController = Get.find<CargasFamiliaresController>();
-            final carga = cargasController.getCargaById(historial.pacienteId);
-
-            if (carga != null) {
-              final rutCargaSinFormato = carga.rut.replaceAll(RegExp(r'[^0-9kK]'), '');
-              if (rutCargaSinFormato.contains(querySinFormato)) {
-                return true;
-              }
-
-              final asociadosController = Get.find<AsociadosController>();
-              final asociadoTitular = asociadosController.getAsociadoById(carga.asociadoId);
-              if (asociadoTitular != null &&
-                  asociadoTitular.sap != null &&
-                  asociadoTitular.sap!.contains(querySinFormato)) {
-                return true;
-              }
-            }
-          }
-
           return false;
         } catch (e) {
           return false;
@@ -244,7 +246,7 @@ class HistorialClinicoController extends GetxController {
       filtered = filtered.where((h) => h.estado.toLowerCase() == selectedStatus.value).toList();
     }
     
-    // Filtro por odontólogo
+    // Filtro por odontólogo (Visual)
     if (selectedOdontologo.value != 'todos') {
       filtered = filtered.where((h) => h.odontologo == selectedOdontologo.value).toList();
     }
@@ -253,8 +255,73 @@ class HistorialClinicoController extends GetxController {
     filtered.sort((a, b) => b.fecha.compareTo(a.fecha));
 
     historiales.value = filtered;
+    
+    // Refrescar para actualizar la UI
+    historiales.refresh();
   }
 
+  // ========== HELPERS ==========
+
+  void _showErrorSnackbar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
+      colorText: Get.theme.colorScheme.onError,
+      duration: const Duration(seconds: 4),
+    );
+  }
+
+  void _showSuccessSnackbar(String title, String message) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.8),
+      colorText: Get.theme.colorScheme.onPrimary,
+      duration: const Duration(seconds: 3),
+    );
+  }
+
+  // ========== CONVERTIR A MAP PARA LA VISTA ==========
+    List<Map<String, dynamic>> get filteredHistorial {
+    return historiales.map((h) => toDisplayMap(h)).toList();
+  }
+
+  Map<String, dynamic> toDisplayMap(HistorialClinico h) {
+    final info = _getPacienteInfo(h);
+    return {
+      'id': h.id,
+      'pacienteId': h.pacienteId,
+      'pacienteTipo': h.pacienteTipo,
+      'pacienteNombre': info?['nombre'] ?? 'Paciente no encontrado',
+      'pacienteRut': info?['rut'] ?? 'N/A',
+      'pacienteEdad': info?['edad'] ?? 0,
+      'pacienteTelefono': info?['telefono'] ?? '',
+      'pacienteSap': info?['sap'],
+      'tipoConsulta': h.tipoConsultaFormateado,
+      'odontologo': h.odontologo,
+      'odontologoId': h.odontologoId,
+      'fecha': h.fechaFormateada,
+      'hora': h.hora,
+      'motivoPrincipal': h.motivoPrincipal,
+      'diagnostico': h.diagnostico ?? '',
+      'tratamientoRealizado': h.tratamientoRealizado ?? '',
+      'tratamiento': h.tratamientoRealizado ?? '',
+      'dienteTratado': h.dienteTratado ?? '',
+      'observacionesOdontologo': h.observacionesOdontologo ?? '',
+      'observaciones': h.observacionesOdontologo ?? '',
+      'alergias': h.alergias ?? '',
+      'medicamentosActuales': h.medicamentosActuales ?? '',
+      'proximaCita': h.proximaCitaFormateada,
+      'estado': h.estadoFormateado,
+      'costoTratamiento': h.costoTratamiento,
+      'imagenUrl': h.imagenUrl ?? '',
+      'asociadoTitular': info?['titularNombre'] ?? '',
+    };
+  }
+  
   void searchHistorial(String query) {
     searchQuery.value = query;
   }
@@ -361,29 +428,17 @@ class HistorialClinicoController extends GetxController {
         return false;
       }
 
-      Get.log('Tamaño de archivo: ${(fileSize / 1024 / 1024).toStringAsFixed(2)} MB');
-
       final storageRef = FirebaseStorage.instanceFor(
         app: Firebase.app('storageApp'),
         bucket: 'gestasocia-bucket-4b6ea.firebasestorage.app',
       ).ref().child('historiales/$historialId/imagen.jpg');
 
-      Get.log('Referencia de Storage: ${storageRef.fullPath}');
-      Get.log('Bucket: ${storageRef.bucket}');
-
       final uploadTask = storageRef.putFile(imageFile);
 
-      uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
-        final progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        Get.log('Progreso de subida: ${progress.toStringAsFixed(2)}%');
-      });
-
       final snapshot = await uploadTask;
-      Get.log('Estado de subida: ${snapshot.state}');
 
       if (snapshot.state == TaskState.success) {
         final downloadUrl = await storageRef.getDownloadURL();
-        Get.log('URL de descarga obtenida: $downloadUrl');
 
         await FirebaseFirestore.instance
             .collection('historiales_clinicos')
@@ -392,8 +447,6 @@ class HistorialClinicoController extends GetxController {
           'imagenUrl': downloadUrl,
           'fechaActualizacion': DateTime.now(),
         });
-
-        Get.log('Firestore actualizado con imagenUrl');
 
         if (selectedHistorial.value?.id == historialId) {
           final historialActualizado = selectedHistorial.value!.copyWith(
@@ -412,52 +465,11 @@ class HistorialClinicoController extends GetxController {
         _showSuccessSnackbar('Éxito', 'Imagen subida correctamente');
         return true;
       } else {
-        Get.log('Estado de subida no exitoso: ${snapshot.state}');
         _showErrorSnackbar('Error', 'No se pudo completar la subida');
         return false;
       }
-    } on FirebaseException catch (e) {
-      Get.log('Firebase Error: ${e.code} - ${e.message}');
-
-      switch (e.code) {
-        case 'unauthorized':
-          _showErrorSnackbar(
-            'Permiso Denegado',
-            'No tienes permiso para subir imágenes. Contacta al administrador.',
-          );
-          break;
-        case 'canceled':
-          Get.log('Upload cancelado por el usuario');
-          return false;
-        case 'unknown':
-          _showErrorSnackbar(
-            'Error Desconocido',
-            'Error: ${e.message ?? 'Desconocido'}',
-          );
-          break;
-        case 'object-not-found':
-          _showErrorSnackbar('Error', 'No se encontró el archivo');
-          break;
-        case 'bucket-not-found':
-          _showErrorSnackbar('Error', 'Configuración de Storage incorrecta');
-          break;
-        case 'quota-exceeded':
-          _showErrorSnackbar('Error', 'Se excedió la cuota de almacenamiento');
-          break;
-        default:
-          _showErrorSnackbar(
-            'Error de Storage',
-            'Código: ${e.code}\n${e.message ?? 'Error desconocido'}',
-          );
-      }
-      return false;
-    } catch (e, stackTrace) {
-      Get.log('Error subiendo imagen: $e');
-      Get.log('Stack trace: $stackTrace');
-      _showErrorSnackbar(
-        'Error',
-        'No se pudo subir la imagen: ${e.toString()}',
-      );
+    } catch (e) {
+      _showErrorSnackbar('Error', 'No se pudo subir la imagen: ${e.toString()}');
       return false;
     }
   }
@@ -475,11 +487,32 @@ class HistorialClinicoController extends GetxController {
         throw Exception('El paciente no existe en el sistema');
       }
 
+      // --- ASIGNAR ID DEL ODONTÓLOGO SI NO VIENE ---
+      String? odontoId = historialData['odontologoId'];
+      try {
+        final authController = Get.find<AuthController>();
+        final currentUser = authController.currentUser.value;
+        
+        if (odontoId == null && currentUser != null) {
+          if (historialData['odontologo'] == currentUser.nombreCompleto) {
+            odontoId = currentUser.id;
+          } else if (currentUser.rol == 'odontologo') {
+
+             odontoId = currentUser.id;
+             historialData['odontologo'] = currentUser.nombreCompleto;
+          }
+        }
+      } catch (e) {
+        Get.log('No se pudo asignar ID de odontólogo automáticamente: $e');
+      }
+      // ---------------------------------------------
+
       final historialLimpio = HistorialClinico(
         pacienteId: historialData['pacienteId'],
         pacienteTipo: historialData['pacienteTipo'],
         tipoConsulta: historialData['tipoConsulta'],
         odontologo: historialData['odontologo'],
+        odontologoId: odontoId,
         fecha: historialData['fecha'],
         hora: historialData['hora'],
         motivoPrincipal: historialData['motivoPrincipal'],
@@ -539,19 +572,12 @@ class HistorialClinicoController extends GetxController {
           _allHistoriales.firstWhere((h) => h.id == historialId, orElse: () => throw Exception('Historial no encontrado'));
 
       if (historialEliminar.imagenUrl != null && historialEliminar.imagenUrl!.isNotEmpty) {
-        final uri = Uri.parse(historialEliminar.imagenUrl!);
-        final pathSegments = uri.pathSegments;
-        final startIndex = pathSegments.indexOf('o');
-        if (startIndex != -1 && startIndex + 1 < pathSegments.length) {
-          final encodedPath = pathSegments.sublist(startIndex + 1).join('/');
-          final decodedPath = Uri.decodeComponent(encodedPath);
 
-          try {
-            final ref = FirebaseStorage.instance.ref().child(decodedPath);
-            await ref.delete();
-          } catch (e) {
-            Get.log('Advertencia: No se pudo eliminar la imagen del Storage: $e');
-          }
+        try {
+           final ref = FirebaseStorage.instance.refFromURL(historialEliminar.imagenUrl!);
+           await ref.delete();
+        } catch (e) {
+           Get.log('Nota: Error al intentar borrar imagen (puede no existir): $e');
         }
       }
 
@@ -641,69 +667,7 @@ class HistorialClinicoController extends GetxController {
       'pacienteId': pacienteId,
     };
   }
-
-  // ========== HELPERS ==========
-
-  void _showErrorSnackbar(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Get.theme.colorScheme.error.withValues(alpha: 0.8),
-      colorText: Get.theme.colorScheme.onError,
-      duration: const Duration(seconds: 4),
-    );
-  }
-
-  void _showSuccessSnackbar(String title, String message) {
-    Get.snackbar(
-      title,
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Get.theme.colorScheme.primary.withValues(alpha: 0.8),
-      colorText: Get.theme.colorScheme.onPrimary,
-      duration: const Duration(seconds: 3),
-    );
-  }
-
-  // ========== CONVERTIR A MAP PARA LA VISTA ==========
-
-  List<Map<String, dynamic>> get filteredHistorial {
-    return historiales.map((h) => toDisplayMap(h)).toList();
-  }
-
-  Map<String, dynamic> toDisplayMap(HistorialClinico h) {
-    final info = _getPacienteInfo(h);
-    return {
-      'id': h.id,
-      'pacienteId': h.pacienteId,
-      'pacienteTipo': h.pacienteTipo,
-      'pacienteNombre': info?['nombre'] ?? 'Paciente no encontrado',
-      'pacienteRut': info?['rut'] ?? 'N/A',
-      'pacienteEdad': info?['edad'] ?? 0,
-      'pacienteTelefono': info?['telefono'] ?? '',
-      'pacienteSap': info?['sap'],
-      'tipoConsulta': h.tipoConsultaFormateado,
-      'odontologo': h.odontologo,
-      'fecha': h.fechaFormateada,
-      'hora': h.hora,
-      'motivoPrincipal': h.motivoPrincipal,
-      'diagnostico': h.diagnostico ?? '',
-      'tratamientoRealizado': h.tratamientoRealizado ?? '',
-      'tratamiento': h.tratamientoRealizado ?? '',
-      'dienteTratado': h.dienteTratado ?? '',
-      'observacionesOdontologo': h.observacionesOdontologo ?? '',
-      'observaciones': h.observacionesOdontologo ?? '',
-      'alergias': h.alergias ?? '',
-      'medicamentosActuales': h.medicamentosActuales ?? '',
-      'proximaCita': h.proximaCitaFormateada,
-      'estado': h.estadoFormateado,
-      'costoTratamiento': h.costoTratamiento,
-      'imagenUrl': h.imagenUrl ?? '',
-      'asociadoTitular': info?['titularNombre'] ?? '',
-    };
-  }
-
+  
   // ========== EXPORTACIÓN ==========
   Map<String, dynamic>? get currentHistorial {
     final historial = selectedHistorial.value;

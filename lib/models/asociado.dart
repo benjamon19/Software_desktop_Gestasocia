@@ -17,6 +17,8 @@ class Asociado {
   String? codigoBarras;
   String? sap;
   DateTime? ultimaActividad;
+  String? odontologoAsignadoId;
+  String? odontologoAsignadoNombre;
 
   Asociado({
     this.id,
@@ -35,6 +37,8 @@ class Asociado {
     this.codigoBarras,
     this.sap,
     this.ultimaActividad,
+    this.odontologoAsignadoId,
+    this.odontologoAsignadoNombre,
   });
 
   String get nombreCompleto => '$nombre $apellido';
@@ -161,6 +165,8 @@ class Asociado {
       'codigoBarras': codigoBarras,
       'sap': sap,
       'ultimaActividad': ultimaActividad,
+      'odontologoAsignadoId': odontologoAsignadoId,
+      'odontologoAsignadoNombre': odontologoAsignadoNombre,
     };
   }
 
@@ -182,6 +188,8 @@ class Asociado {
       codigoBarras: map['codigoBarras'],
       sap: map['sap'],
       ultimaActividad: map['ultimaActividad'] != null ? _parseDateTime(map['ultimaActividad']) : null,
+      odontologoAsignadoId: map['odontologoAsignadoId'],
+      odontologoAsignadoNombre: map['odontologoAsignadoNombre'],
     );
   }
 
@@ -220,6 +228,8 @@ class Asociado {
     String? codigoBarras,
     String? sap,
     DateTime? ultimaActividad,
+    String? odontologoAsignadoId,
+    String? odontologoAsignadoNombre,
   }) {
     return Asociado(
       id: id ?? this.id,
@@ -238,6 +248,8 @@ class Asociado {
       codigoBarras: codigoBarras ?? this.codigoBarras,
       sap: sap ?? this.sap,
       ultimaActividad: ultimaActividad ?? this.ultimaActividad,
+      odontologoAsignadoId: odontologoAsignadoId ?? this.odontologoAsignadoId,
+      odontologoAsignadoNombre: odontologoAsignadoNombre ?? this.odontologoAsignadoNombre,
     );
   }
 

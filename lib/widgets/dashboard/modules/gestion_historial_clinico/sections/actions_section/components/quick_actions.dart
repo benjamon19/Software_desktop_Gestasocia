@@ -1,6 +1,8 @@
-// quick_actions.dart
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../../../../../../controllers/historial_clinico_controller.dart';
+import '../../../../../../../controllers/asociados_controller.dart';
+import '../../../../../../../controllers/cargas_familiares_controller.dart';
 import '../../../../../../../utils/app_theme.dart';
 import '../../../shared/widgets/section_title.dart';
 import '../../../shared/widgets/action_button.dart';
@@ -9,6 +11,7 @@ import '../../../shared/dialog/edit_historial_dialog.dart';
 import '../../../shared/dialog/add_historial_dialog.dart';
 import '../../../shared/dialog/add_image_dialog.dart'; 
 import '../../../shared/dialog/delete_confirmation_dialog.dart';
+import '../../../shared/dialog/transfer_patient_general_dialog.dart';
 import 'patient_link.dart';
 import '../../../../../../../models/historial_clinico.dart';
 
@@ -89,6 +92,48 @@ class QuickActions extends StatelessWidget {
           color: const Color(0xFF059669),
           onPressed: () {
             ExportOptionsDialog.show(context);
+          },
+        ),
+
+        const SizedBox(height: 8),
+
+        ActionButton(
+          icon: Icons.swap_horiz,
+          title: 'Transferir Paciente',
+          subtitle: 'Cambiar de Odontólogo',
+          color: Colors.orange.shade800,
+          onPressed: () {
+            String? currentId;
+            String? currentName;
+
+            if (historial.pacienteTipo == 'asociado') {
+              try {
+                final asociadoController = Get.find<AsociadosController>();
+                final asociado = asociadoController.getAsociadoById(historial.pacienteId);
+                currentId = asociado?.odontologoAsignadoId;
+                currentName = asociado?.odontologoAsignadoNombre;
+              } catch (e) {
+                // Error silencioso si no encuentra el controlador
+              }
+            } else if (historial.pacienteTipo == 'carga') {
+              try {
+                final cargaController = Get.find<CargasFamiliaresController>();
+                final carga = cargaController.getCargaById(historial.pacienteId);
+                currentId = carga?.odontologoAsignadoId;
+                currentName = carga?.odontologoAsignadoNombre;
+              } catch (e) {
+                // Error silencioso
+              }
+            }
+
+            TransferPatientGeneralDialog.show(
+              context,
+              pacienteId: historial.pacienteId,
+              pacienteTipo: historial.pacienteTipo,
+              nombrePaciente: pacienteNombre,
+              currentOdontologoId: currentId,
+              currentOdontologoNombre: currentName,
+            );
           },
         ),
 

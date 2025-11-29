@@ -5,6 +5,7 @@ import 'dart:async';
 import 'dart:math';
 import '../models/asociado.dart';
 import '../models/carga_familiar.dart';
+import '../models/usuario.dart';
 import '../controllers/historial_controller.dart';
 import '../widgets/dashboard/modules/gestion_asociados/shared/dialogs/new_asociado_dialog.dart';
 import '../widgets/dashboard/modules/gestion_asociados/shared/dialogs/edit_asociado_dialog.dart';
@@ -487,6 +488,73 @@ class AsociadosController extends GetxController {
 
     } catch (e) {
       _showErrorSnackbar("Error", "No se pudo crear la carga familiar: ${e.toString()}");
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ========== TRANSFERENCIA DE PACIENTES (NUEVO) ==========
+
+  Future<List<Usuario>> getAvailableOdontologos() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .where('rol', isEqualTo: 'odontologo')
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      return snapshot.docs
+          .map((doc) => Usuario.fromMap(doc.data(), doc.id))
+          .toList();
+    } catch (e) {
+      Get.log('Error obteniendo odontólogos: $e');
+      return [];
+    }
+  }
+
+  Future<bool> transferirPaciente({
+    required String asociadoId,
+    required String nuevoOdontologoId,
+    required String nuevoOdontologoNombre,
+  }) async {
+    try {
+      isLoading.value = true;
+
+      await FirebaseFirestore.instance
+          .collection('asociados')
+          .doc(asociadoId)
+          .update({
+        'odontologoAsignadoId': nuevoOdontologoId,
+        'odontologoAsignadoNombre': nuevoOdontologoNombre,
+        'ultimaActividad': DateTime.now(),
+      });
+
+      final index = _allAsociados.indexWhere((a) => a.id == asociadoId);
+      if (index != -1) {
+        final asociadoActualizado = _allAsociados[index].copyWith(
+          odontologoAsignadoId: nuevoOdontologoId,
+          odontologoAsignadoNombre: nuevoOdontologoNombre,
+          ultimaActividad: DateTime.now(),
+        );
+        
+        _allAsociados[index] = asociadoActualizado;
+        
+        // Actualizar lista filtrada
+        _filterAsociados(searchQuery.value);
+        
+        // Actualizar selección si es el mismo
+        if (selectedAsociado.value?.id == asociadoId) {
+          selectedAsociado.value = asociadoActualizado;
+        }
+      }
+
+      _showSuccessSnackbar('Asignación Exitosa', 'Paciente asignado a $nuevoOdontologoNombre');
+      return true;
+
+    } catch (e) {
+      Get.log('Error transfiriendo paciente: $e');
+      _showErrorSnackbar('Error', 'No se pudo asignar el odontólogo');
       return false;
     } finally {
       isLoading.value = false;
