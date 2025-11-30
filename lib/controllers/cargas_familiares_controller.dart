@@ -14,6 +14,7 @@ import '../widgets/dashboard/modules/gestion_cargas_familiares/shared/dialogs/hi
 
 class CargasFamiliaresController extends GetxController {
   // ==================== ESTADO ====================
+  RxBool isNavigatedFromProfile = false.obs;
   final RxList<CargaFamiliar> _allCargasFamiliares = <CargaFamiliar>[].obs;
   RxList<CargaFamiliar> cargasFamiliares = <CargaFamiliar>[].obs;
   final RxList<Map<String, dynamic>> filteredCargas = <Map<String, dynamic>>[].obs;
@@ -67,6 +68,13 @@ class CargasFamiliaresController extends GetxController {
     _debounceTimer?.cancel();
     searchController.dispose();
     super.onClose();
+  }
+
+  void resetState() {
+    selectedCarga.value = null;
+    searchText.value = '';
+    isNavigatedFromProfile.value = false;
+    _filterCargas('');
   }
 
   // ==================== CARGA DE DATOS ====================

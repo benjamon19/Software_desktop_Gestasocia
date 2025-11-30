@@ -19,17 +19,51 @@ class ClinicalHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final HistorialClinicoController controller = Get.find<HistorialClinicoController>();
+    final AuthController authController = Get.find<AuthController>();
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       child: Obx(() {
-        // Filtrar historiales del paciente actual
+        // --- LÓGICA DE SEGURIDAD PREVENTIVA ---
+        final currentUser = authController.currentUser.value;
+        bool tieneAcceso = true;
+
+        if (currentUser != null && currentUser.rol == 'odontologo') {
+          // Verificar si el odontólogo está asignado a este asociado
+          final asociadosController = Get.find<AsociadosController>();
+          final asociado = asociadosController.getAsociadoById(pacienteId);
+
+          if (asociado != null) {
+            final asignadoId = asociado.odontologoAsignadoId;
+            final asignadoNombre = asociado.odontologoAsignadoNombre;
+            
+            // Si no coincide ni por ID ni por nombre, denegar acceso
+            if (asignadoId != currentUser.id && asignadoNombre != currentUser.nombreCompleto) {
+              tieneAcceso = false;
+            }
+          }
+        }
+        // ----------------------------------------
+
+        // Si no tiene acceso, mostramos el widget de bloqueo INMEDIATAMENTE
+        // evitando que se intente cargar la lista de historiales.
+        if (!tieneAcceso) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSectionHeader(context, 0, showCount: false),
+              const SizedBox(height: 16),
+              _buildRestrictedAccess(context),
+            ],
+          );
+        }
+
+        // Si tiene acceso, procedemos con la carga normal
         final historialesDelPaciente = controller.allHistoriales
             .where((h) =>
                 h.pacienteId == pacienteId && h.pacienteTipo == pacienteTipo)
             .toList();
         
-        // Ordenar por fecha (más reciente primero)
         historialesDelPaciente.sort((a, b) => b.fecha.compareTo(a.fecha));
 
         return Column(
@@ -45,7 +79,7 @@ class ClinicalHistoryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, int historyCount) {
+  Widget _buildSectionHeader(BuildContext context, int historyCount, {bool showCount = true}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -74,35 +108,86 @@ class ClinicalHistoryCard extends StatelessWidget {
             ),
           ],
         ),
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '$historyCount',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF3B82F6),
+        if (showCount)
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$historyCount',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF3B82F6),
+                  ),
                 ),
               ),
-            ),
-            if (historyCount > 5)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Icon(
-                  Icons.keyboard_arrow_down,
-                  color: AppTheme.getTextSecondary(context),
-                  size: 16,
+              if (historyCount > 5)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    color: AppTheme.getTextSecondary(context),
+                    size: 16,
+                  ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
       ],
+    );
+  }
+
+  // NUEVO WIDGET: Acceso Restringido
+  Widget _buildRestrictedAccess(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppTheme.getSurfaceColor(context),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Colors.red.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.lock_outline,
+              color: Colors.red,
+              size: 24,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Acceso Restringido',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.getTextPrimary(context),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Solo el odontólogo asignado puede ver este historial.',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.getTextSecondary(context),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -308,51 +393,9 @@ class ClinicalHistoryCard extends StatelessWidget {
     );
   }
 
-  // === LÓGICA DE SEGURIDAD AJUSTADA (ADMIN + ADMINISTRATIVO) ===
   void _goToHistorialDetail(dynamic historial) {
+
     try {
-      final authController = Get.find<AuthController>();
-      final currentUser = authController.currentUser.value;
-      
-      if (currentUser == null) return;
-
-      bool tieneAcceso = false;
-      final rol = currentUser.rol.toLowerCase().trim();
-
-      if (rol == 'administrativo' || rol == 'admin') {
-        tieneAcceso = true; 
-      } 
-
-      else if (rol == 'odontologo') {
-        if (pacienteTipo == 'asociado') {
-          final asociadosController = Get.find<AsociadosController>();
-          final asociado = asociadosController.getAsociadoById(pacienteId);
-          
-          if (asociado != null) {
-
-            if (asociado.odontologoAsignadoId == currentUser.id || 
-                asociado.odontologoAsignadoNombre == currentUser.nombreCompleto) {
-              tieneAcceso = true;
-            }
-          }
-        }
-      }
-
-      // BLOQUEO Y MENSAJE
-      if (!tieneAcceso) {
-        Get.snackbar(
-          "Acceso Denegado",
-          "No tienes permiso para ver los detalles de este historial clínico.",
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.9),
-          colorText: Colors.white,
-          duration: const Duration(seconds: 4),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
-        );
-        return; 
-      }
-
       final historialController = Get.find<HistorialClinicoController>();
 
       if (historial is! Map<String, dynamic>) {

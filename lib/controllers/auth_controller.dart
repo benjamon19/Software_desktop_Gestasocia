@@ -11,6 +11,10 @@ import 'package:file_picker/file_picker.dart';
 import '../models/usuario.dart';
 import '../services/firebase_service.dart';
 import 'package:firebase_core/firebase_core.dart';
+import '../controllers/asociados_controller.dart';
+import '../controllers/cargas_familiares_controller.dart';
+import '../controllers/historial_clinico_controller.dart';
+import '../controllers/dashboard_page_controller.dart';
 
 class AuthController extends GetxController {
   Rxn<User> firebaseUser = Rxn<User>();
@@ -27,6 +31,40 @@ class AuthController extends GetxController {
     super.onInit();
     Get.log('=== INICIANDO AUTH CONTROLLER ===');
     _checkPersistentSession();
+  }
+
+  Future<void> logout() async {
+    try {
+      isLoading.value = true;
+      
+      try {
+        if (Get.isRegistered<AsociadosController>()) {
+          Get.find<AsociadosController>().resetState();
+        }
+        if (Get.isRegistered<CargasFamiliaresController>()) {
+          Get.find<CargasFamiliaresController>().resetState();
+        }
+        if (Get.isRegistered<HistorialClinicoController>()) {
+          Get.find<HistorialClinicoController>().resetState();
+        }
+        if (Get.isRegistered<DashboardPageController>()) {
+          Get.find<DashboardPageController>().changeModule(0); 
+        }
+      } catch (e) {
+        // Ignorar errores de limpieza
+      }
+
+      await _clearPersistentSession();
+      await FirebaseService.signOut();
+      firebaseUser.value = null;
+      currentUser.value = null;
+      
+      Get.offAllNamed('/login');
+    } catch (e) {
+      _showErrorSnackbar("Error", "No se pudo cerrar sesión correctamente");
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   Future<void> _checkPersistentSession() async {
@@ -284,24 +322,6 @@ class AuthController extends GetxController {
 
   String _generarCodigoUnico() {
     return (1000 + Random().nextInt(9000)).toString();
-  }
-
-  Future<void> logout() async {
-    try {
-      Get.log('=== INICIANDO LOGOUT ===');
-      isLoading.value = true;
-      await _clearPersistentSession();
-      await FirebaseService.signOut();
-      firebaseUser.value = null;
-      currentUser.value = null;
-      Get.log('=== LOGOUT COMPLETADO - NAVEGANDO A LOGIN ===');
-      Get.offAllNamed('/login');
-    } catch (e) {
-      Get.log('Error en logout: $e');
-      _showErrorSnackbar("Error", "No se pudo cerrar sesión correctamente");
-    } finally {
-      isLoading.value = false;
-    }
   }
 
   Future<bool> uploadProfilePhoto({bool fromCamera = false}) async {
