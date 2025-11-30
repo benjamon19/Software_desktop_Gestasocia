@@ -246,16 +246,13 @@ class HistorialController extends GetxController {
     Map<String, dynamic>? datosAdicionales,
   }) async {
     try {
-      // === CORRECCIÓN DE USUARIO: Usar AuthController ===
       String usuarioId = 'sistema';
       String usuarioNombre = 'Sistema';
 
       if (Get.isRegistered<AuthController>()) {
         final authController = Get.find<AuthController>();
-        // Verificamos si hay usuario logueado en la sesión activa
         if (authController.currentUser.value != null) {
           usuarioId = authController.currentUserId ?? 'sistema';
-          // Esto obtiene el nombre real del usuario logueado
           usuarioNombre = authController.userDisplayName; 
         }
       }
@@ -312,24 +309,27 @@ class HistorialController extends GetxController {
     }
   }
 
-  /// Limpiar historial más antiguo que 30 días
   Future<void> _limpiarHistorialAntiguo() async {
     try {
       final fechaLimite = DateTime.now().subtract(Duration(days: diasRetencion));
       
+      // === CORRECCIÓN DE ESTABILIDAD ===
+
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('historial_cambios')
           .where('fechaHora', isLessThan: fechaLimite)
+          .limit(400)
           .get();
+
+      if (snapshot.docs.isEmpty) return;
 
       final batch = FirebaseFirestore.instance.batch();
       for (var doc in snapshot.docs) {
         batch.delete(doc.reference);
       }
       
-      if (snapshot.docs.isNotEmpty) {
-        await batch.commit();
-      }
+      await batch.commit();
+      
     } catch (e) {
       debugPrint('Error limpiando historial antiguo: $e');
     }
@@ -358,7 +358,6 @@ class HistorialController extends GetxController {
     }
   }
 
-  // Getters útiles
   int get totalCambios => historialCambios.length;
   bool get tieneCambios => historialCambios.isNotEmpty;
 }

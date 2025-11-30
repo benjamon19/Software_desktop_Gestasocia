@@ -42,7 +42,7 @@ class ReservaHorasController extends GetxController {
   // === GETTERS PARA DASHBOARD Y GRÁFICOS ===
   // =========================================================
 
-  // KPI: Total de citas activas hoy (FILTRADO AUTOMÁTICAMENTE POR loadReservas)
+  // KPI: Total de citas activas hoy
   int get totalCitasHoy {
     final today = DateTime.now();
     return reservas.where((r) {
@@ -125,8 +125,20 @@ class ReservaHorasController extends GetxController {
   Future<void> loadReservas() async {
     try {
       isLoading.value = true;
+
+      final authController = Get.find<AuthController>();
+      final currentUser = authController.currentUser.value;
+
+      if (currentUser == null) {
+        reservas.clear();
+        return;
+      }
+
+      final fechaLimite = DateTime.now().subtract(const Duration(days: 30));
+
       final snapshot = await FirebaseFirestore.instance
           .collection('reservas_horas')
+          .where('fecha', isGreaterThanOrEqualTo: fechaLimite)
           .orderBy('fecha')
           .get();
 
@@ -135,27 +147,23 @@ class ReservaHorasController extends GetxController {
           .toList();
 
       // --- FILTRO DE SEGURIDAD POR ROL ---
-      try {
-        final authController = Get.find<AuthController>();
-        final currentUser = authController.currentUser.value;
-
-        if (currentUser != null && currentUser.rol == 'odontologo') {
-          loadedReservas = loadedReservas.where((r) {
-            if (r.odontologoId != null && r.odontologoId == currentUser.id) {
-              return true;
-            }
-            if (r.odontologoId == null && r.odontologo == currentUser.nombreCompleto) {
-              return true;
-            }
-            return false;
-          }).toList();
-        }
-      } catch (e) {
-        debugPrint('Error filtrando reservas por rol: $e');
+      if (currentUser.rol == 'odontologo') {
+        loadedReservas = loadedReservas.where((r) {
+          // Prioridad ID
+          if (r.odontologoId != null && r.odontologoId == currentUser.id) {
+            return true;
+          }
+          // Compatibilidad Nombre
+          if (r.odontologoId == null && r.odontologo == currentUser.nombreCompleto) {
+            return true;
+          }
+          return false;
+        }).toList();
       }
 
       reservas.assignAll(loadedReservas);
     } catch (e) {
+      debugPrint('Error cargando reservas: $e');
       _showSnackbar('Error', 'No se pudieron cargar las reservas', isError: true);
     } finally {
       isLoading.value = false;
@@ -186,8 +194,9 @@ class ReservaHorasController extends GetxController {
           .collection('reservas_horas')
           .add(reservaAGuardar.toMap());
 
-      reservas.add(reservaAGuardar.copyWith(id: docRef.id));
-      loadReservas(); 
+      final nuevaConId = reservaAGuardar.copyWith(id: docRef.id);
+      reservas.add(nuevaConId);
+      reservas.sort((a, b) => a.fecha.compareTo(b.fecha));
       
       _showSnackbar('Éxito', 'Reserva agendada correctamente');
       return true;
