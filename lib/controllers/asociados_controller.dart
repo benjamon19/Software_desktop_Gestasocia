@@ -22,6 +22,10 @@ class AsociadosController extends GetxController {
   RxList<Asociado> asociados = <Asociado>[].obs;
   RxList<CargaFamiliar> cargasFamiliares = <CargaFamiliar>[].obs;
 
+  // === OPTIMIZACIÓN: MAPA PARA BÚSQUEDA RÁPIDA (O(1)) ===
+  final Map<String, Asociado> _asociadosMap = {}; 
+  // =======================================================
+
   final GlobalKey<State<StatefulWidget>> searchFieldKey = GlobalKey();
   Timer? _debounceTimer;
 
@@ -137,12 +141,19 @@ class AsociadosController extends GetxController {
           .get();
       
       _allAsociados.clear();
+      _asociadosMap.clear();
+
       for (var doc in snapshot.docs) {
         final asociado = Asociado.fromMap(
           doc.data() as Map<String, dynamic>, 
           doc.id
         );
         _allAsociados.add(asociado);
+        
+        // Llenar el mapa
+        if (asociado.id != null) {
+          _asociadosMap[asociado.id!] = asociado;
+        }
       }
       
       _filterAsociados(searchQuery.value);
@@ -209,7 +220,13 @@ class AsociadosController extends GetxController {
           .add(nuevoAsociado.toMap());
 
       final asociadoConId = nuevoAsociado.copyWith(id: docRef.id);
+      
       _allAsociados.add(asociadoConId);
+      // Agregar al mapa
+      if (asociadoConId.id != null) {
+        _asociadosMap[asociadoConId.id!] = asociadoConId;
+      }
+      
       selectedAsociado.value = asociadoConId;
       searchQuery.value = '';
 
@@ -265,6 +282,7 @@ class AsociadosController extends GetxController {
         
         _showSuccessSnackbar("Encontrado", "Asociado encontrado: ${asociado.nombreCompleto}");
       } else {
+
         QuerySnapshot snapshot = await FirebaseFirestore.instance
             .collection('asociados')
             .where('rut', isEqualTo: cleanSearchTerm)
@@ -299,6 +317,9 @@ class AsociadosController extends GetxController {
           
           if (!_allAsociados.any((a) => a.id == asociadoEncontrado.id)) {
             _allAsociados.add(asociadoEncontrado);
+            if (asociadoEncontrado.id != null) {
+               _asociadosMap[asociadoEncontrado.id!] = asociadoEncontrado;
+            }
             _filterAsociados(searchQuery.value);
           }
           
@@ -341,6 +362,7 @@ class AsociadosController extends GetxController {
       final index = _allAsociados.indexWhere((a) => a.id == asociadoActualizado.id);
       if (index != -1) {
         _allAsociados[index] = asociadoActualizado;
+        _asociadosMap[asociadoActualizado.id!] = asociadoActualizado;
         _filterAsociados(searchQuery.value);
       }
 
@@ -372,6 +394,7 @@ class AsociadosController extends GetxController {
           .delete();
 
       _allAsociados.removeWhere((asociado) => asociado.id == id);
+      _asociadosMap.remove(id);
       _filterAsociados(searchQuery.value);
 
       if (selectedAsociado.value?.id == id) {
@@ -477,6 +500,7 @@ class AsociadosController extends GetxController {
       final index = _allAsociados.indexWhere((a) => a.id == asociadoActualizado.id);
       if (index != -1) {
         _allAsociados[index] = asociadoActualizado;
+        _asociadosMap[asociadoActualizado.id!] = asociadoActualizado;
       }
       selectedAsociado.value = asociadoActualizado;
 
@@ -539,11 +563,10 @@ class AsociadosController extends GetxController {
         );
         
         _allAsociados[index] = asociadoActualizado;
+        _asociadosMap[asociadoActualizado.id!] = asociadoActualizado;
         
-        // Actualizar lista filtrada
         _filterAsociados(searchQuery.value);
         
-        // Actualizar selección si es el mismo
         if (selectedAsociado.value?.id == asociadoId) {
           selectedAsociado.value = asociadoActualizado;
         }
@@ -682,6 +705,7 @@ class AsociadosController extends GetxController {
       final allIndex = _allAsociados.indexWhere((a) => a.id == asociadoId);
       if (allIndex != -1) {
         _allAsociados[allIndex] = asociadoActualizado;
+        _asociadosMap[asociadoId] = asociadoActualizado;
       }
       
       Get.snackbar(
@@ -774,6 +798,7 @@ class AsociadosController extends GetxController {
           final index = _allAsociados.indexWhere((a) => a.id == asociado.id);
           if (index != -1) {
             _allAsociados[index] = asociadoActualizado;
+            _asociadosMap[asociado.id!] = asociadoActualizado;
           }
           
           _registrarSAP(asociado.id!, sap);
@@ -882,9 +907,14 @@ class AsociadosController extends GetxController {
     );
   }
   
+  // === OPTIMIZACIÓN: BÚSQUEDA O(1) ===
   Asociado? getAsociadoById(String asociadoId) {
+    if (_asociadosMap.containsKey(asociadoId)) {
+      return _asociadosMap[asociadoId];
+    }
     return _allAsociados.firstWhereOrNull((asociado) => asociado.id == asociadoId);
   }
+  // ===================================
 
   // ========== GETTERS ==========
   bool get hasSelectedAsociado => selectedAsociado.value != null;

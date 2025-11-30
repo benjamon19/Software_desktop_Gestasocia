@@ -3,9 +3,11 @@ import 'package:get/get.dart';
 import 'dart:math';
 import '../../../../../../utils/app_theme.dart';
 import '../../../../../../controllers/historial_clinico_controller.dart';
+import '../../../../../../models/historial_clinico.dart'; // Importante
 
 class HistorialListSection extends StatelessWidget {
-  final List<Map<String, dynamic>> historiales;
+  // CAMBIO: Recibimos objetos puros
+  final List<HistorialClinico> historiales;
   final Function(Map<String, dynamic>) onHistorialSelected;
   final Function(String) onFilterChanged;
   final Function(String) onStatusChanged;
@@ -184,8 +186,11 @@ class HistorialListSection extends StatelessWidget {
         itemCount: listaPaginada.length,
         separatorBuilder: (context, index) => SizedBox(height: isVerySmall ? 4 : 6),
         itemBuilder: (context, index) {
-          final historial = listaPaginada[index];
-          return _buildHistorialCard(context, historial, isSmallScreen, isVerySmall);
+          final historialObjeto = listaPaginada[index];
+          final controller = Get.find<HistorialClinicoController>();
+          final historialMap = controller.toDisplayMap(historialObjeto);
+
+          return _buildHistorialCard(context, historialMap, isSmallScreen, isVerySmall);
         },
       );
     });

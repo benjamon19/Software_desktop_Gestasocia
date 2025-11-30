@@ -76,7 +76,7 @@ class HistorialClinicoMainView extends StatelessWidget {
               const SizedBox(height: 20),
               Expanded(
                 child: HistorialListSection(
-                  historiales: controller.filteredHistorial,
+                  historiales: controller.filteredHistorialList,
                   onHistorialSelected: (historialMap) {
                     final historialCompleto = controller.allHistoriales.firstWhereOrNull(
                       (h) => h.id == historialMap['id'],

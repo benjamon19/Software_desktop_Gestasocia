@@ -28,7 +28,6 @@ class HistorialClinicoController extends GetxController {
   final RxList<HistorialClinico> _allHistoriales = <HistorialClinico>[].obs;
   RxList<HistorialClinico> historiales = <HistorialClinico>[].obs;
 
-  // Datos pre-cargados para nuevo historial
   RxMap<String, dynamic> datosPacientePreCargados = <String, dynamic>{}.obs;
 
   Timer? _debounceTimer;
@@ -46,7 +45,6 @@ class HistorialClinicoController extends GetxController {
       }
     });
 
-    // Escuchar cambios en el usuario para recargar filtros
     try {
       final authController = Get.find<AuthController>();
       ever(authController.currentUser, (_) {
@@ -189,14 +187,20 @@ class HistorialClinicoController extends GetxController {
   // ========== BÚSQUEDA Y FILTROS ==========
 
   void _applyFilters() {
+
+    final authController = Get.find<AuthController>();
+    final currentUser = authController.currentUser.value;
+
+    if (currentUser == null) {
+      historiales.clear();
+      return;
+    }
+
     List<HistorialClinico> filtered = List.from(_allHistoriales);
 
     // --- LOGICA DE SEGURIDAD PARA ODONTÓLOGOS ---
     try {
-      final authController = Get.find<AuthController>();
-      final currentUser = authController.currentUser.value;
-
-      if (currentUser != null && currentUser.rol == 'odontologo') {
+      if (currentUser.rol == 'odontologo') {
         filtered = filtered.where((h) {
           if (h.tipoConsulta.toLowerCase() == 'urgencia' && 
               ['pendiente', 'requiere_seguimiento'].contains(h.estado.toLowerCase())) {
@@ -215,6 +219,8 @@ class HistorialClinicoController extends GetxController {
       }
     } catch (e) {
       // Error silencioso
+      historiales.clear();
+      return;
     }
 
     if (searchQuery.value.isNotEmpty) {
@@ -236,27 +242,22 @@ class HistorialClinicoController extends GetxController {
       }).toList();
     }
 
-    // Filtro por tipo de consulta
     if (selectedFilter.value != 'todos') {
       filtered = filtered.where((h) => h.tipoConsulta == selectedFilter.value).toList();
     }
 
-    // Filtro por estado
     if (selectedStatus.value != 'todos') {
       filtered = filtered.where((h) => h.estado.toLowerCase() == selectedStatus.value).toList();
     }
     
-    // Filtro por odontólogo (Visual)
     if (selectedOdontologo.value != 'todos') {
       filtered = filtered.where((h) => h.odontologo == selectedOdontologo.value).toList();
     }
 
-    // Ordenar por fecha más reciente
     filtered.sort((a, b) => b.fecha.compareTo(a.fecha));
 
     historiales.value = filtered;
     
-    // Refrescar para actualizar la UI
     historiales.refresh();
   }
 
@@ -284,9 +285,10 @@ class HistorialClinicoController extends GetxController {
     );
   }
 
-  // ========== CONVERTIR A MAP PARA LA VISTA ==========
-    List<Map<String, dynamic>> get filteredHistorial {
-    return historiales.map((h) => toDisplayMap(h)).toList();
+  // ========== OPTIMIZACIÓN DE RENDIMIENTO ==========
+
+  List<HistorialClinico> get filteredHistorialList {
+    return historiales;
   }
 
   Map<String, dynamic> toDisplayMap(HistorialClinico h) {
@@ -487,7 +489,6 @@ class HistorialClinicoController extends GetxController {
         throw Exception('El paciente no existe en el sistema');
       }
 
-      // --- ASIGNAR ID DEL ODONTÓLOGO SI NO VIENE ---
       String? odontoId = historialData['odontologoId'];
       try {
         final authController = Get.find<AuthController>();

@@ -1,9 +1,11 @@
-// clinical_history_card.dart
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../../../../utils/app_theme.dart';
 import '../../../../../../../controllers/historial_clinico_controller.dart';
 import '../../../../../../../controllers/dashboard_page_controller.dart';
+import '../../../../../../../controllers/auth_controller.dart';
+import '../../../../../../../controllers/asociados_controller.dart';
+import '../../../../../../../controllers/cargas_familiares_controller.dart';
 
 class ClinicalHistoryCard extends StatelessWidget {
   final String pacienteId;
@@ -22,11 +24,13 @@ class ClinicalHistoryCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       child: Obx(() {
-        // Filtrar historiales del paciente actual
+
         final historialesDelPaciente = controller.allHistoriales
             .where((h) =>
                 h.pacienteId == pacienteId && h.pacienteTipo == pacienteTipo)
             .toList();
+        
+        historialesDelPaciente.sort((a, b) => b.fecha.compareTo(a.fecha));
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,6 +310,59 @@ class ClinicalHistoryCard extends StatelessWidget {
 
   void _goToHistorialDetail(dynamic historial) {
     try {
+      final authController = Get.find<AuthController>();
+      final currentUser = authController.currentUser.value;
+      
+      if (currentUser == null) return;
+
+      bool tieneAcceso = false;
+      final rol = currentUser.rol.toLowerCase().trim();
+
+      if (rol == 'admin' || rol == 'administrativo') {
+        tieneAcceso = true; 
+      } 
+
+      else if (rol == 'odontologo') {
+
+        if (pacienteTipo == 'asociado') {
+          final asociadosController = Get.find<AsociadosController>();
+          final asociado = asociadosController.getAsociadoById(pacienteId);
+          
+          if (asociado != null) {
+            if (asociado.odontologoAsignadoId == currentUser.id || 
+                asociado.odontologoAsignadoNombre == currentUser.nombreCompleto) {
+              tieneAcceso = true;
+            }
+          }
+        }
+
+        else if (pacienteTipo == 'carga') {
+          final cargasController = Get.find<CargasFamiliaresController>();
+          final carga = cargasController.getCargaById(pacienteId);
+          
+          if (carga != null) {
+            if (carga.odontologoAsignadoId == currentUser.id || 
+                carga.odontologoAsignadoNombre == currentUser.nombreCompleto) {
+              tieneAcceso = true;
+            }
+          }
+        }
+      }
+
+      if (!tieneAcceso) {
+        Get.snackbar(
+          "Acceso Denegado",
+          "No tienes permiso para ver los detalles de este historial clínico.",
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.9),
+          colorText: Colors.white,
+          duration: const Duration(seconds: 4),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+        );
+        return; // Detiene la navegación
+      }
+
       final historialController = Get.find<HistorialClinicoController>();
 
       if (historial is! Map<String, dynamic>) {

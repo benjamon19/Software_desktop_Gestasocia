@@ -214,6 +214,7 @@ class HistorialCargasController extends GetxController {
     }
   }
 
+  // === CORRECCIÓN DE ESTABILIDAD (BATCH LIMIT) ===
   Future<void> _limpiarHistorialAntiguo() async {
     try {
       final fechaLimite = DateTime.now().subtract(Duration(days: diasRetencion));
@@ -221,16 +222,18 @@ class HistorialCargasController extends GetxController {
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('historial_cargas_cambios')
           .where('fechaHora', isLessThan: fechaLimite)
+          .limit(400)
           .get();
+
+      if (snapshot.docs.isEmpty) return;
 
       final batch = FirebaseFirestore.instance.batch();
       for (var doc in snapshot.docs) {
         batch.delete(doc.reference);
       }
       
-      if (snapshot.docs.isNotEmpty) {
-        await batch.commit();
-      }
+      await batch.commit();
+      
     } catch (e) {
       debugPrint('Error limpiando historial antiguo de cargas: $e');
     }
@@ -242,7 +245,7 @@ class HistorialCargasController extends GetxController {
           .collection('historial_cargas_cambios')
           .where('cargaFamiliarId', isEqualTo: cargaFamiliarId)
           .get();
-
+      
       final batch = FirebaseFirestore.instance.batch();
       for (var doc in snapshot.docs) {
         batch.delete(doc.reference);
