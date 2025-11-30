@@ -62,6 +62,14 @@ class HistorialClinicoController extends GetxController {
     _debounceTimer?.cancel();
     super.onClose();
   }
+  
+  void resetState() {
+    selectedHistorial.value = null;
+    selectedPacienteNombre.value = '';
+    currentView.value = listaView;
+    searchQuery.value = '';
+    datosPacientePreCargados.clear();
+  }
 
   // =========================================================================
   // === GETTERS DINÁMICOS PARA DASHBOARD (KPIs y Listas) ===

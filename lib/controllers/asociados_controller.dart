@@ -51,6 +51,12 @@ class AsociadosController extends GetxController {
     _debounceTimer?.cancel();
     super.onClose();
   }
+  
+  void resetState() {
+    selectedAsociado.value = null;
+    searchQuery.value = '';
+    _filterAsociados('');
+  }
 
   // ========== MÉTODOS DE BÚSQUEDA Y FILTRADO ==========
 

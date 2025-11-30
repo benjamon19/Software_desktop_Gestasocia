@@ -4,6 +4,7 @@ import '../../../../../../../utils/app_theme.dart';
 import '../../../../../../../controllers/asociados_controller.dart';
 import '../../../../../../../controllers/cargas_familiares_controller.dart';
 import '../../../../../../../controllers/dashboard_page_controller.dart';
+import '../../../../../../../controllers/auth_controller.dart';
 import '../../../shared/widgets/section_title.dart';
 
 class PatientLink extends StatelessWidget {
@@ -167,7 +168,6 @@ class PatientLink extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Nombre del paciente
         Text(
           historial['pacienteNombre'] ?? 'Sin nombre',
           style: TextStyle(
@@ -180,7 +180,6 @@ class PatientLink extends StatelessWidget {
         ),
         const SizedBox(height: 2),
 
-        // RUT y tipo de paciente
         Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 8,
@@ -243,20 +242,28 @@ class PatientLink extends StatelessWidget {
     try {
       final tipo = historial['pacienteTipo'];
       final pacienteId = historial['pacienteId'];
+      
+      // Obtener rol del usuario actual
+      final authController = Get.find<AuthController>();
+      final currentUser = authController.currentUser.value;
+      final esOdontologo = currentUser?.rol == 'odontologo';
 
       if (tipo == 'asociado') {
         final asociadosController = Get.find<AsociadosController>();
         final asociado = asociadosController.getAsociadoById(pacienteId);
+        
         if (asociado != null) {
           asociadosController.selectedAsociado.value = asociado;
           Get.find<DashboardPageController>().changeModule(1);
         } else {
-          Get.snackbar('Error', 'No se encontró el asociado',
-              snackPosition: SnackPosition.BOTTOM);
+          // Si no se encuentra y es odontólogo, es un tema de permisos
+          _handleNotFound(esOdontologo);
         }
+
       } else if (tipo == 'carga') {
         final cargasController = Get.find<CargasFamiliaresController>();
         final carga = cargasController.getCargaById(pacienteId);
+        
         if (carga != null) {
           final cargaMap = {
             'id': carga.id,
@@ -276,13 +283,36 @@ class PatientLink extends StatelessWidget {
           cargasController.selectCarga(cargaMap);
           Get.find<DashboardPageController>().changeModule(2);
         } else {
-          Get.snackbar('Error', 'No se encontró la carga familiar',
-              snackPosition: SnackPosition.BOTTOM);
+          // Si no se encuentra y es odontólogo, es un tema de permisos
+          _handleNotFound(esOdontologo);
         }
       }
     } catch (e) {
       Get.snackbar('Error', 'No se pudo abrir el perfil del paciente',
           snackPosition: SnackPosition.BOTTOM);
+    }
+  }
+
+  void _handleNotFound(bool esOdontologo) {
+    if (esOdontologo) {
+      Get.snackbar(
+        'Acceso Restringido',
+        'Este paciente no está asignado a tu lista, por lo que no puedes ver su perfil completo.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFF59E0B).withValues(alpha: 0.9),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+      );
+    } else {
+      Get.snackbar(
+        'No encontrado', 
+        'No se encontraron los datos del paciente en el sistema.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFEF4444).withValues(alpha: 0.9),
+        colorText: Colors.white,
+      );
     }
   }
 
